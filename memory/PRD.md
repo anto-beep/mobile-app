@@ -1,46 +1,78 @@
-# Wayly Mobile — Phase 1 PRD
+# Wayly Mobile — PRD
 
 ## Goal
-Build a React Native (Expo SDK 54) mobile companion app for the existing Wayly web product (Australian aged-care Support at Home programme). The mobile app is the second client of an existing FastAPI backend; both share the same data via JWT auth.
+Mobile companion (React Native, Expo SDK 54) to the Wayly web app for Australian aged-care Support at Home caregivers. Mobile is a **second client** of the same FastAPI backend — sessions, statements, anomalies and notifications all sync via shared JWT auth.
 
-## User
-**Cathy** — adult-child caregiver helping their parent (the participant) navigate Support at Home statements, budgets, and anomalies. The mobile app prioritises moments-of-need: "I just opened a paper statement and want to upload it" or "I need to know in 30 seconds if anything's wrong this quarter."
+## Production target
+`EXPO_PUBLIC_BACKEND_URL=https://aged-care-os.preview.emergentagent.com`
 
-## Phase 1 Scope (this build)
-1. **Auth** — email/password JWT (`/api/auth/signup`, `/api/auth/login`, `/api/auth/me`). Google sign-in deferred to Phase 2.
-2. **Today screen** — the marquee 30-second-glance dashboard. Greeting with participant name, quarter remaining (hero number), spent + alert count + lifetime cap %, stream breakdown, latest statement card.
-3. **Camera upload** — primary FAB on Today + Statements. Action sheet → Camera / Library / PDF. Uploads to `/api/statements/upload`, polls `/api/statements/upload-job/{id}` for OCR + parse completion.
-4. **Statement detail** — plain-English summary, anomaly cards (severity-tinted), line-item list with stream chips.
-5. **Push notifications** — Expo push token registered to `/api/notifications/register-push`. Backend fires push on every HIGH/MEDIUM (alert/warning) anomaly detected during upload parse.
+## Persona — Cathy
+Adult-child caregiver. Calm, plain-English, warm, never alarmist. "Things to know" not "Errors". 30-second-glance dashboards.
 
-## Brand & Persona
-- Colors (literal): navy `#1F3A5F`, gold `#D4A24E`, cream `#FAF7F2`. Stream accents: Clinical `#3A5A40`, Independence `#8B9B82`, Everyday Living `#A05545`.
-- Fonts: Outfit (headings), Figtree (body) via `@expo-google-fonts`.
-- Tone: calm, plain-English, warm, never alarmist. "Things to know" not "Errors". "Worth a quick check" not "URGENT".
+## Brand
+- Navy `#1F3A5F` · Gold `#D4A24E` · Cream `#FAF7F2`
+- Stream accents: Clinical `#3A5A40` · Independence `#8B9B82` · Everyday Living `#A05545`
+- Outfit (heading) + Figtree (body) via @expo-google-fonts
 
-## Architecture
-- **Backend** (`/app/backend`): FastAPI + Motor + Mongo. Auth via PyJWT + bcrypt. Statement OCR via Claude Sonnet 4.5 vision through `emergentintegrations` (EMERGENT_LLM_KEY). Background async parse job. Expo push via `exponent_server_sdk`.
-- **Frontend** (`/app/frontend`): Expo Router file-based routes. AsyncStorage-persisted JWT. Axios client with interceptor. Tab navigation: Today / Statements / Alerts / Profile.
+## Tab structure (5)
+1. **Today** — hero remaining-this-quarter, alert chip, lifetime cap %, stream burn, latest statement card, camera FAB, bell w/ unread dot
+2. **Statements** — list + camera FAB
+3. **Help** — Claude chatbot grounded in dashboard context, 4 starter prompts
+4. **Family** — caregiver/participant message thread (`/api/family-thread`)
+5. **More** (Profile) — household, links to: Participant view, AI tools, Notifications, Share dashboard, Settings (web), Billing (web), Sign out
 
-## Endpoints
-- `POST /api/auth/signup`, `POST /api/auth/login`, `GET /api/auth/me`
-- `POST /api/household`, `GET /api/household`
-- `POST /api/statements/upload` → returns `{job_id}`
-- `GET /api/statements/upload-job/{job_id}` → polled for `{status, statement_id}`
-- `GET /api/statements`, `GET /api/statements/{id}`
-- `GET /api/budget/current` → Today screen data
-- `GET /api/notifications`, `POST /api/notifications/read`, `POST /api/notifications/register-push`
+## Deeper screens
+- **Statement detail** — summary + anomaly cards + line items
+- **Notifications** — severity-tinted alert list (50 most recent)
+- **Participant view** (`/participant`) — appointment, quarter remaining, 3 mood buttons → `/api/participant/wellbeing`. Caregiver gets push if "not_great"
+- **Tools** (`/tools/...`) — 4 native screens:
+  - Budget calc — quarterly + annual breakdown for any classification
+  - Price checker — verdict (fair/high/low) + suggested action
+  - Classification self-check — 12 questions → likely level
+  - Reassessment letter — Claude-drafted MAC letter with copy-to-clipboard
 
-## Demo data
-On first startup, seed user `demo@wayly.com.au / Wayly123!` with household "Margaret" (Level 4), one sample statement covering current month, 1 warning anomaly + 1 info anomaly, 1 unread notification.
+## Auth
+- Email/password JWT (`/api/auth/login`, `/auth/signup`)
+- **Google sign-in** via Emergent-managed OAuth: WebBrowser opens `auth.emergentagent.com` → returns `#session_id=...` → exchanged at `/api/auth/google-session` → Wayly JWT
+- AsyncStorage-persisted token, axios interceptor
 
-## Out of Phase 1 (deferred)
-- Google sign-in
-- Help chatbot
-- Family thread
-- Wellbeing check-in / participant view
-- Settings (plan/billing) — point to web
+## Push notifications
+- Expo Push Notifications (free, no extra accounts)
+- Token registered to `/api/notifications/register-push` on login
+- Backend fires push on every alert/warning anomaly during statement parse, plus participant wellbeing "not_great"
+- Real device + EAS dev build needed for push delivery (Expo Go doesn't support remote push since SDK 53)
 
-## Notes
-- The mobile app's `EXPO_PUBLIC_BACKEND_URL` can be repointed at any time to the real Wayly backend; the contract is identical.
-- Statement OCR uses Claude vision and so requires `EMERGENT_LLM_KEY` (set in `/app/backend/.env`).
+## Statement upload
+- Camera FAB → action sheet (Take photo / Library / PDF)
+- Photo flows: image → Claude Sonnet 4.5 vision OCR via emergentintegrations → structured parse with anomaly detection
+- Polls `/api/statements/upload-job/{id}` until `status: done`
+
+## Endpoints (full surface used by mobile)
+**Auth**: `/api/auth/signup`, `/api/auth/login`, `/api/auth/me`, `/api/auth/google-session`
+**Household**: `/api/household` (POST, GET)
+**Statements**: `/api/statements/upload`, `/api/statements/upload-job/{id}`, `/api/statements`, `/api/statements/{id}`
+**Today**: `/api/budget/current`
+**Chat**: `/api/chat` (POST), `/api/chat/history`
+**Family**: `/api/family-thread` (POST, GET)
+**Participant**: `/api/participant/today`, `/api/participant/wellbeing` (POST, GET)
+**Notifications**: `/api/notifications`, `/api/notifications/read`, `/api/notifications/register-push`
+**Share**: `/api/dashboard/share`
+**Public AI tools**: `/api/public/budget-calc`, `/api/public/price-check` (+ `/services`), `/api/public/classification-check`, `/api/public/reassessment-letter`
+
+## Phase scope
+- **Phase 1** ✅ Auth + Today + Camera Upload + Statement Detail + Push
+- **Phase 2** ✅ Google sign-in, Help chatbot, Family thread, Wellbeing check-in, Share dashboard
+- **Phase 3** ✅ Native AI tools (4), Settings/Billing web deep-links
+- **Tier 3 deferred (still web-only)**: Stripe checkout / plan switching, Advisor multi-client portal, Admin flows
+- **Phase 4 candidates**: Notifications archive (filters/search), in-app billing via Apple/Google IAP, calendar agent for live appointments
+
+## Smart business enhancement
+**Camera-on-FAB everywhere** + **Help chatbot with dashboard grounding** make the app a moment-of-need first stop: "I just opened a paper statement" or "What does this anomaly actually mean?". The chatbot drives engagement (and is grounded in the user's own data, so answers are concrete) while reducing support load on the web product.
+
+## Design guidelines
+See `/app/design_guidelines.json` (auto-generated by design agent).
+
+## Testing
+- Backend: 40/40 pytest pass (auth, household, statements, today, notifications, chat, family, participant, share, all 4 AI tools, Google session)
+- Frontend: full e2e on 390×844 mobile viewport (login → today → bell → notifications → statements → detail → chat → family → profile → participant → tools)
+- Test reports: `/app/test_reports/iteration_1.json`, `/app/test_reports/pytest/pytest_phase2.xml`
