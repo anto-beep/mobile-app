@@ -17,7 +17,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('demo@wayly.com.au');
   const [password, setPassword] = useState('Wayly123!');
@@ -32,6 +32,21 @@ export default function Login() {
       router.replace('/(tabs)/today');
     } catch (e: any) {
       setError(e?.message || 'Could not sign in');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await loginWithGoogle();
+      router.replace('/(tabs)/today');
+    } catch (e: any) {
+      if (e?.message !== 'REDIRECTING') {
+        setError(e?.message || 'Google sign-in failed');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -101,6 +116,22 @@ export default function Login() {
               <Text style={styles.btnText}>{submitting ? 'Signing in…' : 'Sign in'}</Text>
             </TouchableOpacity>
 
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              testID="auth-google-button"
+              onPress={onGoogle}
+              disabled={submitting}
+              style={[styles.googleBtn, submitting && { opacity: 0.6 }]}
+            >
+              <Ionicons name="logo-google" size={18} color={Colors.brandPrimary} />
+              <Text style={styles.googleBtnText}>Continue with Google</Text>
+            </TouchableOpacity>
+
             <View style={styles.switchRow}>
               <Text style={styles.muted}>No account yet?</Text>
               <Link href="/(auth)/signup" asChild>
@@ -161,6 +192,16 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.lg },
   muted: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary },
   linkText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, textDecorationLine: 'underline' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  googleBtn: {
+    marginTop: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md,
+    paddingVertical: 14, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 10, minHeight: 52,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  googleBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
   demoChip: {
     marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(139, 155, 130, 0.08)',
     borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', gap: 8,

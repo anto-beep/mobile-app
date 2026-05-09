@@ -17,6 +17,8 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, name: string) => Promise<User>;
+  loginWithGoogle: () => Promise<User>;
+  finishGoogleSession: (sessionId: string) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -76,8 +78,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  const loginWithGoogle = async () => {
+    const { startGoogleAuth } = await import('../lib/google');
+    const { token, user: u } = await startGoogleAuth();
+    await persistAndSet(token, u);
+    return u as User;
+  };
+
+  const finishGoogleSession = async (sessionId: string) => {
+    const { data } = await api.post('/auth/google-session', { session_id: sessionId });
+    await persistAndSet(data.token, data.user);
+    return data.user as User;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, finishGoogleSession, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

@@ -434,6 +434,395 @@ async def register_push(body: PushTokenRegister, user_id: str = Depends(get_curr
 
 
 # ─────────────────── seed demo data on startup ───────────────────
+# ─────────────────── chat (help-chat with dashboard context) ───────────────────
+class ChatBody(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+
+@api.post("/chat")
+async def chat(body: ChatBody, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    user = await _get_user(user_id)
+    classification = h["classification"]
+    q_start, q_end, q_label = budget_lib.get_quarter_window()
+    docs = await db.statements.find({"household_id": h["id"]}, {"_id": 0}).to_list(200)
+    items: List[dict] = []
+    for s in docs:
+        items.extend(s.get("line_items", []))
+    burn = budget_lib.compute_burn(items, q_start, q_end)
+    contributions = budget_lib.compute_contributions(items)
+    cap_amount = budget_lib.lifetime_cap(h.get("is_grandfathered", False))
+    latest_summary = (
+        sorted(docs, key=lambda d: d.get("uploaded_at", ""), reverse=True)[0].get("summary")
+        if docs else "No statements uploaded yet."
+    )
+    burn_str = ", ".join(f"{k}: ${v:,.2f}" for k, v in burn.items())
+    context = (
+        f"You are Kindred — Wayly's calm aged-care helper for caregivers in Australia. "
+        f"User is {user['name']} caring for {h['participant_name']} on {budget_lib.CLASSIFICATIONS[classification]['label']}. "
+        f"Provider: {h['provider_name']}. Quarter: {q_label}. Quarterly budget ${budget_lib.quarterly_budget(classification):,.2f}. "
+        f"Burn so far: {burn_str or 'no spend yet'}. Lifetime contributions ${contributions:,.2f} of ${cap_amount:,.2f}. "
+        f"Latest statement summary: {latest_summary}. "
+        "Tone: warm, plain English, never alarmist. Two-three sentences max unless asked for detail."
+    )
+    session_id = body.session_id or f"chat-{h['id']}"
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise RuntimeError("EMERGENT_LLM_KEY not set")
+        chat_inst = LlmChat(
+            api_key=api_key, session_id=session_id, system_message=context
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929").with_params(max_tokens=600)
+        reply = await chat_inst.send_message(UserMessage(text=body.message))
+        reply_text = str(reply or "")
+    except Exception as e:
+        logger.exception("chat failed")
+        reply_text = "I'm having trouble reaching my brain at the moment — try again in a minute."
+
+    await db.chat_turns.insert_many([
+        {"id": new_id(), "household_id": h["id"], "role": "user", "content": body.message, "created_at": now_iso()},
+        {"id": new_id(), "household_id": h["id"], "role": "assistant", "content": reply_text, "created_at": now_iso()},
+    ])
+    return {"reply": reply_text, "session_id": session_id}
+
+
+@api.get("/chat/history")
+async def chat_history(user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    return await db.chat_turns.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", 1).to_list(500)
+
+
+# ─────────────────── family thread ───────────────────
+class FamilyMessageCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+    related_statement_id: Optional[str] = None
+
+
+@api.post("/family-thread")
+async def post_family_message(payload: FamilyMessageCreate, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    user = await _get_user(user_id)
+    msg = {
+        "id": new_id(),
+        "household_id": h["id"],
+        "author_id": user_id,
+        "author_name": user["name"],
+        "body": payload.body,
+        "related_statement_id": payload.related_statement_id,
+        "created_at": now_iso(),
+    }
+    response = dict(msg)  # snapshot before Mongo mutates with _id
+    await db.family_messages.insert_one(msg)
+    return response
+
+
+@api.get("/family-thread")
+async def list_family_messages(user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    docs = await db.family_messages.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return docs
+
+
+# ─────────────────── participant view ───────────────────
+@api.get("/participant/today")
+async def participant_today(user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    classification = h["classification"]
+    q_start, q_end, q_label = budget_lib.get_quarter_window()
+    quarterly_total = budget_lib.quarterly_budget(classification)
+    docs = await db.statements.find({"household_id": h["id"]}, {"_id": 0}).to_list(200)
+    items: List[dict] = []
+    for s in docs:
+        items.extend(s.get("line_items", []))
+    burn = budget_lib.compute_burn(items, q_start, q_end)
+    spent = sum(burn.values())
+    remaining = max(0.0, quarterly_total - spent)
+    today = datetime.now(timezone.utc).date()
+    days_left = (q_end - today).days + 1
+    appt = {"time": "10:00 AM", "name": "Sarah", "service": "Personal care", "duration": "1 hour"}
+    return {
+        "participant_name": h["participant_name"],
+        "today_label": today.strftime("%A %d %B"),
+        "appointment": appt,
+        "quarter_remaining": round(remaining, 2),
+        "quarter_remaining_sentence": (
+            f"That's plenty for the {days_left} days left in this quarter."
+            if remaining > spent * 0.2 or days_left < 30
+            else f"Just keep an eye on it — {days_left} days to go."
+        ),
+        "caregiver_name": (await _get_user(h.get("owner_id", user_id)))["name"],
+    }
+
+
+class WellbeingBody(BaseModel):
+    mood: str = Field(pattern="^(good|okay|not_great)$")
+    notify_caregiver: bool = False
+
+
+@api.post("/participant/wellbeing")
+async def log_wellbeing(body: WellbeingBody, user_id: str = Depends(get_current_user_id)):
+    h = await _get_household(user_id)
+    user = await _get_user(user_id)
+    doc = {
+        "id": new_id(),
+        "user_id": user_id,
+        "household_id": h["id"] if h else None,
+        "mood": body.mood,
+        "notify_caregiver": body.notify_caregiver,
+        "created_at": now_iso(),
+    }
+    await db.wellbeing.insert_one(doc)
+    if h and body.mood == "not_great" and body.notify_caregiver and h.get("owner_id") and h["owner_id"] != user_id:
+        note = NotificationItem(
+            user_id=h["owner_id"],
+            title=f"{user['name']} flagged a hard day",
+            body="They marked today as 'not great'. Worth checking in.",
+            category="wellbeing",
+            severity="warning",
+        )
+        await db.notifications.insert_one(note.model_dump())
+        await _push_to_user(h["owner_id"], note.title, note.body, {"category": "wellbeing"})
+    doc.pop("_id", None)
+    return doc
+
+
+@api.get("/participant/wellbeing")
+async def recent_wellbeing(user_id: str = Depends(get_current_user_id)):
+    h = await _get_household(user_id)
+    if not h:
+        return []
+    return await db.wellbeing.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", -1).limit(14).to_list(14)
+
+
+# ─────────────────── share dashboard (mock) ───────────────────
+class ShareBody(BaseModel):
+    extra_emails: List[str] = Field(default_factory=list, max_length=10)
+    note: Optional[str] = ""
+
+
+@api.post("/dashboard/share")
+async def share_dashboard(body: ShareBody, user_id: str = Depends(get_current_user_id)):
+    # Local fallback — real production uses Resend pipeline. Here we just ack.
+    if not body.extra_emails:
+        raise HTTPException(status_code=400, detail="Add at least one email address.")
+    return {"sent_to": body.extra_emails, "failures": []}
+
+
+# ─────────────────── public AI tools ───────────────────
+class PublicBudgetBody(BaseModel):
+    classification: int = Field(ge=1, le=8)
+    is_grandfathered: bool = False
+    current_lifetime_balance: float = 0.0
+    expected_annual_burn: Optional[float] = None
+
+
+@api.post("/public/budget-calc")
+async def public_budget_calc(body: PublicBudgetBody):
+    classification = body.classification
+    annual = budget_lib.CLASSIFICATIONS[classification]["annual"]
+    quarterly = budget_lib.quarterly_budget(classification)
+    allocations = budget_lib.stream_allocations(classification)
+    rollover = budget_lib.rollover_cap(classification)
+    cap_amount = budget_lib.lifetime_cap(body.is_grandfathered)
+    contributions = max(0.0, body.current_lifetime_balance)
+    pct = (contributions / cap_amount * 100) if cap_amount else 0.0
+    years_to_cap = None
+    if body.expected_annual_burn and body.expected_annual_burn > 0:
+        remaining = max(0.0, cap_amount - contributions)
+        years_to_cap = round(remaining / body.expected_annual_burn, 2)
+    return {
+        "classification": classification,
+        "classification_label": budget_lib.CLASSIFICATIONS[classification]["label"],
+        "annual_total": annual,
+        "quarterly_total": quarterly,
+        "rollover_cap": rollover,
+        "streams": [{"stream": s, "allocated": allocations[s]} for s in budget_lib.STREAMS],
+        "lifetime_cap": cap_amount,
+        "lifetime_contributions": contributions,
+        "lifetime_pct": round(pct, 2),
+        "years_to_cap": years_to_cap,
+        "is_grandfathered": body.is_grandfathered,
+    }
+
+
+PRICE_BENCHMARKS = {
+    "Personal care": {"median": 65.0, "cap": 90.00},
+    "Domestic assistance": {"median": 58.0, "cap": 79.00},
+    "Nursing": {"median": 145.0, "cap": 178.00},
+    "Physiotherapy": {"median": 125.0, "cap": 156.00},
+    "Cleaning": {"median": 55.0, "cap": 75.00},
+    "Transport": {"median": 32.0, "cap": 48.00},
+}
+
+
+class PublicPriceBody(BaseModel):
+    service: str
+    rate: float
+
+
+@api.post("/public/price-check")
+async def public_price_check(body: PublicPriceBody):
+    bench = PRICE_BENCHMARKS.get(body.service, {"median": body.rate, "cap": body.rate})
+    median = bench["median"]
+    cap = bench["cap"]
+    delta_pct = ((body.rate - median) / median * 100) if median else 0.0
+    if body.rate > cap:
+        verdict, label = "high", "Above the 1 July 2026 cap"
+        assessment = (
+            f"At ${body.rate:.2f}/unit, this is above the published cap of ${cap:.2f}. "
+            "From that date, providers cannot exceed the cap."
+        )
+        suggested = "Ask the provider for a corrected rate, or raise it with the Aged Care Quality and Safety Commission."
+    elif body.rate > median * 1.10:
+        verdict, label = "high", "Higher than the typical rate"
+        assessment = f"At ${body.rate:.2f}/unit, that's about {delta_pct:.0f}% above the network median of ${median:.2f}."
+        suggested = "Email the provider asking for a written explanation of the rate."
+    elif body.rate < median * 0.85:
+        verdict, label = "low", "Below the typical rate"
+        assessment = f"At ${body.rate:.2f}/unit, this is below the network median of ${median:.2f}."
+        suggested = None
+    else:
+        verdict, label = "fair", "About what you'd expect"
+        assessment = f"At ${body.rate:.2f}/unit, you're within typical range (network median ${median:.2f})."
+        suggested = None
+    return {
+        "service": body.service, "charged": body.rate, "median": median, "cap": cap,
+        "delta_pct": round(delta_pct, 2), "verdict": verdict, "verdict_label": label,
+        "assessment": assessment, "suggested_action": suggested,
+    }
+
+
+@api.get("/public/price-check/services")
+async def public_price_services():
+    return [{"name": k, "median": v["median"], "cap": v["cap"]} for k, v in PRICE_BENCHMARKS.items()]
+
+
+class PublicClassificationBody(BaseModel):
+    answers: List[int] = Field(min_length=12, max_length=12)
+    current_classification: Optional[int] = None
+
+
+@api.post("/public/classification-check")
+async def public_classification_check(body: PublicClassificationBody):
+    if not all(0 <= a <= 4 for a in body.answers):
+        raise HTTPException(status_code=400, detail="Each answer must be 0–4")
+    score = sum(body.answers)
+    if score <= 6:
+        low, high = 1, 2
+    elif score <= 12:
+        low, high = 2, 3
+    elif score <= 18:
+        low, high = 3, 4
+    elif score <= 24:
+        low, high = 4, 5
+    elif score <= 30:
+        low, high = 5, 6
+    elif score <= 36:
+        low, high = 6, 7
+    else:
+        low, high = 7, 8
+    annual_low = budget_lib.CLASSIFICATIONS[low]["annual"]
+    annual_high = budget_lib.CLASSIFICATIONS[high]["annual"]
+    suggest = body.current_classification is not None and (
+        body.current_classification < low or body.current_classification > high + 1
+    )
+    return {
+        "score": score, "score_max": 48,
+        "likely_low": low, "likely_high": high,
+        "likely_label": f"Classification {low}" if low == high else f"Classification {low}–{high}",
+        "annual_range": [annual_low, annual_high],
+        "current_classification": body.current_classification,
+        "suggest_reassessment": suggest,
+        "caveat": "This is informational only. Only the My Aged Care Independent Assessment Tool determines the actual classification.",
+    }
+
+
+class PublicReassessmentBody(BaseModel):
+    participant_name: str
+    current_classification: int = Field(ge=1, le=8)
+    changes_summary: str = Field(min_length=10, max_length=4000)
+    recent_events: Optional[str] = None
+    sender_name: str
+    relationship: Optional[str] = "family caregiver"
+
+
+@api.post("/public/reassessment-letter")
+async def public_reassessment_letter(body: PublicReassessmentBody):
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="LLM unavailable")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    system = (
+        "You are a paperwork drafter for Australian Support at Home. Draft a polite, factual "
+        "reassessment request letter to My Aged Care. Australian English. 250–400 words. "
+        "Plain professional tone. Use the participant's name and the sender's name. Use "
+        "gender-neutral language. Reference Aged Care Act 2024 framework where relevant. "
+        "End with a specific request and a 14-day response timeframe. Output ONLY the letter "
+        "body — no preamble, no markdown. NEVER claim a specific reassessment outcome — "
+        "you ASK for reassessment, you don't predict its result."
+    )
+    user_msg = (
+        f"Participant: {body.participant_name}\n"
+        f"Current classification: Level {body.current_classification}\n"
+        f"Sender: {body.sender_name} ({body.relationship or 'family caregiver'})\n\n"
+        f"Changes since assessment:\n{body.changes_summary}\n\n"
+        f"Recent events: {body.recent_events or '(none)'}"
+    )
+    chat_inst = LlmChat(
+        api_key=api_key, session_id=f"reassess-{new_id()[:8]}", system_message=system
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929").with_params(max_tokens=1200)
+    out = await chat_inst.send_message(UserMessage(text=user_msg))
+    return {"letter": str(out or "")}
+
+
+# ─────────────────── auth: emergent google session exchange ───────────────────
+class GoogleSessionBody(BaseModel):
+    session_id: str
+
+
+@api.post("/auth/google-session", response_model=TokenResponse)
+async def google_session(body: GoogleSessionBody):
+    """Exchange Emergent OAuth session_id for a Wayly JWT."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=15) as client_http:
+            r = await client_http.get(
+                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                headers={"X-Session-ID": body.session_id},
+            )
+            r.raise_for_status()
+            data = r.json()
+    except Exception as e:
+        logger.warning("Emergent session exchange failed: %s", e)
+        raise HTTPException(status_code=400, detail="Could not verify Google session — please try again.")
+
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Google did not return an email — please try again.")
+
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        new_user = {
+            "id": new_id(),
+            "email": email,
+            "password_hash": "",  # google-only — no password login allowed
+            "name": data.get("name") or email.split("@")[0],
+            "role": "caregiver",
+            "plan": "free",
+            "household_id": None,
+            "picture": data.get("picture"),
+            "created_at": now_iso(),
+            "auth_provider": "google",
+        }
+        await db.users.insert_one(new_user)
+        user = new_user
+
+    token = create_token(user["id"])
+    return TokenResponse(token=token, user=_user_public(user))
+
+
 @app.on_event("startup")
 async def seed_demo():
     try:
