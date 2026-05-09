@@ -1,0 +1,265 @@
+{
+  "app_name": "Wayly",
+  "theme": "Light",
+  "archetype": "1 (Organic & Earthy)",
+  "global_design_principles": {
+    "persona": "Cathy (adult-child caregiver). 30-second-glance is sacred. Tone is calm, plain-English, warm but quietly confident—never alarmist.",
+    "accessibility": "Mobile-first. Minimum 44pt tap targets. Contrast meets APCA/WCAG standards.",
+    "layout": "SafeAreaView for all screens, KeyboardAvoidingView for inputs. Generous whitespace (Tailwind equivalent p-6 to p-8).",
+    "testing": "All interactive and key informational elements MUST include a 'testID' attribute in React Native components."
+  },
+  "colors": {
+    "background": "#FAF7F2",
+    "brand_primary": "#1F3A5F",
+    "brand_secondary": "#D4A24E",
+    "streams": {
+      "clinical": "#3A5A40",
+      "independence": "#8B9B82",
+      "everyday_living": "#A05545"
+    },
+    "anomalies": {
+      "alert": "#A05545",
+      "warning": "#D4A24E",
+      "info": "#8B9B82"
+    },
+    "text": {
+      "primary": "#1F3A5F",
+      "secondary": "#546A87",
+      "inverse": "#FAF7F2"
+    },
+    "surface": {
+      "card": "#FFFFFF",
+      "input_bg": "#FFFFFF",
+      "border": "rgba(31, 58, 95, 0.1)"
+    }
+  },
+  "typography": {
+    "font_setup": "Load via @expo-google-fonts",
+    "families": {
+      "heading": "Outfit",
+      "body": "Figtree"
+    },
+    "scales": {
+      "h1": {
+        "fontFamily": "Outfit",
+        "fontSize": 32,
+        "fontWeight": "700",
+        "letterSpacing": -0.5,
+        "color": "#1F3A5F"
+      },
+      "h2": {
+        "fontFamily": "Outfit",
+        "fontSize": 24,
+        "fontWeight": "600",
+        "letterSpacing": -0.3,
+        "color": "#1F3A5F"
+      },
+      "h3": {
+        "fontFamily": "Outfit",
+        "fontSize": 20,
+        "fontWeight": "600",
+        "letterSpacing": -0.2,
+        "color": "#1F3A5F"
+      },
+      "body_large": {
+        "fontFamily": "Figtree",
+        "fontSize": 18,
+        "fontWeight": "400",
+        "color": "#1F3A5F"
+      },
+      "body": {
+        "fontFamily": "Figtree",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "color": "#546A87",
+        "lineHeight": 24
+      },
+      "caption": {
+        "fontFamily": "Figtree",
+        "fontSize": 14,
+        "fontWeight": "500",
+        "color": "#8B9B82",
+        "letterSpacing": 0.5,
+        "textTransform": "uppercase"
+      }
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#1F3A5F",
+        "borderRadius": 12,
+        "minHeight": 50,
+        "paddingHorizontal": 24,
+        "justifyContent": "center",
+        "alignItems": "center"
+      },
+      "primary_text": {
+        "color": "#FAF7F2",
+        "fontFamily": "Figtree",
+        "fontWeight": "600",
+        "fontSize": 16
+      },
+      "fab": {
+        "backgroundColor": "#1F3A5F",
+        "borderRadius": 30,
+        "width": 60,
+        "height": 60,
+        "position": "absolute",
+        "bottom": 24,
+        "right": 24,
+        "shadowColor": "#1F3A5F",
+        "shadowOffset": { "width": 0, "height": 4 },
+        "shadowOpacity": 0.2,
+        "shadowRadius": 12,
+        "elevation": 5,
+        "justifyContent": "center",
+        "alignItems": "center"
+      }
+    },
+    "cards": {
+      "base": {
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 16,
+        "padding": 20,
+        "borderWidth": 1,
+        "borderColor": "rgba(31, 58, 95, 0.05)",
+        "shadowColor": "#1F3A5F",
+        "shadowOffset": { "width": 0, "height": 2 },
+        "shadowOpacity": 0.05,
+        "shadowRadius": 8,
+        "elevation": 2
+      },
+      "anomaly_alert": {
+        "backgroundColor": "rgba(160, 85, 69, 0.05)",
+        "borderColor": "#A05545",
+        "borderWidth": 1
+      },
+      "anomaly_warning": {
+        "backgroundColor": "rgba(212, 162, 78, 0.05)",
+        "borderColor": "#D4A24E",
+        "borderWidth": 1
+      }
+    },
+    "chips": {
+      "base": {
+        "borderRadius": 100,
+        "paddingHorizontal": 12,
+        "paddingVertical": 6,
+        "alignSelf": "flex-start"
+      },
+      "text": {
+        "fontFamily": "Figtree",
+        "fontSize": 12,
+        "fontWeight": "600",
+        "textTransform": "uppercase",
+        "letterSpacing": 0.5
+      },
+      "variants": {
+        "clinical": {
+          "backgroundColor": "rgba(58, 90, 64, 0.1)",
+          "color": "#3A5A40"
+        },
+        "independence": {
+          "backgroundColor": "rgba(139, 155, 130, 0.1)",
+          "color": "#8B9B82"
+        },
+        "everyday_living": {
+          "backgroundColor": "rgba(160, 85, 69, 0.1)",
+          "color": "#A05545"
+        }
+      }
+    },
+    "navigation": {
+      "bottom_tab_bar": {
+        "backgroundColor": "#FFFFFF",
+        "borderTopWidth": 1,
+        "borderTopColor": "rgba(31, 58, 95, 0.1)",
+        "activeTintColor": "#1F3A5F",
+        "inactiveTintColor": "#8B9B82"
+      }
+    }
+  },
+  "screens": {
+    "auth": {
+      "layout": "Calm welcome (Outfit H1). Simple Email/Password inputs (Figtree). 'Log in' / 'Sign up' Primary Buttons.",
+      "test_ids": [
+        "auth-email-input",
+        "auth-password-input",
+        "auth-login-button",
+        "auth-signup-button",
+        "auth-switch-mode-button"
+      ]
+    },
+    "today_dashboard": {
+      "layout": "Header with participant name greeting. Hero budget numbers front-and-center ($X of $Y, $Z left) in generous whitespace. Lifetime-cap % progress bar. Alert count chip (Sage or Terracotta if >0). Latest statement card snippet. Must take <30s to comprehend.",
+      "test_ids": [
+        "today-greeting",
+        "today-budget-summary",
+        "today-budget-remaining",
+        "today-lifetime-cap-bar",
+        "today-alert-chip",
+        "today-latest-statement-card",
+        "header-notification-bell"
+      ]
+    },
+    "statements_list": {
+      "layout": "Chronological cards sorted by period_label. Card shows date, total cost, and anomaly count/indicator if present.",
+      "test_ids": [
+        "statements-scroll-view",
+        "statement-list-item-{id}",
+        "statement-item-date",
+        "statement-item-total"
+      ]
+    },
+    "statement_detail": {
+      "layout": "Plain-English summary block at the top. Next: Anomaly cards tinted by severity. Bottom: Line-item rows (date, service, stream chip, total, you-paid).",
+      "test_ids": [
+        "statement-detail-summary",
+        "statement-anomaly-card-{id}",
+        "statement-line-item-{id}",
+        "statement-line-item-stream-chip"
+      ]
+    },
+    "camera_upload_flow": {
+      "layout": "Invoked via primary FAB. Native Action Sheet: 'Take photo / Pick from library / Upload PDF'. Loading screen shows calm progress phrases ('Scanning document...', 'Processing...'). Success routes to detail view.",
+      "test_ids": [
+        "upload-fab",
+        "action-take-photo",
+        "action-pick-library",
+        "action-upload-pdf",
+        "upload-loading-view"
+      ]
+    },
+    "notifications": {
+      "layout": "Push notification history list for HIGH/MEDIUM anomalies. Top-right bell on Today screen has a red dot if unread.",
+      "test_ids": [
+        "notifications-list",
+        "notification-item-{id}"
+      ]
+    }
+  },
+  "media": {
+    "image_urls": {
+      "auth_background_texture": {
+        "url": "https://images.unsplash.com/photo-1765370847579-70d5d83401d2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxjYWxtJTIwYWJzdHJhY3QlMjB0ZXh0dXJlJTIwbGlnaHR8ZW58MHx8fHwxNzc4MzM1OTM0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Subtle warm textured light, useful for auth backgrounds or empty states with reduced opacity."
+      },
+      "empty_state_nature": {
+        "url": "https://images.unsplash.com/photo-1658370560323-909ea7053403?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxhdXN0cmFsaWFuJTIwbmF0dXJlJTIwYWJzdHJhY3R8ZW58MHx8fHwxNzc4MzM1OTM0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Calm Australian nature elements (rocks), to be used in 'All caught up' or empty statement list states."
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly use React Native (Expo SDK 54) components: SafeAreaView, KeyboardAvoidingView, ScrollView, View, Text, TouchableOpacity, Pressable, TextInput.",
+    "Do NOT use HTML elements (div, span, etc).",
+    "Use @expo-google-fonts/outfit and @expo-google-fonts/figtree for Typography.",
+    "Ensure all copy mimics the warm, plain-English 'Cathy' persona.",
+    "All TouchableOpacity, Pressable, TextInput, and important Text nodes MUST have a testID prop matching the keys defined in the screens section.",
+    "Implement the FAB specifically for the Camera Upload flow on the main screens.",
+    "Use the specific HEX codes provided for streams (Clinical, Independence, Everyday Living) and anomalies (Alert, Warning, Info).",
+    "Don't implement Participant view; strictly Caregiver view for Phase 1.",
+    "Keep '30-second glance' rule for the Today screen."
+  ]
+}
