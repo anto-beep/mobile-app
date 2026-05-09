@@ -1,0 +1,48 @@
+{
+  "summary": "Wayly Phase 1 mobile — first-pass review. 19/19 backend pytest tests pass (100%). Frontend Expo web preview verified end-to-end on 390x844 mobile viewport: login → /today → bell → /notifications → /statements → /statements/{id} → /profile → upload FAB sheet. All testIDs from /app/design_guidelines.json are present. Brand (navy #1F3A5F / gold / cream) renders correctly. Demo creds (demo@wayly.com.au / Wayly123!) prefilled and authenticate. Statement upload via .csv runs the Claude parse pipeline asynchronously and completes in <30s.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/budget/current", "issue": "alert_count and latest_statement aggregate over ALL statements (including ones uploaded by tests). After repeated CSV uploads, alert_count drifted from 1 (seed) to 4 in the demo account. Not a bug, but consider an admin/reset endpoint or scoping latest_statement to the seeded one for deterministic demos."},
+      {"endpoint": "GET /api/notifications", "issue": "Same accumulation: notifications grow with every uploaded CSV anomaly. unread count stays correct, but list grows unbounded for demo user."},
+      {"endpoint": "auth.py", "issue": "JWT_SECRET in /app/backend/.env is 26 bytes — pyjwt logs InsecureKeyLengthWarning. Recommend rotating to a 32+ byte secret."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Initial app load before token hydrates", "issue": "Two transient 401s appear in browser console (likely budget+notifications fetched before token attached). UX is fine — auth gate redirects to /login — but suggest gating the network calls on auth state to keep DevTools clean.", "affected_testIDs": []}
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "globally", "issue": "Console warns: \"shadow* style props are deprecated. Use boxShadow.\" — non-blocking but worth migrating for RN Web 0.20+ compatibility."},
+      {"component": "src/lib/push.ts", "issue": "expo-notifications warns: 'Listening to push token changes is not yet fully supported on web' — expected on web preview, not an issue on native."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_wayly_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Make demo seed/budget endpoint deterministic so repeat test runs don't inflate alert_count.",
+    "(Optional) Rotate JWT_SECRET to 32+ bytes to silence InsecureKeyLengthWarning.",
+    "(Optional) Migrate `shadow*` style props to `boxShadow` for RN Web compatibility."
+  ],
+  "critical_code_review_comments": [
+    "server.py: UPLOAD_JOBS is an in-process dict — single-process only. If backend ever scales to >1 worker, job IDs created by one worker won't be visible to another. Acceptable for single-uvicorn dev, flag for prod.",
+    "server.py: `_push_to_user` swallows exponent_server_sdk import errors silently — fine for web preview, but in prod ensure the package stays in requirements.txt.",
+    "models.py UserPublic uses EmailStr — email-validator rejects reserved TLDs like .test/.example.invalid; tests must use a real-looking domain (e.g. @example.com). Documented.",
+    "auth.py exposes get_current_user_id; properly returns 401 with WWW-Authenticate header. Good."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_wayly_api.py (new)"
+  ],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "100% on critical flows tested"},
+  "seed_data_creation": "Did NOT seed any data manually. Backend startup auto-seeds demo user + Margaret household + 1 sample statement (7 line items, 2 anomalies) + 1 notification, which is what tests rely on. Test runs do create additional uploaded CSV statements/anomalies in the demo account (residue from /api/statements/upload happy-path test).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All backend endpoints in the Phase 1 contract are implemented and verified. Frontend testIDs to look for: auth-{email|password}-input, auth-login-button, today-greeting, today-budget-remaining, today-alert-chip, today-lifetime-cap-bar, today-stream-{Clinical|Independence|Everyday Living}, today-latest-statement-card, header-notification-bell, upload-fab, action-take-photo/pick-library/upload-pdf, statements-scroll-view, statement-list-item-{id}, statement-detail-summary (verify), statement-anomaly-card-{id} (verify), notifications-list, notification-item-{id}, profile-edit-household, profile-logout. Tabs use Expo Router screens (Today/Statements/Alerts/Profile) without explicit testID — navigate via get_by_text. Upload-job polling can take 10–30s due to Claude parse.",
+  "rca_of_issue": "No outstanding bugs. Three test failures during initial run were test-data issues (reserved TLD `wayly.test`, ordering of upload vs. budget assertion, and stale latest_statement assumption) that were corrected in-place — the API itself behaved correctly throughout."
+}
