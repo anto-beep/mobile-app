@@ -86,14 +86,6 @@ export default function Profile() {
     router.replace('/(auth)/login');
   };
 
-  const openWeb = async (path: string) => {
-    try {
-      await WebBrowser.openBrowserAsync(`${SETTINGS_BASE}${path}`);
-    } catch {
-      Alert.alert("Couldn't open the browser", 'Try again in a moment.');
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -192,26 +184,26 @@ export default function Profile() {
 
           <Text style={styles.sectionLabel}>Account</Text>
 
-          <TouchableOpacity style={styles.linkRow} onPress={() => openWeb('/account')} testID="profile-settings-web">
+          <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings' as any)} testID="profile-settings-web">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
               <Ionicons name="settings-outline" size={20} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Settings</Text>
-              <Text style={styles.linkSub}>Plan, billing, members — opens on the web</Text>
+              <Text style={styles.linkSub}>Profile, members, security, notifications, usage</Text>
             </View>
-            <Ionicons name="open-outline" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.linkRow} onPress={() => openWeb('/billing')} testID="profile-billing-web">
+          <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings/plan' as any)} testID="profile-billing-web">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}>
               <Ionicons name="card-outline" size={20} color={Colors.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.linkTitle}>Billing & plan</Text>
-              <Text style={styles.linkSub}>Upgrade or change plan on the web</Text>
+              <Text style={styles.linkTitle}>Plan & billing</Text>
+              <Text style={styles.linkSub}>{(user?.plan || 'free').toUpperCase()} plan · upgrade or cancel</Text>
             </View>
-            <Ionicons name="open-outline" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onLogout} style={styles.logout} testID="profile-logout">

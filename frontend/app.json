@@ -63,7 +63,8 @@
           "icon": "./assets/images/icon.png",
           "color": "#1F3A5F"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
