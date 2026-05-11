@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../lib/theme';
+import { useAccessibility } from '../context/AccessibilityContext';
 
 export type ToastKind = 'info' | 'success' | 'warning' | 'error';
 export type ToastItem = { id: string; kind: ToastKind; message: string; duration?: number };
@@ -96,17 +97,29 @@ function ToastBubble({ item, onDone }: { item: ToastItem; onDone: () => void }) 
   const opacity = useRef(new Animated.Value(0)).current;
   const translate = useRef(new Animated.Value(-20)).current;
   const tone = TONE[item.kind];
+  // Respect reduce-motion: skip animation, just show + auto-dismiss
+  let reduceMotion = false;
+  try { reduceMotion = useAccessibility().reduceMotion; } catch { /* outside provider */ }
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
-      Animated.timing(translate, { toValue: 0, duration: 240, useNativeDriver: true }),
-    ]).start();
-    const id = setTimeout(() => {
+    if (reduceMotion) {
+      opacity.setValue(1);
+      translate.setValue(0);
+    } else {
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(translate, { toValue: -20, duration: 220, useNativeDriver: true }),
-      ]).start(() => onDone());
+        Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(translate, { toValue: 0, duration: 240, useNativeDriver: true }),
+      ]).start();
+    }
+    const id = setTimeout(() => {
+      if (reduceMotion) {
+        onDone();
+      } else {
+        Animated.parallel([
+          Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.timing(translate, { toValue: -20, duration: 220, useNativeDriver: true }),
+        ]).start(() => onDone());
+      }
     }, item.duration || 4000);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

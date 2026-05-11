@@ -18,6 +18,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
+import { ThemedShell } from '../src/components/ThemedShell';
 import { Colors } from '../src/lib/theme';
 
 function RootStack() {
@@ -73,7 +74,9 @@ export default function RootLayout() {
         <ToastProvider>
           <AuthProvider>
             <StatusBar style="dark" />
-            <RootStack />
+            <ThemedShell>
+              <RootStack />
+            </ThemedShell>
           </AuthProvider>
         </ToastProvider>
       </AccessibilityProvider>

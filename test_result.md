@@ -171,17 +171,20 @@ frontend:
           agent: "testing"
           comment: "Login screen renders with Wayly branding (navy/gold/cream, Crimson Pro heading). demo@wayly.com.au / Wayly123! signs in successfully and routes to /today. cathy@example.com and trial30909@example.com return 'Invalid email or password' against the configured backend (EXPO_PUBLIC_BACKEND_URL=mobile-care-os local pod), since those are production-side accounts."
 
-  - task: "AccessibilityWidget (text size, contrast, dark mode, reduce motion, read aloud)"
+  - task: "AccessibilityWidget propagates settings app-wide (dark mode, text scale, high contrast, reduce motion)"
     implemented: true
     working: true
-    file: "frontend/src/components/AccessibilityWidget.tsx, frontend/src/context/AccessibilityContext.tsx"
+    file: "frontend/src/components/ThemedShell.tsx, AccessibilityWidget.tsx, Toast.tsx, app/_layout.tsx"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
     status_history:
+        - working: false
+          agent: "user"
+          comment: "User reported toggles only affected the accessibility widget sheet itself, not the rest of the app."
         - working: true
           agent: "main"
-          comment: "Built global AccessibilityProvider (text scale sm/md/lg/xl=0.9/1.0/1.15/1.3, highContrast, darkMode, reduceMotion, readAloud), persisted to AsyncStorage. AccessibilityWidget is a fixed bottom-left navy pill (a11y-pill) on EVERY screen (even login). Tapping opens a bottom-sheet with: 4 A/A/A/A scale buttons, then 4 toggle rows (high contrast, dark mode, reduce motion, read aloud) + a 'Test read aloud' button (visible only when read aloud is on). Read aloud uses expo-speech with en-AU voice at rate 0.95. useA11yColors() hook returns themed colors for dark/high-contrast modes — ready for future per-screen theme overrides. Screenshot verified: pill renders on login + sheet opens + dark-mode toggle works."
+          comment: "Fixed by adding a new ThemedShell wrapper at the root of the tree. It applies (a) a dark navy translucent overlay (rgba 0.72, mixBlendMode: multiply on web; 0.55 solid on native) when darkMode is on, sitting above content (zIndex 100) but below the AccessibilityWidget pill (zIndex 9999) and Modal portal, (b) a CSS contrast/saturate filter for high contrast on web, (c) CSS zoom on web + a Text.render monkey-patch on native for app-wide text scaling, (d) wired reduce-motion into Toast so it skips animations. Screenshot-verified: dark mode visibly tints the entire app; XL text scale zooms layout proportionally; the AccessibilityWidget sheet itself remains interactive above the overlay."
 
   - task: "Global axios error toast interceptor (429 warning, 503 error)"
     implemented: true
