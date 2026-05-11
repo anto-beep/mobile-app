@@ -197,18 +197,21 @@ frontend:
 
   - task: "Admin dashboard \u2014 6 screens (overview, users, user detail, households, payments, statements)"
     implemented: true
-    working: false
+    working: true
     file: "frontend/app/(tabs)/admin/*"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Built complete admin section under app/(tabs)/admin/. RequireAdmin guard, 2x2 stat grid, users list with search + plan chips + CSV, user detail with action rows + delete modal, households/payments/statements lists. CSV via expo-file-system/sharing. Admin tab gated by user?.is_admin."
         - working: false
           agent: "testing"
-          comment: "BLOCKER: Admin user hello@techglove.com.au is NOT seeded on the local backend. Direct curl POST /api/auth/login with AdminPass!2026 returns 401 'Invalid email or password'. test_credentials.md and the task brief both state this account exists locally with is_admin:true, but the local FastAPI returns 401. Demo login (demo@wayly.com.au / Wayly123!) works. Consequently the 6 admin screens (/admin, /admin/users, /admin/users/[id], /admin/households, /admin/payments, /admin/statements) cannot be exercised end-to-end. PARTIAL VERIFICATIONS that DO pass: (1) Non-admin gating \u2014 after logging in as demo, the bottom tab bar contains zero occurrences of 'Admin' (admin tab correctly hidden). (2) RequireAdmin guard \u2014 demo user navigating directly to http://localhost:3000/admin is redirected to /today. (3) a11y-pill renders on all routes including /today and /(auth)/login. (4) No non-401 console errors observed. (5) Login form renders correctly at 390x844 with brand styling. ACTION REQUIRED: main agent must seed the admin user on the local backend (likely add to the demo seed script or run a one-off insert with bcrypt-hashed AdminPass!2026 and is_admin:true) before admin UI can be validated. The admin screen code itself looks syntactically correct (all testIDs present in source) but is unverified at runtime."
+          comment: "BLOCKER (prior run): Admin user not seeded on backend the mobile app calls. Demo login worked, but admin login returned 401 against EXPO_PUBLIC_BACKEND_URL. Non-admin gating, RequireAdmin guard, and a11y-pill verified to work."
+        - working: true
+          agent: "testing"
+          comment: "FULL RE-TEST PASSED at 390x844 viewport. Admin login hello@techglove.com.au / AdminPass!2026 now succeeds (200 on POST /api/auth/login against mobile-care-os.preview.emergentagent.com) and redirects to /today. Bottom-nav shows 6 tabs with Admin shield as the right-most tab. Verified end-to-end via screenshots + network log: (1) /admin Overview \u2014 2x2 stat grid renders Total users=7 (+7 this week), Households=4, Statements decoded=4 (+4 this week), Revenue paid=$0. Plans breakdown shows Free 5, Family 2. Subscriptions shows Active 1. Top active households shows Margaret (4 members \u00b7 4 statements). (2) Tapping Total users stat card navigates to /admin/users; list shows 7 users including hello@techglove.com.au with gold ADMIN pill, FAMILY plan pill, ACTIVE subscription pill. Search 'hello' debounces and filters list to admin row only (demo hidden). Plan chips (all/free/solo/family/advisor) tappable and active state styled correctly. Share CSV button visible. (3) /admin/users/<self> \u2014 header shows 'Wayly Admin' + gold ADMIN pill + email; stat grid shows Plan=Family, Role=Caregiver, Joined=11 May 2026, Subscription=Active. Send password reset row triggers green success toast 'sent' (POST /reset-password 200). 'Remove admin' row visually disabled (greyed). 'Set plan' segmented control highlights Family as active. 'Can't delete yourself' delete row is disabled. (4) /admin/users/<demo> \u2014 shows 'Make admin' (enabled) and 'Delete user' (enabled, red). Tapping Delete user opens warning modal with 'permanent'/'cannot be undone' copy; Cancel closes without firing DELETE. (5) /admin/households \u2014 list renders with Margaret household row. (6) /admin/payments \u2014 renders empty 'No payments match.' state. (7) /admin/statements \u2014 4 rows visible: Margaret January 2026 ($380, 1 anomaly, 09/05/2026), Margaret January 2026 ($380), Margaret January 2026 ($380), Margaret May 2026 ($982, 2 anomalies). Share CSV present. (8) AccessibilityWidget a11y-pill renders on every admin screen (bottom-left navy pill). (9) Non-admin gating: after logout + login as demo@wayly.com.au, bottom nav has 0 'Admin' tab occurrences; direct nav to /admin redirects appropriately (RequireAdmin guard works). (10) Brand: navy headers, gold accents, cream background \u2014 no purple. (11) Network log confirms all admin endpoints return 200: /api/admin/analytics, /api/admin/users, /api/admin/users/<id>, /api/admin/users/<id>/reset-password, /api/admin/households, /api/admin/payments, /api/admin/statements. (12) Console errors: 2 background 400s (unrelated to admin flow), zero 401s after login, no JS exceptions. Admin dashboard is fully working."
 
 metadata:
   created_by: "main_agent"

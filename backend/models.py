@@ -35,6 +35,9 @@ class UserPublic(BaseModel):
     plan: str = "free"
     household_id: Optional[str] = None
     created_at: str
+    is_admin: bool = False
+    subscription_status: Optional[str] = None
+    trial_ends_at: Optional[str] = None
 
 
 class TokenResponse(BaseModel):

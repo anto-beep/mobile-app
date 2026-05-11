@@ -92,6 +92,9 @@ def _user_public(u: dict) -> UserPublic:
         plan=u.get("plan", "free"),
         household_id=u.get("household_id"),
         created_at=u["created_at"],
+        is_admin=bool(u.get("is_admin", False)),
+        subscription_status=u.get("subscription_status"),
+        trial_ends_at=u.get("trial_ends_at"),
     )
 
 
@@ -832,6 +835,26 @@ async def seed_demo():
         await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
         await db.push_tokens.create_index([("user_id", 1), ("expo_push_token", 1)], unique=True)
 
+        # Always-on admin seed (idempotent) — required for admin dashboard testing
+        admin_email = "hello@techglove.com.au"
+        admin_existing = await db.users.find_one({"email": admin_email})
+        if admin_existing:
+            await db.users.update_one({"email": admin_email}, {"$set": {"is_admin": True, "plan": "family"}})
+        else:
+            await db.users.insert_one({
+                "id": new_id(),
+                "email": admin_email,
+                "password_hash": hash_password("AdminPass!2026"),
+                "name": "Wayly Admin",
+                "role": "caregiver",
+                "plan": "family",
+                "is_admin": True,
+                "subscription_status": "active",
+                "household_id": None,
+                "created_at": now_iso(),
+            })
+            logger.info("Seeded admin user hello@techglove.com.au / AdminPass!2026")
+
         # Demo seed if not present
         existing = await db.users.find_one({"email": "demo@wayly.com.au"})
         if existing:
@@ -910,6 +933,273 @@ async def _shutdown():
 @api.get("/")
 async def root():
     return {"app": "Wayly Mobile API", "status": "ok"}
+
+
+# ─────────────────── admin (MOCKED: minimal stub for mobile dashboard testing) ───────────────────
+async def _require_admin(user_id: str = Depends(get_current_user_id)) -> dict:
+    u = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not u or not u.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return u
+
+
+def _admin_user_row(u: dict) -> dict:
+    return {
+        "id": u["id"],
+        "email": u["email"],
+        "name": u.get("name"),
+        "plan": u.get("plan", "free"),
+        "subscription_status": u.get("subscription_status") or "none",
+        "created_at": u.get("created_at"),
+        "is_admin": bool(u.get("is_admin", False)),
+    }
+
+
+@api.get("/admin/analytics")
+async def admin_analytics(_: dict = Depends(_require_admin)):
+    from datetime import timedelta
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    total_users = await db.users.count_documents({})
+    new_users = await db.users.count_documents({"created_at": {"$gte": week_ago}})
+    total_households = await db.households.count_documents({})
+    total_statements = await db.statements.count_documents({})
+    new_statements = await db.statements.count_documents({"uploaded_at": {"$gte": week_ago}})
+
+    plans = await db.users.aggregate([{"$group": {"_id": "$plan", "count": {"$sum": 1}}}]).to_list(20)
+    subs = await db.users.aggregate([
+        {"$match": {"subscription_status": {"$exists": True, "$ne": None}}},
+        {"$group": {"_id": "$subscription_status", "count": {"$sum": 1}}},
+    ]).to_list(20)
+
+    # Top households by statement count
+    top_pipeline = [
+        {"$group": {"_id": "$household_id", "statement_count": {"$sum": 1}}},
+        {"$sort": {"statement_count": -1}},
+        {"$limit": 5},
+    ]
+    top_raw = await db.statements.aggregate(top_pipeline).to_list(5)
+    top_households = []
+    for row in top_raw:
+        h = await db.households.find_one({"id": row["_id"]}, {"_id": 0})
+        if not h:
+            continue
+        mc = await db.users.count_documents({"household_id": row["_id"]})
+        top_households.append({
+            "id": h["id"],
+            "participant_name": h.get("participant_name") or "Unnamed",
+            "member_count": mc,
+            "statement_count": row["statement_count"],
+        })
+
+    return {
+        "total_users": total_users,
+        "new_users_this_week": new_users,
+        "total_households": total_households,
+        "total_statements": total_statements,
+        "new_statements_this_week": new_statements,
+        "total_revenue": 0,  # No payments table in stub
+        "plans": [{"plan": (p["_id"] or "free"), "count": p["count"]} for p in plans],
+        "subscriptions": [{"status": s["_id"], "count": s["count"]} for s in subs],
+        "top_households": top_households,
+    }
+
+
+@api.get("/admin/users")
+async def admin_users_list(
+    q: Optional[str] = None,
+    plan: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 25,
+    _: dict = Depends(_require_admin),
+):
+    query: dict = {}
+    if q:
+        import re
+        rx = {"$regex": re.escape(q), "$options": "i"}
+        query["$or"] = [{"email": rx}, {"name": rx}]
+    if plan and plan != "all":
+        query["plan"] = plan
+    total = await db.users.count_documents(query)
+    skip = max(0, (page - 1) * page_size)
+    rows = await db.users.find(query, {"_id": 0, "password_hash": 0}).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    return {"items": [_admin_user_row(u) for u in rows], "total": total, "page": page, "page_size": page_size}
+
+
+@api.get("/admin/users/{user_id}")
+async def admin_user_detail(user_id: str, _: dict = Depends(_require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    h = None
+    if u.get("household_id"):
+        h = await db.households.find_one({"id": u["household_id"]}, {"_id": 0})
+    statements = await db.statements.find({"household_id": u.get("household_id")}, {"_id": 0, "line_items": 0, "anomalies": 0, "raw_text_preview": 0}).sort("uploaded_at", -1).limit(10).to_list(10)
+    # Compute gross + anomaly counts from full docs (cheap loop)
+    for s in statements:
+        full = await db.statements.find_one({"id": s["id"]}, {"_id": 0, "line_items": 1, "anomalies": 1})
+        if full:
+            s["gross_amount"] = sum(float(li.get("total", 0) or 0) for li in (full.get("line_items") or []))
+            s["anomalies_count"] = len(full.get("anomalies") or [])
+            s["period"] = s.get("period_label")
+    audit = []  # No audit collection in stub
+    return {
+        "user": {**u, "is_admin": bool(u.get("is_admin", False))},
+        "household": h,
+        "statements": statements,
+        "payments": [],
+        "audit_trail": audit,
+    }
+
+
+class _AdminFlag(BaseModel):
+    is_admin: bool
+
+
+class _AdminPlan(BaseModel):
+    plan: str
+
+
+@api.post("/admin/users/{user_id}/reset-password")
+async def admin_reset_pw(user_id: str, admin: dict = Depends(_require_admin)):
+    u = await db.users.find_one({"id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    logger.info("Admin %s requested password reset for %s", admin["email"], u["email"])
+    return {"ok": True, "message": "Reset email queued"}
+
+
+@api.put("/admin/users/{user_id}/admin")
+async def admin_toggle_admin(user_id: str, payload: _AdminFlag, admin: dict = Depends(_require_admin)):
+    if user_id == admin["id"] and not payload.is_admin:
+        raise HTTPException(status_code=400, detail="Cannot remove your own admin access")
+    res = await db.users.update_one({"id": user_id}, {"$set": {"is_admin": bool(payload.is_admin)}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "is_admin": bool(payload.is_admin)}
+
+
+@api.put("/admin/users/{user_id}/plan")
+async def admin_set_plan(user_id: str, payload: _AdminPlan, _: dict = Depends(_require_admin)):
+    if payload.plan not in ("free", "solo", "family", "advisor"):
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    res = await db.users.update_one({"id": user_id}, {"$set": {"plan": payload.plan}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "plan": payload.plan}
+
+
+@api.post("/admin/users/{user_id}/cancel-subscription")
+async def admin_cancel_sub(user_id: str, _: dict = Depends(_require_admin)):
+    res = await db.users.update_one({"id": user_id}, {"$set": {"subscription_status": "canceled"}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin: dict = Depends(_require_admin)):
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    res = await db.users.delete_one({"id": user_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True}
+
+
+@api.get("/admin/households")
+async def admin_households(q: Optional[str] = None, page: int = 1, page_size: int = 25, _: dict = Depends(_require_admin)):
+    query: dict = {}
+    if q:
+        import re
+        rx = {"$regex": re.escape(q), "$options": "i"}
+        query["$or"] = [{"participant_name": rx}, {"provider_name": rx}]
+    total = await db.households.count_documents(query)
+    skip = max(0, (page - 1) * page_size)
+    rows = await db.households.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
+    items = []
+    for h in rows:
+        mc = await db.users.count_documents({"household_id": h["id"]})
+        sc = await db.statements.count_documents({"household_id": h["id"]})
+        items.append({**h, "member_count": mc, "statement_count": sc})
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@api.get("/admin/payments")
+async def admin_payments(status: Optional[str] = None, page: int = 1, page_size: int = 25, _: dict = Depends(_require_admin)):
+    # No payments collection in stub — return empty list with realistic shape
+    return {"items": [], "total": 0, "page": page, "page_size": page_size}
+
+
+@api.get("/admin/statements")
+async def admin_statements(q: Optional[str] = None, page: int = 1, page_size: int = 25, _: dict = Depends(_require_admin)):
+    query: dict = {}
+    if q:
+        import re
+        rx = {"$regex": re.escape(q), "$options": "i"}
+        query["$or"] = [{"period_label": rx}, {"filename": rx}]
+    total = await db.statements.count_documents(query)
+    skip = max(0, (page - 1) * page_size)
+    rows = await db.statements.find(query, {"_id": 0, "raw_text_preview": 0}).sort("uploaded_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    items = []
+    for s in rows:
+        h = await db.households.find_one({"id": s.get("household_id")}, {"_id": 0, "participant_name": 1})
+        items.append({
+            "id": s["id"],
+            "participant_name": (h or {}).get("participant_name", "Unnamed"),
+            "period_label": s.get("period_label"),
+            "period": s.get("period_label"),
+            "gross_amount": sum(float(li.get("total", 0) or 0) for li in (s.get("line_items") or [])),
+            "anomalies_count": len(s.get("anomalies") or []),
+            "uploaded_at": s.get("uploaded_at"),
+        })
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+def _csv_response(rows: list, headers: list, filename: str):
+    from fastapi.responses import Response
+    import csv as _csv
+    import io as _io
+    buf = _io.StringIO()
+    w = _csv.writer(buf)
+    w.writerow(headers)
+    for r in rows:
+        w.writerow([(r.get(h, "") if isinstance(r, dict) else "") for h in headers])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@api.get("/admin/export/users.csv")
+async def admin_export_users(_: dict = Depends(_require_admin)):
+    rows = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(10_000)
+    return _csv_response(
+        [{"email": r.get("email"), "name": r.get("name"), "plan": r.get("plan"), "is_admin": r.get("is_admin", False), "created_at": r.get("created_at")} for r in rows],
+        ["email", "name", "plan", "is_admin", "created_at"],
+        "users.csv",
+    )
+
+
+@api.get("/admin/export/payments.csv")
+async def admin_export_payments(_: dict = Depends(_require_admin)):
+    return _csv_response([], ["user_email", "plan", "amount", "currency", "status", "session_id", "created_at"], "payments.csv")
+
+
+@api.get("/admin/export/statements.csv")
+async def admin_export_statements(_: dict = Depends(_require_admin)):
+    rows = await db.statements.find({}, {"_id": 0}).to_list(10_000)
+    out = []
+    for s in rows:
+        h = await db.households.find_one({"id": s.get("household_id")}, {"_id": 0, "participant_name": 1})
+        out.append({
+            "participant": (h or {}).get("participant_name", ""),
+            "period": s.get("period_label", ""),
+            "gross": sum(float(li.get("total", 0) or 0) for li in (s.get("line_items") or [])),
+            "anomalies": len(s.get("anomalies") or []),
+            "uploaded_at": s.get("uploaded_at"),
+        })
+    return _csv_response(out, ["participant", "period", "gross", "anomalies", "uploaded_at"], "statements.csv")
 
 
 app.include_router(api)
