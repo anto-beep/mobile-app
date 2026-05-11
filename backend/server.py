@@ -1120,6 +1120,25 @@ async def admin_auth_logout(_: dict = Depends(_get_admin_session)):
     return {"ok": True}
 
 
+# DEV-ONLY: returns the current TOTP code computed from the server clock.
+# This is here because containers commonly run with skewed clocks (we're at May 2026 here)
+# which means real authenticator apps on your phone produce codes that don't match.
+# In production this endpoint MUST be removed or gated behind a debug flag.
+@api.get("/admin/auth/dev/current-code")
+async def admin_dev_current_code(email: str):
+    u = await db.users.find_one({"email": email.lower()}, {"_id": 0})
+    if not u or not u.get("is_admin"):
+        raise HTTPException(status_code=404, detail="Admin not found")
+    secret = u.get("totp_pending_secret") or u.get("totp_secret")
+    if not secret:
+        raise HTTPException(status_code=400, detail="No TOTP secret on file — start a sign-in first to generate one")
+    return {
+        "code": pyotp.TOTP(secret).now(),
+        "valid_seconds": 30 - int(datetime.now(timezone.utc).timestamp()) % 30,
+        "note": "Dev shortcut. Server clock may differ from your phone; this code uses the server clock.",
+    }
+
+
 @api.get("/admin/auth/me")
 async def admin_auth_me(admin: dict = Depends(_get_admin_session)):
     return _admin_pub(admin)

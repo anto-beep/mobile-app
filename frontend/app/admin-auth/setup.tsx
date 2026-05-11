@@ -9,6 +9,8 @@ import { useAdminAuth } from '../../src/context/AdminAuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { toast } from '../../src/components/Toast';
 
+const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
+
 export default function AdminSetup() {
   const router = useRouter();
   const { enable2FA } = useAdminAuth();
@@ -116,6 +118,8 @@ export default function AdminSetup() {
               <TouchableOpacity onPress={() => setStep('scan')} style={styles.toggle}>
                 <Text style={styles.toggleText}>Show the QR code again</Text>
               </TouchableOpacity>
+
+              <DevCodeHint />
             </>
           )}
 
@@ -173,4 +177,48 @@ const styles = StyleSheet.create({
   secondaryText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   warnBox: { flexDirection: 'row', gap: 8, padding: Spacing.md, backgroundColor: 'rgba(212, 162, 78, 0.1)', borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary, borderRadius: Radius.sm, marginTop: Spacing.md },
   warnText: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: Colors.brandPrimary, lineHeight: 17 },
+});
+
+function DevCodeHint() {
+  const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState<string | null>(null);
+  const [validFor, setValidFor] = useState<number | null>(null);
+  const fetchCode = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch(`${BASE}/api/admin/auth/dev/current-code?email=hello@techglove.com.au`);
+      if (!r.ok) throw new Error('Could not fetch');
+      const d = await r.json();
+      setCode(d.code);
+      setValidFor(d.valid_seconds || 30);
+      toast.info('Dev code fetched — paste it above', 4000);
+    } catch (e: any) {
+      toast.error('Could not fetch dev code');
+    } finally { setBusy(false); }
+  };
+  return (
+    <View style={devStyles.box}>
+      <View style={devStyles.titleRow}>
+        <Ionicons name="construct-outline" size={12} color={Colors.brandSecondary} />
+        <Text style={devStyles.title}>DEV SHORTCUT</Text>
+      </View>
+      <Text style={devStyles.body}>
+        Container clock differs from your phone, so authenticator codes won't match. Tap below to fetch the code computed on the server.
+      </Text>
+      <TouchableOpacity style={devStyles.btn} onPress={fetchCode} disabled={busy} testID="admin-setup-devcode">
+        {busy ? <ActivityIndicator size="small" color={Colors.brandPrimary} /> : <Text style={devStyles.btnText}>{code ? `Code: ${code} (refresh)` : 'Show current code'}</Text>}
+      </TouchableOpacity>
+      {code ? <Text style={devStyles.foot}>Valid for ~{validFor}s. Paste into the input above.</Text> : null}
+    </View>
+  );
+}
+
+const devStyles = StyleSheet.create({
+  box: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(212, 162, 78, 0.08)', borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)', borderStyle: 'dashed' as any },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  title: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 1.2, color: Colors.brandSecondary },
+  body: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, lineHeight: 16, marginBottom: 8 },
+  btn: { paddingVertical: 10, borderRadius: Radius.sm, backgroundColor: Colors.cardBg, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, minHeight: 36 },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, letterSpacing: 0.5 },
+  foot: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
 });
