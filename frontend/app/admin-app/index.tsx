@@ -1,11 +1,14 @@
-// Admin app home — Milestone 1 landing. Shows admin info + sign out. Inbox/Triage arrives in Milestone 2.
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+// Milestone 2 — Admin Inbox / Triage home
+// Replaces the M1 placeholder. Aggregates open P1 tickets, failed payments, data requests,
+// health alerts, and maintenance banner. Pull-to-refresh.
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useAdminAuth, AdminRole } from '../../src/context/AdminAuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { adminApi, useAdminAuth, AdminRole } from '../../src/context/AdminAuthContext';
+import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { toast } from '../../src/components/Toast';
 
 const ROLE_LABEL: Record<AdminRole, string> = {
   super_admin: 'Super admin',
@@ -14,83 +17,208 @@ const ROLE_LABEL: Record<AdminRole, string> = {
   content_admin: 'Content',
 };
 
-export default function AdminHome() {
+type Ticket = { id: string; subject: string; status: string; priority: string; user_email?: string; user_name?: string; created_at?: string; last_message_preview?: string; message_count?: number };
+type DataReq = { id: string; user_email: string; user_name?: string; type: string; status: string; submitted_at: string; due_at: string };
+type Service = { name: string; status: 'healthy' | 'down' | string };
+
+export default function AdminInbox() {
   const router = useRouter();
   const { admin, logout, touch } = useAdminAuth();
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [p1Count, setP1Count] = useState(0);
+  const [opened7d, setOpened7d] = useState(0);
+  const [p1Tickets, setP1Tickets] = useState<Ticket[]>([]);
+  const [failedPayments, setFailedPayments] = useState<any[]>([]);
+  const [dataRequests, setDataRequests] = useState<DataReq[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [llmErrors, setLlmErrors] = useState(0);
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message?: string }>({ enabled: false });
 
-  const onLogout = () => {
-    Alert.alert('Sign out?', 'You’ll need to enter your password and authenticator code again.', [
-      { text: 'Stay', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-          router.replace('/admin-auth/login' as any);
-        },
-      },
-    ]);
-  };
+  const load = useCallback(async () => {
+    try {
+      const [reports, tickets, fp, dr, health, m] = await Promise.all([
+        adminApi.get('/admin/ticket-reports'),
+        adminApi.get('/admin/tickets', { params: { status: 'open', priority: 'P1', page_size: 20 } }),
+        adminApi.get('/admin/failed-payments', { params: { days: 1 } }),
+        adminApi.get('/admin/data-requests', { params: { status: 'received' } }),
+        adminApi.get('/admin/system-health'),
+        adminApi.get('/admin/maintenance'),
+      ]);
+      setP1Count(reports.data.open_p1 || 0);
+      setOpened7d(reports.data.opened_7d || 0);
+      setP1Tickets(tickets.data.items || []);
+      setFailedPayments(fp.data.items || []);
+      setDataRequests(dr.data.items || []);
+      setServices(health.data.services || []);
+      setLlmErrors(health.data.llm_errors_24h || 0);
+      setMaintenance(m.data || { enabled: false });
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || 'Could not load inbox');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const downServices = services.filter((s) => s.status && s.status !== 'healthy');
 
   if (!admin) return null;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}><View style={styles.fill}><ActivityIndicator color={Colors.brandPrimary} size="large" /></View></SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']} onTouchStart={touch}>
-      <ScrollView contentContainerStyle={styles.scroll} testID="admin-home-scroll">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        testID="admin-inbox-scroll"
+      >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.overline}>Wayly Admin</Text>
-            <Text style={styles.h1}>Welcome, {admin.name.split(' ')[0]}</Text>
+            <Text style={styles.overline}>{ROLE_LABEL[admin.admin_role] || admin.admin_role}</Text>
+            <Text style={styles.h1}>Inbox</Text>
           </View>
-          <View style={styles.avatar}><Ionicons name="shield-checkmark" size={22} color={Colors.brandSecondary} /></View>
+          <TouchableOpacity onPress={() => router.push('/admin-app/users' as any)} style={styles.avatar} testID="admin-users-quick">
+            <Ionicons name="search" size={20} color={Colors.brandPrimary} />
+          </TouchableOpacity>
         </View>
 
+        {/* Maintenance banner */}
+        {maintenance.enabled ? (
+          <View style={[styles.banner, styles.bannerDanger]}>
+            <Ionicons name="warning" size={18} color={Colors.danger} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bannerTitle}>Maintenance mode is ON</Text>
+              <Text style={styles.bannerBody}>{maintenance.message || 'Wayly is hidden from the public right now.'}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Health alerts banner */}
+        {(downServices.length > 0 || llmErrors > 10) ? (
+          <View style={[styles.banner, styles.bannerWarn]}>
+            <Ionicons name="pulse" size={18} color={Colors.brandSecondary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bannerTitle}>System alert</Text>
+              <Text style={styles.bannerBody}>
+                {downServices.length > 0 ? `${downServices.map((s) => s.name).join(', ')} unhealthy. ` : ''}
+                {llmErrors > 10 ? `LLM errors in last 24h: ${llmErrors}` : ''}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Quick stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{p1Count}</Text>
+            <Text style={styles.statLabel}>Open P1</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{opened7d}</Text>
+            <Text style={styles.statLabel}>Opened 7d</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{dataRequests.length}</Text>
+            <Text style={styles.statLabel}>Privacy</Text>
+          </View>
+        </View>
+
+        {/* P1 tickets */}
+        <Text style={styles.sectionLabel}>Open P1 tickets</Text>
         <View style={styles.card}>
-          <Text style={styles.label}>Signed in as</Text>
-          <Text style={styles.value}>{admin.email}</Text>
-          <View style={styles.roleRow}>
-            <View style={styles.rolePill}><Text style={styles.rolePillText}>{ROLE_LABEL[admin.admin_role] || admin.admin_role}</Text></View>
-            {admin.totp_enabled ? (
-              <View style={styles.totpPill}><Ionicons name="checkmark-circle" size={12} color="#3A5A40" /><Text style={styles.totpPillText}>2FA on</Text></View>
-            ) : null}
-          </View>
+          {p1Tickets.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Text style={styles.emptyText}>No open P1 tickets — nice.</Text>
+            </View>
+          ) : p1Tickets.map((t) => (
+            <TouchableOpacity key={t.id} style={styles.row} onPress={() => router.push(`/admin-app/tickets/${t.id}` as any)} testID={`ticket-${t.id}`}>
+              <View style={[styles.dot, { backgroundColor: Colors.danger }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{t.subject}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{t.user_name || t.user_email}{t.last_message_preview ? ` · ${t.last_message_preview}` : ''}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Coming next</Text>
-        <View style={styles.tile}>
-          <View style={styles.tileIcon}><Ionicons name="headset-outline" size={20} color={Colors.brandSecondary} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.tileTitle}>Inbox & triage</Text>
-            <Text style={styles.tileBody}>P1 tickets, failed payments, privacy requests, health alerts — all in one feed.</Text>
-          </View>
-          <View style={styles.soonPill}><Text style={styles.soonPillText}>M2</Text></View>
-        </View>
-        <View style={styles.tile}>
-          <View style={styles.tileIcon}><Ionicons name="people-outline" size={20} color={Colors.brandSecondary} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.tileTitle}>User lookup</Text>
-            <Text style={styles.tileBody}>Search any user, view profile, suspend or extend trial, send reset.</Text>
-          </View>
-          <View style={styles.soonPill}><Text style={styles.soonPillText}>M2</Text></View>
-        </View>
-        <View style={styles.tile}>
-          <View style={styles.tileIcon}><Ionicons name="pulse-outline" size={20} color={Colors.brandSecondary} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.tileTitle}>Health & maintenance</Text>
-            <Text style={styles.tileBody}>Service status, biometric-gated maintenance toggle, audit log.</Text>
-          </View>
-          <View style={styles.soonPill}><Text style={styles.soonPillText}>M3</Text></View>
+        {/* Failed payments */}
+        <Text style={styles.sectionLabel}>Failed payments (24h)</Text>
+        <View style={styles.card}>
+          {failedPayments.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Text style={styles.emptyText}>No failed payments in the last 24 hours.</Text>
+            </View>
+          ) : failedPayments.map((p, i) => (
+            <View key={p.id || i} style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: Colors.brandSecondary }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{p.user_email}</Text>
+                <Text style={styles.rowMeta}>{formatAUD(p.amount || 0)} · {p.plan?.toUpperCase() || '—'}</Text>
+              </View>
+            </View>
+          ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} testID="admin-logout">
+        {/* Privacy requests */}
+        <Text style={styles.sectionLabel}>Privacy data requests</Text>
+        <View style={styles.card}>
+          {dataRequests.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Text style={styles.emptyText}>No open data requests.</Text>
+            </View>
+          ) : dataRequests.map((r) => {
+            const due = new Date(r.due_at);
+            const daysLeft = Math.max(0, Math.floor((due.getTime() - Date.now()) / 86400000));
+            return (
+              <View key={r.id} style={styles.row}>
+                <View style={[styles.dot, { backgroundColor: Colors.brandSecondary }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>{r.user_name || r.user_email} · {r.type}</Text>
+                  <Text style={styles.rowMeta}>{daysLeft} day{daysLeft === 1 ? '' : 's'} left (Privacy Act)</Text>
+                </View>
+                <View style={[styles.pill, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}><Text style={[styles.pillText, { color: Colors.brandSecondary }]}>{r.status}</Text></View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* System health */}
+        <Text style={styles.sectionLabel}>System health</Text>
+        <View style={styles.healthGrid}>
+          {services.map((s) => {
+            const ok = s.status === 'healthy';
+            return (
+              <View key={s.name} style={[styles.healthCell, !ok && { borderColor: Colors.danger }]}>
+                <Ionicons name={ok ? 'checkmark-circle' : 'alert-circle'} size={16} color={ok ? '#3A5A40' : Colors.danger} />
+                <Text style={styles.healthName}>{s.name}</Text>
+                <Text style={[styles.healthStatus, { color: ok ? '#3A5A40' : Colors.danger }]}>{s.status}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Sign out */}
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={async () => { await logout(); router.replace('/admin-auth/login' as any); }}
+          testID="admin-logout"
+        >
           <Ionicons name="log-out-outline" size={16} color={Colors.brandPrimary} />
           <Text style={styles.logoutText}>Sign out</Text>
         </TouchableOpacity>
 
-        <View style={styles.foot}>
-          <Ionicons name="information-circle-outline" size={12} color={Colors.textMuted} />
-          <Text style={styles.footText}>Sessions auto-expire after 30 minutes of inactivity.</Text>
-        </View>
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -98,28 +226,35 @@ export default function AdminHome() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
+  fill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl, gap: 4 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.lg },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(212, 162, 78, 0.15)', alignItems: 'center', justifyContent: 'center' },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.lg, gap: 4 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted },
-  value: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  roleRow: { flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' },
-  rolePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: Colors.brandSecondary },
-  rolePillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.5, textTransform: 'uppercase' },
-  totpPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(58, 90, 64, 0.12)' },
-  totpPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: '#3A5A40', letterSpacing: 0.5, textTransform: 'uppercase' },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 8, marginTop: 4 },
-  tile: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.sm },
-  tileIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(212, 162, 78, 0.12)', alignItems: 'center', justifyContent: 'center' },
-  tileTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  tileBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 17 },
-  soonPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 100, backgroundColor: 'rgba(31, 58, 95, 0.06)' },
-  soonPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.5 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.md },
+  h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
+  bannerDanger: { backgroundColor: 'rgba(160, 85, 69, 0.1)', borderLeftColor: Colors.danger },
+  bannerWarn: { backgroundColor: 'rgba(212, 162, 78, 0.1)', borderLeftColor: Colors.brandSecondary },
+  bannerTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
+  bannerBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  statsRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md, marginTop: Spacing.sm },
+  statBox: { flex: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center' },
+  statValue: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.5 },
+  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted, marginTop: 2 },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 6, marginTop: Spacing.md },
+  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
+  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
+  pillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
+  emptyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16, paddingHorizontal: Spacing.sm },
+  emptyText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
+  healthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  healthCell: { flexBasis: '47%', flexGrow: 1, padding: 12, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 4 },
+  healthName: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, marginTop: 2 },
+  healthStatus: { fontFamily: Fonts.bodyMed, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.lg },
   logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  foot: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, justifyContent: 'center' },
-  footText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted },
 });

@@ -228,15 +228,27 @@ frontend:
           agent: "main"
           comment: "Full TOTP 2FA flow validated end-to-end via curl + pyotp. Backend (MOCKED stubs): added POST /admin/auth/login (returns requires_2fa_setup with QR data URI + secret on first login, requires_2fa with temp_token on subsequent), POST /admin/auth/2fa/enable (verifies code, generates 10 single-use backup codes), POST /admin/auth/2fa/verify (accepts 6-digit TOTP OR 8-char backup code, consumes backup codes), POST /admin/auth/logout, GET /admin/auth/me. Backend uses pyotp for TOTP + qrcode for QR data URI generation. Admin JWTs are marked kind='admin' (vs admin_temp / admin_setup) and verified separately from consumer user JWTs. Frontend: AdminAuthProvider with isolated expo-secure-store (Keychain/Keystore on native, AsyncStorage fallback on web), 30-min idle auto-logout via AppState + interval poll, and a separate adminApi axios instance. 4 screens: /admin-auth/login (email + password with eye toggle), /admin-auth/2fa (6-digit code or 8-char backup), /admin-auth/setup (QR + manual secret + verify + backup codes display ONCE with copy-all + warn box), /admin-app (post-auth landing with role pill + 2FA pill + sign-out confirmation + coming-soon tiles for Milestone 2/3). Entry point: 'Wayly staff sign-in' link at bottom of consumer login. Old is_admin-gated tab in (tabs) is now hidden (href: null). Validated via curl + pyotp: login \u2192 setup \u2192 verify \u2192 backup codes; login \u2192 TOTP verify; login \u2192 backup-code verify; backup-code reuse rejected (400); /admin/auth/me works; logout works. Screenshot-verified: all 4 screens render with brand colors, QR appears, secret is copyable, FIRST-TIME SETUP badge styled."
 
+  - task: "Admin app Milestone 2 (Inbox / Tickets / User lookup / User profile)"
+    implemented: true
+    working: true
+    file: "frontend/app/admin-app/index.tsx, tickets/[id].tsx, users.tsx, users/[id].tsx, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Backend (MOCKED stubs): added /admin/ticket-reports, /admin/tickets (list + detail + PUT update + POST messages), /admin/macros (4 canned replies), /admin/failed-payments, /admin/data-requests (returns 1 sample 'received' request), /admin/system-health (real Mongo ping + stubbed Stripe/Resend/LLM), /admin/maintenance (GET + super_admin-only POST), /admin/search (users + tickets + households), /admin/users/{id}/profile, /admin/users/{id}/notes (GET via profile + POST), /admin/users/{id}/suspend, /admin/users/{id}/extend-trial. Idempotent ticket seed with 5 realistic sample tickets (2 P1 open, 1 P2 in_progress, 1 P3 waiting_on_user, 1 P3 resolved). Frontend: REPLACED M1 placeholder with new Inbox (3 stat cards, P1 ticket list, failed payments empty state, privacy requests with 30-day countdown badge, system health 2x2 grid, maintenance banner placeholder, sign-out at bottom). New ticket detail screen with horizontal-scroll status chips + priority chips (P1 red active) + 'Assign to me' button + user info card + threaded conversation (admin navy bubbles vs user light cards, internal-note variant with gold left border) + composer with multiline TextInput + Macros picker bottom-sheet + Public/Internal toggle + Send button. User search with 300ms debounce, hint-state empty page, two-section results (Users + Tickets) with status dots, long-press a user → Alert with Email/Copy email/Open profile shortcuts. User profile with header card + email shortcut + stat grid + Actions card (send password reset, extend trial with chips 7/14/30 or custom days modal, suspend with native Alert confirm) gated by canManage (super_admin or operations_admin and not self) + Household card + Internal notes list + multiline composer. Screenshot-verified all 5 screens render correctly with brand colors, brand fonts, and 44px+ touch targets. Backend endpoints validated via curl: /admin/ticket-reports returns {open_p1: 2, opened_7d: 5}, /admin/macros returns 4, /admin/system-health returns 4 healthy services, /admin/search?q=hello returns 1 user. Long-press on user row triggers native Alert (functional on native; web shows browser confirm)."
+
 metadata:
   created_by: "main_agent"
-  version: "1.4"
-  test_sequence: 6
+  version: "1.5"
+  test_sequence: 7
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Admin auth (Milestone 1)"
+    - "Admin app Milestone 2"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

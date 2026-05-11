@@ -14,7 +14,7 @@ import asyncio
 import base64
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -1123,6 +1123,267 @@ async def admin_auth_logout(_: dict = Depends(_get_admin_session)):
 @api.get("/admin/auth/me")
 async def admin_auth_me(admin: dict = Depends(_get_admin_session)):
     return _admin_pub(admin)
+
+
+# ─────────────── Milestone 2: Inbox / Tickets / Users / Health (MOCKED) ───────────────
+TICKET_MACROS = [
+    {"id": "m1", "title": "Acknowledge", "body": "Thanks for reaching out — we've got this and will come back to you shortly with an update."},
+    {"id": "m2", "title": "Need more info", "body": "Could you share a screenshot of what you're seeing, plus the email on the affected account?"},
+    {"id": "m3", "title": "Bug logged", "body": "We've logged this with engineering. We'll email you again the moment it's fixed."},
+    {"id": "m4", "title": "Resolved", "body": "We've sorted this for you. Let us know if anything else pops up."},
+]
+
+
+async def _seed_tickets():
+    """Idempotent ticket seed — only if collection is empty."""
+    if await db.tickets.count_documents({}) > 0:
+        return
+    admin = await db.users.find_one({"email": "hello@techglove.com.au"}, {"id": 1})
+    cathy = await db.users.find_one({"email": "demo@wayly.com.au"}, {"id": 1, "email": 1, "name": 1})
+    samples = [
+        {"id": new_id(), "subject": "Statement decoder showed wrong totals", "status": "open", "priority": "P1", "user_email": "margaret@example.com", "user_name": "Margaret Williams", "assigned_admin_id": None, "created_at": now_iso(), "updated_at": now_iso(), "messages": [
+            {"id": new_id(), "from": "user", "body": "I uploaded my May statement and the gross looks $300 too high. Can you check?", "created_at": now_iso(), "internal": False},
+        ]},
+        {"id": new_id(), "subject": "Can't add a family member", "status": "open", "priority": "P1", "user_email": cathy["email"] if cathy else "demo@wayly.com.au", "user_name": cathy.get("name") if cathy else "Cathy Williams", "assigned_admin_id": admin["id"] if admin else None, "created_at": now_iso(), "updated_at": now_iso(), "messages": [
+            {"id": new_id(), "from": "user", "body": "When I tap Add member nothing happens. iPhone 14, latest app.", "created_at": now_iso(), "internal": False},
+            {"id": new_id(), "from": "admin", "body": "Thanks for flagging — checking now.", "created_at": now_iso(), "internal": False},
+        ]},
+        {"id": new_id(), "subject": "Refund for double charge", "status": "in_progress", "priority": "P2", "user_email": "ben@example.com", "user_name": "Ben Tran", "assigned_admin_id": None, "created_at": now_iso(), "updated_at": now_iso(), "messages": [
+            {"id": new_id(), "from": "user", "body": "Got charged twice for Solo plan in October.", "created_at": now_iso(), "internal": False},
+        ]},
+        {"id": new_id(), "subject": "How does grandfathered status work?", "status": "waiting_on_user", "priority": "P3", "user_email": "joan@example.com", "user_name": "Joan Carter", "assigned_admin_id": None, "created_at": now_iso(), "updated_at": now_iso(), "messages": [
+            {"id": new_id(), "from": "user", "body": "Is my dad grandfathered? He started his HCP in 2019.", "created_at": now_iso(), "internal": False},
+        ]},
+        {"id": new_id(), "subject": "Reassessment letter formatting", "status": "resolved", "priority": "P3", "user_email": "sue@example.com", "user_name": "Sue Patel", "assigned_admin_id": None, "created_at": now_iso(), "updated_at": now_iso(), "messages": [
+            {"id": new_id(), "from": "user", "body": "Can I edit the letter before sending?", "created_at": now_iso(), "internal": False},
+            {"id": new_id(), "from": "admin", "body": "Yes — tap Edit on the result card.", "created_at": now_iso(), "internal": False},
+        ]},
+    ]
+    await db.tickets.insert_many(samples)
+    logger.info("Seeded %d sample tickets", len(samples))
+
+
+@app.on_event("startup")
+async def _on_start_seed_tickets():
+    try:
+        await _seed_tickets()
+    except Exception as e:
+        logger.warning("Ticket seed skipped: %s", e)
+
+
+@api.get("/admin/ticket-reports")
+async def admin_ticket_reports(_: dict = Depends(_get_admin_session)):
+    open_p1 = await db.tickets.count_documents({"status": "open", "priority": "P1"})
+    opened_7d = await db.tickets.count_documents({"created_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()}})
+    oldest = await db.tickets.find({"status": {"$in": ["open", "in_progress"]}}).sort("created_at", 1).limit(1).to_list(1)
+    return {
+        "open_p1": open_p1,
+        "opened_7d": opened_7d,
+        "oldest_unresolved": (oldest[0]["created_at"] if oldest else None),
+    }
+
+
+@api.get("/admin/tickets")
+async def admin_tickets_list(status: Optional[str] = None, priority: Optional[str] = None, page: int = 1, page_size: int = 25, _: dict = Depends(_get_admin_session)):
+    query: dict = {}
+    if status: query["status"] = status
+    if priority: query["priority"] = priority
+    total = await db.tickets.count_documents(query)
+    skip = max(0, (page - 1) * page_size)
+    rows = await db.tickets.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    # strip messages array for list response — keep last_message preview
+    out = []
+    for t in rows:
+        msgs = t.get("messages") or []
+        last = msgs[-1] if msgs else None
+        out.append({**{k: v for k, v in t.items() if k != "messages"}, "last_message_preview": (last["body"][:140] if last else None), "message_count": len(msgs)})
+    return {"items": out, "total": total, "page": page, "page_size": page_size}
+
+
+@api.get("/admin/tickets/{ticket_id}")
+async def admin_ticket_get(ticket_id: str, _: dict = Depends(_get_admin_session)):
+    t = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return t
+
+
+class _TicketUpdate(BaseModel):
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assigned_admin_id: Optional[str] = None
+
+
+@api.put("/admin/tickets/{ticket_id}")
+async def admin_ticket_update(ticket_id: str, payload: _TicketUpdate, _: dict = Depends(_get_admin_session)):
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not update:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    update["updated_at"] = now_iso()
+    res = await db.tickets.update_one({"id": ticket_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    t = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
+    return t
+
+
+class _TicketMessage(BaseModel):
+    body: str
+    internal: bool = False
+
+
+@api.post("/admin/tickets/{ticket_id}/messages")
+async def admin_ticket_reply(ticket_id: str, payload: _TicketMessage, admin: dict = Depends(_get_admin_session)):
+    if not payload.body.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    msg = {
+        "id": new_id(),
+        "from": "admin",
+        "admin_email": admin["email"],
+        "body": payload.body.strip(),
+        "internal": bool(payload.internal),
+        "created_at": now_iso(),
+    }
+    res = await db.tickets.update_one({"id": ticket_id}, {"$push": {"messages": msg}, "$set": {"updated_at": now_iso()}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return msg
+
+
+@api.get("/admin/macros")
+async def admin_macros(_: dict = Depends(_get_admin_session)):
+    return TICKET_MACROS
+
+
+@api.get("/admin/failed-payments")
+async def admin_failed_payments(days: int = 1, _: dict = Depends(_get_admin_session)):
+    # No payments collection — return empty list with realistic shape
+    return {"items": [], "since": (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()}
+
+
+@api.get("/admin/data-requests")
+async def admin_data_requests(status: Optional[str] = None, _: dict = Depends(_get_admin_session)):
+    # Stub: return a couple of in-progress requests if status=received
+    if status == "received":
+        return {"items": [
+            {"id": new_id(), "user_email": "margaret@example.com", "user_name": "Margaret Williams", "type": "delete", "status": "received", "submitted_at": now_iso(), "due_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()},
+        ]}
+    return {"items": []}
+
+
+@api.get("/admin/system-health")
+async def admin_system_health(_: dict = Depends(_get_admin_session)):
+    # Real check: ping Mongo. Stripe/Resend/LLM are stubbed as healthy.
+    try:
+        await db.command("ping")
+        mongo_status = "healthy"
+    except Exception:
+        mongo_status = "down"
+    return {
+        "services": [
+            {"name": "MongoDB", "status": mongo_status, "checked_at": now_iso()},
+            {"name": "Stripe", "status": "healthy", "checked_at": now_iso()},
+            {"name": "Resend", "status": "healthy", "checked_at": now_iso()},
+            {"name": "LLM", "status": "healthy", "checked_at": now_iso()},
+        ],
+        "llm_errors_24h": 0,
+    }
+
+
+@api.get("/admin/maintenance")
+async def admin_maintenance_get(_: dict = Depends(_get_admin_session)):
+    doc = await db.app_state.find_one({"key": "maintenance"}, {"_id": 0}) or {"enabled": False, "message": ""}
+    return {"enabled": bool(doc.get("enabled")), "message": doc.get("message", "")}
+
+
+class _Maintenance(BaseModel):
+    enabled: bool
+    message: Optional[str] = ""
+
+
+@api.post("/admin/maintenance")
+async def admin_maintenance_set(payload: _Maintenance, admin: dict = Depends(_get_admin_session)):
+    if admin.get("admin_role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Only super_admin can toggle maintenance")
+    await db.app_state.update_one({"key": "maintenance"}, {"$set": {"key": "maintenance", "enabled": payload.enabled, "message": payload.message or "", "updated_at": now_iso(), "updated_by": admin["email"]}}, upsert=True)
+    return {"ok": True, "enabled": payload.enabled, "message": payload.message or ""}
+
+
+@api.get("/admin/search")
+async def admin_search(q: str = "", _: dict = Depends(_get_admin_session)):
+    if not q.strip():
+        return {"users": [], "tickets": [], "households": []}
+    import re
+    rx = {"$regex": re.escape(q.strip()), "$options": "i"}
+    users = await db.users.find({"$or": [{"email": rx}, {"name": rx}]}, {"_id": 0, "password_hash": 0}).limit(10).to_list(10)
+    tickets = await db.tickets.find({"$or": [{"subject": rx}, {"user_email": rx}, {"user_name": rx}]}, {"_id": 0, "messages": 0}).limit(10).to_list(10)
+    households = await db.households.find({"$or": [{"participant_name": rx}, {"provider_name": rx}]}, {"_id": 0}).limit(10).to_list(10)
+    return {
+        "users": [_admin_user_row(u) for u in users],
+        "tickets": tickets,
+        "households": households,
+    }
+
+
+@api.get("/admin/users/{user_id}/profile")
+async def admin_user_profile(user_id: str, _: dict = Depends(_get_admin_session)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0, "totp_secret": 0, "backup_codes_hashes": 0})
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Notes (stub)
+    notes = await db.user_notes.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    h = None
+    if u.get("household_id"):
+        h = await db.households.find_one({"id": u["household_id"]}, {"_id": 0})
+    return {"user": u, "household": h, "notes": notes}
+
+
+class _UserNote(BaseModel):
+    body: str
+
+
+@api.post("/admin/users/{user_id}/notes")
+async def admin_user_add_note(user_id: str, payload: _UserNote, admin: dict = Depends(_get_admin_session)):
+    if not payload.body.strip():
+        raise HTTPException(status_code=400, detail="Note cannot be empty")
+    note = {"id": new_id(), "user_id": user_id, "body": payload.body.strip(), "admin_email": admin["email"], "created_at": now_iso()}
+    await db.user_notes.insert_one(note)
+    note.pop("_id", None)
+    return note
+
+
+class _Suspend(BaseModel):
+    suspended: bool
+    reason: Optional[str] = None
+
+
+@api.post("/admin/users/{user_id}/suspend")
+async def admin_user_suspend(user_id: str, payload: _Suspend, admin: dict = Depends(_get_admin_session)):
+    if admin.get("admin_role") not in ("super_admin", "operations_admin"):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Cannot suspend yourself")
+    res = await db.users.update_one({"id": user_id}, {"$set": {"suspended": payload.suspended, "suspended_reason": payload.reason or None}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "suspended": payload.suspended}
+
+
+class _ExtendTrial(BaseModel):
+    days: int = 7
+
+
+@api.post("/admin/users/{user_id}/extend-trial")
+async def admin_user_extend_trial(user_id: str, payload: _ExtendTrial, admin: dict = Depends(_get_admin_session)):
+    if admin.get("admin_role") not in ("super_admin", "operations_admin"):
+        raise HTTPException(status_code=403, detail="Not allowed")
+    if payload.days <= 0 or payload.days > 90:
+        raise HTTPException(status_code=400, detail="Days must be 1-90")
+    new_end = (datetime.now(timezone.utc) + timedelta(days=payload.days)).isoformat()
+    res = await db.users.update_one({"id": user_id}, {"$set": {"trial_ends_at": new_end, "subscription_status": "trialing"}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "trial_ends_at": new_end}
 
 
 # Add admin_role + totp scaffolding to the seed
