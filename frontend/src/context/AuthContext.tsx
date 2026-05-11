@@ -10,6 +10,9 @@ export type User = {
   plan: string;
   household_id?: string | null;
   created_at: string;
+  is_admin?: boolean;
+  subscription_status?: string | null;
+  trial_ends_at?: string | null;
 };
 
 type AuthState = {

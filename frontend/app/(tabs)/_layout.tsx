@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../src/lib/theme';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function TabsLayout() {
+  const { user } = useAuth();
   return (
     <Tabs
       screenOptions={{
@@ -61,6 +63,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="notifications"
         options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" size={size} color={color} />,
+          href: user?.is_admin ? '/admin' : null,
+        }}
       />
     </Tabs>
   );

@@ -195,16 +195,27 @@ frontend:
           agent: "main"
           comment: "Added ToastProvider (top-positioned animated bubble queue: info navy / success sage / warning gold / error terracotta) with imperative module-level `toast.warning()`, `toast.error()`, etc. Wired axios response interceptor to call toast.warning() on 429 with retry-aware copy, toast.error() on 503 with 'temporarily unavailable' copy, and toast.error() on other 5xx. /auth/me probes are excluded to avoid noise during session refresh. Bundler restarts clean."
 
+  - task: "Admin dashboard \u2014 6 screens (overview, users, user detail, households, payments, statements)"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/(tabs)/admin/*"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Built complete admin section under app/(tabs)/admin/: _layout.tsx (Stack + RequireAdmin guard), index.tsx (analytics 2x2 grid + plans/subscriptions/top households breakdowns), users.tsx (debounced search 300ms + plan chip filter + Load more pagination + CSV share), users/[id].tsx (header, stat grid, admin actions: send reset/toggle admin/set plan segmented/cancel sub/delete with modal confirm; household, recent statements, payments with status pills, audit trail), households.tsx (search + paginated list), payments.tsx (status chip filter + CSV share + copyable session_id via expo-clipboard), statements.tsx (search + CSV share + tap row -> /statements/[id]). All hit /api/admin/* endpoints. CSV exports use expo-file-system.downloadAsync + expo-sharing.shareAsync (web fallback uses blob download). Added Admin tab to (tabs)/_layout.tsx with `href: user?.is_admin ? '/admin' : null` so non-admins don't see it. RequireAdmin redirects non-admins to /today with a 'Admin access required' toast. Bundler clean: 1170 modules compiled, no syntax errors. NOTE: Local backend has NO admin endpoints \u2014 admin flows only validate against production API. The admin user (hello@techglove.com.au) is not seeded locally, so end-to-end UI screenshots can't be captured against local backend. Mobile app code is structurally complete and follows the prompt spec exactly."
+
 metadata:
   created_by: "main_agent"
-  version: "1.2"
-  test_sequence: 4
+  version: "1.3"
+  test_sequence: 5
   run_ui: false
 
 test_plan:
   current_focus:
-    - "AccessibilityWidget"
-    - "Global axios error toast interceptor"
+    - "Admin dashboard \u2014 6 screens"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
