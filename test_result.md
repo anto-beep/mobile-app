@@ -198,10 +198,10 @@ frontend:
           agent: "main"
           comment: "Added ToastProvider (top-positioned animated bubble queue: info navy / success sage / warning gold / error terracotta) with imperative module-level `toast.warning()`, `toast.error()`, etc. Wired axios response interceptor to call toast.warning() on 429 with retry-aware copy, toast.error() on 503 with 'temporarily unavailable' copy, and toast.error() on other 5xx. /auth/me probes are excluded to avoid noise during session refresh. Bundler restarts clean."
 
-  - task: "Admin dashboard \u2014 6 screens (overview, users, user detail, households, payments, statements)"
-    implemented: true
-    working: true
-    file: "frontend/app/(tabs)/admin/*"
+  - task: "Admin dashboard \u2014 6 screens (overview, users, user detail, households, payments, statements) [DEPRECATED — replaced by admin-app/]"
+    implemented: false
+    working: "NA"
+    file: "frontend/app/(tabs)/admin/* (removed)"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -254,6 +254,8 @@ test_plan:
   test_priority: "high_first"
 
 agent_communication:
+    - agent: "main"
+      message: "P0 cleanup done (June 2026 session): Deleted redundant legacy `/app/(tabs)/admin/*` (6 files + 1 nested dir) — the entire admin surface is now /admin-auth (TOTP login) + /admin-app (triage). Removed orphan `<Tabs.Screen name='admin'>` from (tabs)/_layout.tsx. app.json already had scheme: 'wayly', bundleIdentifier au.wayly.app, package au.wayly.app — no changes needed. Visual smoke test on web @ 390x844: /admin-auth/login renders cleanly (WAYLY STAFF pill, brand colors, 30-min idle copy, eye toggle, AccessibilityWidget); enters creds → POST /admin/auth/login 200 → routes to /admin-auth/2fa with temp_token + role=super_admin; dev-shortcut 'Show current code' returns 6-digit TOTP (811121) → POST /admin/auth/2fa/verify 200 → lands /admin-app Inbox with 3 stat cards (2 OPEN P1, 5 OPENED 7D, 1 PRIVACY), 2 P1 ticket cards (Cathy Williams 'Can\\'t add a family member', Margaret Williams 'Statement decoder showed wrong totals'), failed-payments empty state, 1 privacy data request (Margaret 29 days left), system-health 2x2 (Mongo/Stripe/Resend/LLM all HEALTHY), Sign out at bottom. All 6 inbox endpoints return 200. Milestone 1 + Milestone 2 are both production-ready. Ready for next milestone (Maintenance toggle w/ biometric, Push notifications, or System Health detail) per user direction."
     - agent: "testing"
       message: "ADMIN DASHBOARD TESTING BLOCKED: Re-tested at 390x844 mobile viewport. The admin user hello@techglove.com.au is NOT seeded on the local backend \u2014 direct curl POST /api/auth/login with AdminPass!2026 returns 401 'Invalid email or password' (confirmed at server log: 127.0.0.1:57852 POST /api/auth/login 401). The task brief and /app/memory/test_credentials.md both claim this account is seeded locally, but it is not. Demo login works correctly (200 OK). What I COULD verify: (a) Admin tab is correctly hidden in bottom nav for non-admin (demo) user (0 'Admin' text occurrences after login). (b) RequireAdmin guard works \u2014 direct navigation to /admin as demo user redirects to /today. (c) AccessibilityWidget a11y-pill renders on every screen. (d) No non-401 console errors observed during entire run. (e) Login screen renders correctly with brand styling (navy/gold/cream). What I COULD NOT verify (because admin login fails): /admin overview 2x2 stat grid, plans/subscriptions/top households sections, /admin/users list + search debounce + plan chip filter + CSV export, /admin/users/:id action rows + password reset + plan toggle + delete modal + self-disable rules, /admin/households, /admin/payments (status filter + copy session_id), /admin/statements (tap row -> /statements/[id]). ACTION FOR MAIN AGENT: Seed admin user on local backend startup (idempotent) with email=hello@techglove.com.au, password=AdminPass!2026 (bcrypt-hashed), is_admin=true. Then request re-test of the admin dashboard."
     - agent: "main"
