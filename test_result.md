@@ -171,14 +171,40 @@ frontend:
           agent: "testing"
           comment: "Login screen renders with Wayly branding (navy/gold/cream, Crimson Pro heading). demo@wayly.com.au / Wayly123! signs in successfully and routes to /today. cathy@example.com and trial30909@example.com return 'Invalid email or password' against the configured backend (EXPO_PUBLIC_BACKEND_URL=mobile-care-os local pod), since those are production-side accounts."
 
+  - task: "AccessibilityWidget (text size, contrast, dark mode, reduce motion, read aloud)"
+    implemented: true
+    working: true
+    file: "frontend/src/components/AccessibilityWidget.tsx, frontend/src/context/AccessibilityContext.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Built global AccessibilityProvider (text scale sm/md/lg/xl=0.9/1.0/1.15/1.3, highContrast, darkMode, reduceMotion, readAloud), persisted to AsyncStorage. AccessibilityWidget is a fixed bottom-left navy pill (a11y-pill) on EVERY screen (even login). Tapping opens a bottom-sheet with: 4 A/A/A/A scale buttons, then 4 toggle rows (high contrast, dark mode, reduce motion, read aloud) + a 'Test read aloud' button (visible only when read aloud is on). Read aloud uses expo-speech with en-AU voice at rate 0.95. useA11yColors() hook returns themed colors for dark/high-contrast modes — ready for future per-screen theme overrides. Screenshot verified: pill renders on login + sheet opens + dark-mode toggle works."
+
+  - task: "Global axios error toast interceptor (429 warning, 503 error)"
+    implemented: true
+    working: true
+    file: "frontend/src/lib/api.ts, frontend/src/components/Toast.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Added ToastProvider (top-positioned animated bubble queue: info navy / success sage / warning gold / error terracotta) with imperative module-level `toast.warning()`, `toast.error()`, etc. Wired axios response interceptor to call toast.warning() on 429 with retry-aware copy, toast.error() on 503 with 'temporarily unavailable' copy, and toast.error() on other 5xx. /auth/me probes are excluded to avoid noise during session refresh. Bundler restarts clean."
+
 metadata:
   created_by: "main_agent"
-  version: "1.1"
-  test_sequence: 3
+  version: "1.2"
+  test_sequence: 4
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "AccessibilityWidget"
+    - "Global axios error toast interceptor"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

@@ -15,6 +15,9 @@ import {
   Figtree_600SemiBold,
 } from '@expo-google-fonts/figtree';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { AccessibilityProvider } from '../src/context/AccessibilityContext';
+import { ToastProvider } from '../src/components/Toast';
+import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { Colors } from '../src/lib/theme';
 
 function RootStack() {
@@ -41,11 +44,14 @@ function RootStack() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
+      </Stack>
+      <AccessibilityWidget />
+    </>
   );
 }
 
@@ -63,10 +69,14 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="dark" />
-        <RootStack />
-      </AuthProvider>
+      <AccessibilityProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <RootStack />
+          </AuthProvider>
+        </ToastProvider>
+      </AccessibilityProvider>
     </SafeAreaProvider>
   );
 }
