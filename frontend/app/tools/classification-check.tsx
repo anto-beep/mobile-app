@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 const QUESTIONS = [
   'Mobility — moving around the home',
@@ -32,10 +34,25 @@ const SCALE: { value: number; label: string }[] = [
 
 export default function ClassificationCheck() {
   const router = useRouter();
+  const { user } = useAuth();
   const [answers, setAnswers] = useState<number[]>(Array(12).fill(0));
   const [currentClass, setCurrentClass] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  if (!hasPaidAccess(user)) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <Text style={styles.overline}>Classification check</Text>
+          <Text style={styles.h1}>Quick self-check</Text>
+          <AIAccuracyBanner tool="classification-self-check" />
+          <ToolGate tool="classification-self-check" variant={user ? 'free-plan' : 'unauth'} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   const setAnswer = (i: number, v: number) => {
     setAnswers((prev) => prev.map((a, idx) => (idx === i ? v : a)));
@@ -64,6 +81,7 @@ export default function ClassificationCheck() {
         <Text style={styles.overline}>Classification check</Text>
         <Text style={styles.h1}>Quick self-check</Text>
         <Text style={styles.sub}>Twelve questions, two minutes — gives a likely Support at Home level.</Text>
+        <AIAccuracyBanner tool="classification-self-check" />
 
         <View style={styles.note}>
           <Ionicons name="information-circle-outline" size={16} color={Colors.severityInfo} />

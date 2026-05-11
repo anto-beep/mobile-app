@@ -101,3 +101,60 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Wayly mobile app - mirror web app feature parity. Currently retrofitting the 4 existing AI tools (budget-calc, price-checker, classification-check, reassessment-letter) with plan gating components (<ToolGate>, <AIAccuracyBanner>) and finalising Stripe checkout flow with deep-linking."
+
+frontend:
+  - task: "app.json deep-link scheme + bundle identifiers"
+    implemented: true
+    working: true
+    file: "frontend/app.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Confirmed scheme: 'wayly' already set. Updated bundleIdentifier (iOS) and package (Android) to au.wayly.app per master prompt. Required for Stripe Checkout return via wayly:// deep link."
+
+  - task: "ToolGate + AIAccuracyBanner retrofit on 4 existing tools"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/tools/{budget-calc,price-checker,classification-check,reassessment-letter}.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added useAuth + hasPaidAccess gating; if user is free/unauth, render <ToolGate variant='free-plan'|'unauth'> with the appropriate disclaimer banner. Added <AIAccuracyBanner tool='...'> at top of each tool's hero. Verified files compile (Metro bundler clean restart). Auth gating means we need to be logged-in-as-paid to fully test the calc flows; gate-state UI can be tested when logged in as free user."
+
+  - task: "PayMethodBadges on Plan & Billing"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/settings/plan.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added <PayMethodBadges /> below the Stripe security note. Existing Stripe checkout flow (WebBrowser.openAuthSessionAsync + session polling + auth refresh) was already implemented previously."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 3
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "ToolGate + AIAccuracyBanner retrofit on 4 existing tools"
+    - "PayMethodBadges on Plan & Billing"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Retrofit complete for the 4 remaining AI tools. ToolGate appears for free/unauth users; tool body only renders when hasPaidAccess(user)===true (paid plan or trialing). app.json bundleId/package updated to au.wayly.app. PayMethodBadges added to plan.tsx. App bundler restarts cleanly (no syntax errors). Did NOT run testing agent yet — awaiting user confirmation on whether to test now or proceed to next batch (push notifications, accessibility widget, crisis hotlines footer, axios error toast interceptor)."

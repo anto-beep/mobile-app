@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
+import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 const FALLBACK_SERVICES = ['Personal care', 'Domestic assistance', 'Nursing', 'Physiotherapy', 'Cleaning', 'Transport'];
 
@@ -17,6 +19,7 @@ const VERDICT_COLORS: Record<string, string> = {
 
 export default function PriceChecker() {
   const router = useRouter();
+  const { user } = useAuth();
   const [services, setServices] = useState<string[]>(FALLBACK_SERVICES);
   const [service, setService] = useState('Personal care');
   const [rate, setRate] = useState('');
@@ -29,6 +32,20 @@ export default function PriceChecker() {
       if (list.length) setServices(list);
     }).catch(() => {});
   }, []);
+
+  if (!hasPaidAccess(user)) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <Text style={styles.overline}>Price checker</Text>
+          <Text style={styles.h1}>Is this rate fair?</Text>
+          <AIAccuracyBanner tool="provider-price-checker" />
+          <ToolGate tool="provider-price-checker" variant={user ? 'free-plan' : 'unauth'} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   const check = async () => {
     const r = parseFloat(rate);
@@ -58,6 +75,7 @@ export default function PriceChecker() {
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
           <Text style={styles.sub}>We'll compare against the network median and the 1 July 2026 cap.</Text>
+          <AIAccuracyBanner tool="provider-price-checker" />
 
           <Text style={styles.label}>Service</Text>
           <View style={styles.row}>

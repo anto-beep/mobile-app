@@ -1,39 +1,93 @@
-// AI Tools index — picker for native tool screens
+// AI Tools index — 8 tools with plan badges
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { TrialCountdownBanner } from '../../src/components/AITools';
 
-const TOOLS = [
+type Tool = {
+  key: string;
+  title: string;
+  sub: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  badge: { label: string; tone: 'sage' | 'navy' };
+  trialNote?: string;
+};
+
+const TOOLS: Tool[] = [
   {
-    key: 'budget-calc',
-    title: 'Budget calculator',
-    sub: 'Work out the quarterly + annual budget for any classification',
+    key: 'statement-decoder',
+    title: 'Statement Decoder',
+    sub: 'Snap or upload a Support at Home statement — get a plain-English summary and anomaly check',
+    icon: 'scan-outline',
+    color: '#3A5A40',
+    badge: { label: 'FREE · 1 use/day', tone: 'sage' },
+  },
+  {
+    key: 'budget-calculator',
+    title: 'Budget Calculator',
+    sub: 'Quarterly + annual budget for any classification level',
     icon: 'calculator-outline',
     color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
   },
   {
-    key: 'price-checker',
-    title: 'Provider price checker',
-    sub: "Is this rate fair? We'll compare it to the network median + 1 Jul cap",
+    key: 'provider-price-checker',
+    title: 'Provider Price Checker',
+    sub: "Is the rate fair? Compare to network median and 1 Jul 2026 cap",
     icon: 'pricetag-outline',
-    color: '#3A5A40',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
   },
   {
-    key: 'classification-check',
-    title: 'Classification self-check',
-    sub: '12-question quick check — likely Support at Home level',
+    key: 'classification-self-check',
+    title: 'Classification Self-Check',
+    sub: 'Quick check to see if your classification level still fits',
     icon: 'help-circle-outline',
-    color: '#8B9B82',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
   },
   {
     key: 'reassessment-letter',
-    title: 'Reassessment letter',
-    sub: "Draft a polite request to My Aged Care if your parent's needs have changed",
+    title: 'Reassessment Letter',
+    sub: "Polite letter to My Aged Care asking for a fresh look",
     icon: 'mail-outline',
-    color: '#A05545',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
+  },
+  {
+    key: 'contribution-estimator',
+    title: 'Contribution Estimator',
+    sub: 'What you might pay each quarter based on your pension status',
+    icon: 'wallet-outline',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
+  },
+  {
+    key: 'care-plan-reviewer',
+    title: 'Care Plan Reviewer',
+    sub: "Traffic-light review of your participant's care plan",
+    icon: 'document-text-outline',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
+  },
+  {
+    key: 'family-coordinator',
+    title: 'Family Coordinator',
+    sub: 'Ask anything about Support at Home — the friendliest niece in Australia',
+    icon: 'chatbubbles-outline',
+    color: '#1F3A5F',
+    badge: { label: 'Solo & Family', tone: 'navy' },
+    trialNote: '7-day free trial',
   },
 ];
 
@@ -48,7 +102,9 @@ export default function ToolsIndex() {
         </TouchableOpacity>
         <Text style={styles.overline}>Helpful tools</Text>
         <Text style={styles.h1}>AI tools</Text>
-        <Text style={styles.sub}>Quick answers when you need them.</Text>
+        <Text style={styles.sub}>Quick answers when you need them — all included with Solo and Family plans.</Text>
+
+        <TrialCountdownBanner />
 
         {TOOLS.map((t) => (
           <TouchableOpacity
@@ -58,11 +114,19 @@ export default function ToolsIndex() {
             testID={`tool-${t.key}`}
           >
             <View style={[styles.iconWrap, { backgroundColor: `${t.color}15` }]}>
-              <Ionicons name={t.icon as any} size={22} color={t.color} />
+              <Ionicons name={t.icon} size={22} color={t.color} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{t.title}</Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>{t.title}</Text>
+                <View style={[styles.badge, t.badge.tone === 'sage' ? styles.badgeSage : styles.badgeNavy]}>
+                  <Text style={[styles.badgeText, t.badge.tone === 'sage' ? styles.badgeTextSage : styles.badgeTextNavy]}>
+                    {t.badge.label}
+                  </Text>
+                </View>
+              </View>
               <Text style={styles.cardSub}>{t.sub}</Text>
+              {t.trialNote && <Text style={styles.trialNote}>{t.trialNote}</Text>}
             </View>
             <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
@@ -79,13 +143,21 @@ const styles = StyleSheet.create({
   backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
   overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
   h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
   card: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
     backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md + 2,
     marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, flex: 1 },
   cardSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
+  trialNote: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandSecondary, marginTop: 4 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
+  badgeSage: { backgroundColor: 'rgba(58, 90, 64, 0.12)' },
+  badgeNavy: { backgroundColor: 'rgba(31, 58, 95, 0.08)' },
+  badgeText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.5 },
+  badgeTextSage: { color: '#3A5A40' },
+  badgeTextNavy: { color: Colors.brandPrimary },
 });

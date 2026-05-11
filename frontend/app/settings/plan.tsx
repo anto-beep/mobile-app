@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { PayMethodBadges } from '../../src/components/AITools';
 
 const PLANS = [
   { key: 'free', name: 'Free', price: '$0', period: '', tagline: 'Get a feel for Wayly', features: ['1 free statement decode every 24 hours', 'Read-only dashboard preview'] },
@@ -301,6 +302,8 @@ export default function Plan() {
             Payments are processed securely by Stripe. Pricing in AUD, includes GST. Cancel anytime.
           </Text>
         </View>
+
+        <PayMethodBadges />
       </ScrollView>
     </SafeAreaView>
   );

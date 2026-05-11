@@ -5,16 +5,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 export default function BudgetCalc() {
   const router = useRouter();
+  const { user } = useAuth();
   const [classification, setClassification] = useState(4);
   const [grandfathered, setGrandfathered] = useState(false);
   const [balance, setBalance] = useState('');
   const [annualBurn, setAnnualBurn] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  if (!hasPaidAccess(user)) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <Text style={styles.overline}>Budget calculator</Text>
+          <Text style={styles.h1}>What's the budget?</Text>
+          <AIAccuracyBanner tool="budget-calculator" />
+          <ToolGate tool="budget-calculator" variant={user ? 'free-plan' : 'unauth'} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   const calc = async () => {
     setLoading(true);
@@ -42,6 +59,7 @@ export default function BudgetCalc() {
           <Text style={styles.overline}>Budget calculator</Text>
           <Text style={styles.h1}>What's the budget?</Text>
           <Text style={styles.sub}>For any classification level — works it out in seconds.</Text>
+          <AIAccuracyBanner tool="budget-calculator" />
 
           <Text style={styles.label}>Classification level</Text>
           <View style={styles.row}>

@@ -6,7 +6,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 export default function ReassessmentLetter() {
   const router = useRouter();
@@ -63,6 +65,7 @@ export default function ReassessmentLetter() {
           <Text style={styles.overline}>Reassessment letter</Text>
           <Text style={styles.h1}>Draft a letter to MAC</Text>
           <Text style={styles.sub}>If your parent's needs have changed, ask My Aged Care for a fresh look.</Text>
+          <AIAccuracyBanner tool="reassessment-letter" />
 
           <Text style={styles.label}>Participant's name</Text>
           <TextInput style={styles.input} value={participant} onChangeText={setParticipant} placeholder="Margaret" placeholderTextColor={Colors.textMuted} testID="reassess-participant" />

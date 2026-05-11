@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wayly.mobile",
+      "bundleIdentifier": "au.wayly.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Snap a photo of your statement to upload it",
         "NSPhotoLibraryUsageDescription": "Pick a saved statement photo to upload",
@@ -23,7 +23,7 @@
         "backgroundColor": "#FAF7F2"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.wayly.mobile",
+      "package": "au.wayly.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
