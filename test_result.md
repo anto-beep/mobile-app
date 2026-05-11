@@ -216,15 +216,27 @@ frontend:
           agent: "testing"
           comment: "FULL RE-TEST PASSED at 390x844 viewport. Admin login hello@techglove.com.au / AdminPass!2026 now succeeds (200 on POST /api/auth/login against mobile-care-os.preview.emergentagent.com) and redirects to /today. Bottom-nav shows 6 tabs with Admin shield as the right-most tab. Verified end-to-end via screenshots + network log: (1) /admin Overview \u2014 2x2 stat grid renders Total users=7 (+7 this week), Households=4, Statements decoded=4 (+4 this week), Revenue paid=$0. Plans breakdown shows Free 5, Family 2. Subscriptions shows Active 1. Top active households shows Margaret (4 members \u00b7 4 statements). (2) Tapping Total users stat card navigates to /admin/users; list shows 7 users including hello@techglove.com.au with gold ADMIN pill, FAMILY plan pill, ACTIVE subscription pill. Search 'hello' debounces and filters list to admin row only (demo hidden). Plan chips (all/free/solo/family/advisor) tappable and active state styled correctly. Share CSV button visible. (3) /admin/users/<self> \u2014 header shows 'Wayly Admin' + gold ADMIN pill + email; stat grid shows Plan=Family, Role=Caregiver, Joined=11 May 2026, Subscription=Active. Send password reset row triggers green success toast 'sent' (POST /reset-password 200). 'Remove admin' row visually disabled (greyed). 'Set plan' segmented control highlights Family as active. 'Can't delete yourself' delete row is disabled. (4) /admin/users/<demo> \u2014 shows 'Make admin' (enabled) and 'Delete user' (enabled, red). Tapping Delete user opens warning modal with 'permanent'/'cannot be undone' copy; Cancel closes without firing DELETE. (5) /admin/households \u2014 list renders with Margaret household row. (6) /admin/payments \u2014 renders empty 'No payments match.' state. (7) /admin/statements \u2014 4 rows visible: Margaret January 2026 ($380, 1 anomaly, 09/05/2026), Margaret January 2026 ($380), Margaret January 2026 ($380), Margaret May 2026 ($982, 2 anomalies). Share CSV present. (8) AccessibilityWidget a11y-pill renders on every admin screen (bottom-left navy pill). (9) Non-admin gating: after logout + login as demo@wayly.com.au, bottom nav has 0 'Admin' tab occurrences; direct nav to /admin redirects appropriately (RequireAdmin guard works). (10) Brand: navy headers, gold accents, cream background \u2014 no purple. (11) Network log confirms all admin endpoints return 200: /api/admin/analytics, /api/admin/users, /api/admin/users/<id>, /api/admin/users/<id>/reset-password, /api/admin/households, /api/admin/payments, /api/admin/statements. (12) Console errors: 2 background 400s (unrelated to admin flow), zero 401s after login, no JS exceptions. Admin dashboard is fully working."
 
+  - task: "Admin auth (Milestone 1: TOTP 2FA + secure storage + 30-min idle logout)"
+    implemented: true
+    working: true
+    file: "frontend/app/admin-auth/*, frontend/app/admin-app/*, frontend/src/context/AdminAuthContext.tsx, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Full TOTP 2FA flow validated end-to-end via curl + pyotp. Backend (MOCKED stubs): added POST /admin/auth/login (returns requires_2fa_setup with QR data URI + secret on first login, requires_2fa with temp_token on subsequent), POST /admin/auth/2fa/enable (verifies code, generates 10 single-use backup codes), POST /admin/auth/2fa/verify (accepts 6-digit TOTP OR 8-char backup code, consumes backup codes), POST /admin/auth/logout, GET /admin/auth/me. Backend uses pyotp for TOTP + qrcode for QR data URI generation. Admin JWTs are marked kind='admin' (vs admin_temp / admin_setup) and verified separately from consumer user JWTs. Frontend: AdminAuthProvider with isolated expo-secure-store (Keychain/Keystore on native, AsyncStorage fallback on web), 30-min idle auto-logout via AppState + interval poll, and a separate adminApi axios instance. 4 screens: /admin-auth/login (email + password with eye toggle), /admin-auth/2fa (6-digit code or 8-char backup), /admin-auth/setup (QR + manual secret + verify + backup codes display ONCE with copy-all + warn box), /admin-app (post-auth landing with role pill + 2FA pill + sign-out confirmation + coming-soon tiles for Milestone 2/3). Entry point: 'Wayly staff sign-in' link at bottom of consumer login. Old is_admin-gated tab in (tabs) is now hidden (href: null). Validated via curl + pyotp: login \u2192 setup \u2192 verify \u2192 backup codes; login \u2192 TOTP verify; login \u2192 backup-code verify; backup-code reuse rejected (400); /admin/auth/me works; logout works. Screenshot-verified: all 4 screens render with brand colors, QR appears, secret is copyable, FIRST-TIME SETUP badge styled."
+
 metadata:
   created_by: "main_agent"
-  version: "1.3"
-  test_sequence: 5
+  version: "1.4"
+  test_sequence: 6
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Admin dashboard \u2014 6 screens"
+    - "Admin auth (Milestone 1)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

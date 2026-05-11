@@ -15,6 +15,7 @@ import {
   Figtree_600SemiBold,
 } from '@expo-google-fonts/figtree';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { AdminAuthProvider } from '../src/context/AdminAuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
@@ -29,6 +30,8 @@ function RootStack() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const inAdminGroup = segments[0] === 'admin-auth' || segments[0] === 'admin-app';
+    if (inAdminGroup) return; // admin flow is independent of the consumer user auth
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (user && inAuthGroup) {
@@ -49,6 +52,8 @@ function RootStack() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="admin-auth" />
+        <Stack.Screen name="admin-app" />
         <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
       </Stack>
       <AccessibilityWidget />
@@ -72,12 +77,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AccessibilityProvider>
         <ToastProvider>
-          <AuthProvider>
-            <StatusBar style="dark" />
-            <ThemedShell>
-              <RootStack />
-            </ThemedShell>
-          </AuthProvider>
+          <AdminAuthProvider>
+            <AuthProvider>
+              <StatusBar style="dark" />
+              <ThemedShell>
+                <RootStack />
+              </ThemedShell>
+            </AuthProvider>
+          </AdminAuthProvider>
         </ToastProvider>
       </AccessibilityProvider>
     </SafeAreaProvider>

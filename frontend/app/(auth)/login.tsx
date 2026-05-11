@@ -147,6 +147,15 @@ export default function Login() {
                 Try the demo: <Text style={styles.demoBold}>demo@wayly.com.au / Wayly123!</Text>
               </Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.staffLink}
+              onPress={() => router.push('/admin-auth/login' as any)}
+              testID="admin-signin-link"
+            >
+              <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
+              <Text style={styles.staffLinkText}>Wayly staff sign-in</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -208,4 +217,6 @@ const styles = StyleSheet.create({
   },
   demoText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, flex: 1 },
   demoBold: { fontFamily: Fonts.bodySemi, color: Colors.textPrimary },
+  staffLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
+  staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
 });

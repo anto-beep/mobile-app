@@ -849,11 +849,18 @@ async def seed_demo():
                 "role": "caregiver",
                 "plan": "family",
                 "is_admin": True,
+                "admin_role": "super_admin",
+                "totp_enabled": False,
                 "subscription_status": "active",
                 "household_id": None,
                 "created_at": now_iso(),
             })
             logger.info("Seeded admin user hello@techglove.com.au / AdminPass!2026")
+        # Ensure existing admin always has admin_role
+        await db.users.update_one(
+            {"email": admin_email, "admin_role": {"$exists": False}},
+            {"$set": {"admin_role": "super_admin", "totp_enabled": False}},
+        )
 
         # Demo seed if not present
         existing = await db.users.find_one({"email": "demo@wayly.com.au"})
@@ -935,7 +942,191 @@ async def root():
     return {"app": "Wayly Mobile API", "status": "ok"}
 
 
-# ─────────────────── admin (MOCKED: minimal stub for mobile dashboard testing) ───────────────────
+# ─────────────────── admin auth (MOCKED stubs — Milestone 1: TOTP + sessions) ───────────────────
+import base64
+import io
+import pyotp
+import qrcode
+import secrets as _secrets
+
+ADMIN_ROLE_DEFAULTS = ("super_admin", "operations_admin", "support_admin", "content_admin")
+
+
+class _AdminLoginReq(BaseModel):
+    email: str
+    password: str
+
+
+class _Admin2FAVerifyReq(BaseModel):
+    temp_token: str
+    code: str
+
+
+class _Admin2FAEnableReq(BaseModel):
+    setup_token: str
+    code: str
+
+
+def _admin_token(user_id: str, kind: str = "admin", ttl_hours: int = 24) -> str:
+    """Issue a JWT marked with `kind` so we can distinguish admin sessions from user sessions."""
+    import jwt as _jwt
+    from datetime import timedelta as _td
+    payload = {
+        "sub": user_id,
+        "kind": kind,
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + _td(hours=ttl_hours),
+    }
+    secret = os.environ.get("JWT_SECRET", "wayly-dev-secret-change-me")
+    return _jwt.encode(payload, secret, algorithm="HS256")
+
+
+def _decode_admin(token: str) -> dict:
+    """Decode an admin token; raises 401 if invalid or wrong kind."""
+    import jwt as _jwt
+    secret = os.environ.get("JWT_SECRET", "wayly-dev-secret-change-me")
+    try:
+        payload = _jwt.decode(token, secret, algorithms=["HS256"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid admin session")
+    return payload
+
+
+from fastapi.security import HTTPAuthorizationCredentials as _HTTPAuthCreds  # noqa: E402
+from auth import bearer_scheme as _bearer  # noqa: E402
+
+
+async def _get_admin_session(creds: _HTTPAuthCreds = Depends(_bearer)) -> dict:
+    if not creds:
+        raise HTTPException(status_code=401, detail="Admin sign-in required")
+    payload = _decode_admin(creds.credentials)
+    if payload.get("kind") != "admin":
+        raise HTTPException(status_code=403, detail="Admin session required")
+    u = await db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
+    if not u or not u.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return u
+
+
+def _admin_pub(u: dict) -> dict:
+    return {
+        "id": u["id"],
+        "email": u["email"],
+        "name": u.get("name") or u["email"],
+        "admin_role": u.get("admin_role", "super_admin"),
+        "totp_enabled": bool(u.get("totp_enabled")),
+    }
+
+
+@api.post("/admin/auth/login")
+async def admin_auth_login(payload: _AdminLoginReq):
+    u = await db.users.find_one({"email": payload.email.lower()}, {"_id": 0})
+    if not u or not u.get("is_admin"):
+        # Don't leak whether a non-admin email exists
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not verify_password(payload.password, u.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    role = u.get("admin_role", "super_admin")
+
+    if u.get("totp_enabled"):
+        # Issue a short-lived TEMP token to bridge into the 2FA verification step
+        temp = _admin_token(u["id"], kind="admin_temp", ttl_hours=0.1)
+        return {"requires_2fa": True, "temp_token": temp, "role": role}
+
+    # First-time TOTP setup — generate secret + provisioning URI + QR
+    secret = pyotp.random_base32()
+    totp = pyotp.TOTP(secret)
+    issuer = "Wayly Admin"
+    uri = totp.provisioning_uri(name=u["email"], issuer_name=issuer)
+    qr = qrcode.QRCode(box_size=6, border=2)
+    qr.add_data(uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#1F3A5F", back_color="#FAF7F2")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    qr_data_uri = f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+
+    # Stash secret on the user doc as pending (NOT enabled until they verify a code)
+    await db.users.update_one({"id": u["id"]}, {"$set": {"totp_pending_secret": secret}})
+
+    setup = _admin_token(u["id"], kind="admin_setup", ttl_hours=0.25)
+    return {
+        "requires_2fa_setup": True,
+        "setup_token": setup,
+        "qr_data_uri": qr_data_uri,
+        "secret": secret,
+        "role": role,
+    }
+
+
+@api.post("/admin/auth/2fa/enable")
+async def admin_2fa_enable(payload: _Admin2FAEnableReq):
+    decoded = _decode_admin(payload.setup_token)
+    if decoded.get("kind") != "admin_setup":
+        raise HTTPException(status_code=401, detail="Invalid setup token")
+    u = await db.users.find_one({"id": decoded["sub"]}, {"_id": 0})
+    if not u or not u.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    pending = u.get("totp_pending_secret")
+    if not pending:
+        raise HTTPException(status_code=400, detail="No setup in progress")
+    if not pyotp.TOTP(pending).verify(payload.code.replace(" ", ""), valid_window=1):
+        raise HTTPException(status_code=400, detail="That code didn't match — try again")
+    # Generate 10 backup codes (8 chars each)
+    backup = [_secrets.token_hex(4).upper() for _ in range(10)]
+    backup_hashes = [hash_password(c) for c in backup]
+    await db.users.update_one({"id": u["id"]}, {
+        "$set": {"totp_secret": pending, "totp_enabled": True, "backup_codes_hashes": backup_hashes},
+        "$unset": {"totp_pending_secret": ""},
+    })
+    refreshed = await db.users.find_one({"id": u["id"]}, {"_id": 0, "password_hash": 0})
+    token = _admin_token(u["id"], kind="admin", ttl_hours=24)
+    return {"token": token, "admin": _admin_pub(refreshed), "backup_codes": backup}
+
+
+@api.post("/admin/auth/2fa/verify")
+async def admin_2fa_verify(payload: _Admin2FAVerifyReq):
+    decoded = _decode_admin(payload.temp_token)
+    if decoded.get("kind") != "admin_temp":
+        raise HTTPException(status_code=401, detail="Invalid temp token")
+    u = await db.users.find_one({"id": decoded["sub"]}, {"_id": 0})
+    if not u or not u.get("is_admin") or not u.get("totp_enabled"):
+        raise HTTPException(status_code=400, detail="2FA not set up")
+    code = payload.code.replace(" ", "").upper()
+    matched = False
+    # 6-digit TOTP path
+    if code.isdigit() and len(code) == 6:
+        matched = pyotp.TOTP(u["totp_secret"]).verify(code, valid_window=1)
+    # 8-char backup-code path
+    if not matched and len(code) == 8:
+        hashes = u.get("backup_codes_hashes") or []
+        for i, h in enumerate(hashes):
+            if verify_password(code, h):
+                # consume that code
+                remaining = hashes[:i] + hashes[i + 1:]
+                await db.users.update_one({"id": u["id"]}, {"$set": {"backup_codes_hashes": remaining}})
+                matched = True
+                break
+    if not matched:
+        raise HTTPException(status_code=400, detail="That code didn't match — try again")
+    token = _admin_token(u["id"], kind="admin", ttl_hours=24)
+    return {"token": token, "admin": _admin_pub(u)}
+
+
+@api.post("/admin/auth/logout")
+async def admin_auth_logout(_: dict = Depends(_get_admin_session)):
+    # In a real system we'd revoke the JWT (jti + denylist). For stub, just acknowledge.
+    return {"ok": True}
+
+
+@api.get("/admin/auth/me")
+async def admin_auth_me(admin: dict = Depends(_get_admin_session)):
+    return _admin_pub(admin)
+
+
+# Add admin_role + totp scaffolding to the seed
+
 async def _require_admin(user_id: str = Depends(get_current_user_id)) -> dict:
     u = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not u or not u.get("is_admin"):
