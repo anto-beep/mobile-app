@@ -1290,29 +1290,105 @@ async def admin_data_requests(status: Optional[str] = None, _: dict = Depends(_g
     return {"items": []}
 
 
-@api.get("/admin/system-health")
-async def admin_system_health(_: dict = Depends(_get_admin_session)):
-    # Real check: ping Mongo. Stripe/Resend/LLM are stubbed as healthy.
+async def _ping_mongo_ms() -> tuple[str, int]:
+    import time
+    t0 = time.perf_counter()
     try:
         await db.command("ping")
-        mongo_status = "healthy"
+        return "healthy", int((time.perf_counter() - t0) * 1000)
     except Exception:
-        mongo_status = "down"
+        return "down", int((time.perf_counter() - t0) * 1000)
+
+
+# Mocked latency + error stats per service. Seeded deterministically off the service name.
+def _mock_service_stats(name: str, base_ms: int, status: str = "healthy") -> dict:
+    import random
+    rnd = random.Random(name)
+    p95 = base_ms + rnd.randint(20, 90)
+    err = 0 if status == "healthy" else rnd.randint(2, 12)
     return {
-        "services": [
-            {"name": "MongoDB", "status": mongo_status, "checked_at": now_iso()},
-            {"name": "Stripe", "status": "healthy", "checked_at": now_iso()},
-            {"name": "Resend", "status": "healthy", "checked_at": now_iso()},
-            {"name": "LLM", "status": "healthy", "checked_at": now_iso()},
-        ],
-        "llm_errors_24h": 0,
+        "name": name,
+        "status": status,
+        "response_ms": base_ms,
+        "p95_ms": p95,
+        "error_rate_24h": err / 1000.0,
+        "checked_at": now_iso(),
+    }
+
+
+@api.get("/admin/system-health")
+async def admin_system_health(_: dict = Depends(_get_admin_session)):
+    mongo_status, mongo_ms = await _ping_mongo_ms()
+    services = [
+        {**_mock_service_stats("MongoDB", mongo_ms, mongo_status)},
+        {**_mock_service_stats("Stripe", 142, "healthy")},
+        {**_mock_service_stats("Resend", 88, "healthy")},
+        {**_mock_service_stats("LLM", 412, "healthy")},
+    ]
+    return {"services": services, "llm_errors_24h": 0}
+
+
+@api.get("/admin/system-health/{service}")
+async def admin_system_health_detail(service: str, _: dict = Depends(_get_admin_session)):
+    # Detail view. MongoDB is live-pinged; others are mocked timeseries.
+    import random
+    name_map = {"mongodb": "MongoDB", "stripe": "Stripe", "resend": "Resend", "llm": "LLM"}
+    key = service.lower()
+    if key not in name_map:
+        raise HTTPException(status_code=404, detail="Unknown service")
+    name = name_map[key]
+    if key == "mongodb":
+        status, base_ms = await _ping_mongo_ms()
+    else:
+        status, base_ms = ("healthy", {"stripe": 142, "resend": 88, "llm": 412}[key])
+    rnd = random.Random(name)
+    # 24-point latency series (last 24h, hourly)
+    points = []
+    for i in range(24):
+        jitter = rnd.randint(-25, 60)
+        points.append({"t": (datetime.now(timezone.utc) - timedelta(hours=23 - i)).isoformat(), "ms": max(10, base_ms + jitter)})
+    # Mock recent errors (none if healthy)
+    recent_errors = []
+    if status != "healthy":
+        for _i in range(rnd.randint(1, 3)):
+            recent_errors.append({
+                "at": (datetime.now(timezone.utc) - timedelta(minutes=rnd.randint(5, 600))).isoformat(),
+                "code": rnd.choice(["500", "503", "ETIMEDOUT", "ECONNRESET"]),
+                "message": "Upstream temporarily unavailable",
+            })
+    return {
+        "name": name,
+        "status": status,
+        "response_ms": base_ms,
+        "p95_ms": base_ms + rnd.randint(20, 90),
+        "uptime_30d_pct": 99.92 if status == "healthy" else 98.40,
+        "checked_at": now_iso(),
+        "latency_series": points,
+        "recent_errors": recent_errors,
+        "docs_url": {
+            "MongoDB": "https://status.mongodb.com",
+            "Stripe": "https://status.stripe.com",
+            "Resend": "https://resend.com/status",
+            "LLM": "https://status.openai.com",
+        }[name],
     }
 
 
 @api.get("/admin/maintenance")
 async def admin_maintenance_get(_: dict = Depends(_get_admin_session)):
     doc = await db.app_state.find_one({"key": "maintenance"}, {"_id": 0}) or {"enabled": False, "message": ""}
-    return {"enabled": bool(doc.get("enabled")), "message": doc.get("message", "")}
+    return {
+        "enabled": bool(doc.get("enabled")),
+        "message": doc.get("message", ""),
+        "updated_at": doc.get("updated_at"),
+        "updated_by": doc.get("updated_by"),
+    }
+
+
+@api.get("/admin/maintenance/history")
+async def admin_maintenance_history(_: dict = Depends(_get_admin_session)):
+    items = await db.maintenance_log.find({}, {"_id": 0}).sort("at", -1).limit(20).to_list(20)
+    return {"items": items}
 
 
 class _Maintenance(BaseModel):
@@ -1324,7 +1400,19 @@ class _Maintenance(BaseModel):
 async def admin_maintenance_set(payload: _Maintenance, admin: dict = Depends(_get_admin_session)):
     if admin.get("admin_role") != "super_admin":
         raise HTTPException(status_code=403, detail="Only super_admin can toggle maintenance")
-    await db.app_state.update_one({"key": "maintenance"}, {"$set": {"key": "maintenance", "enabled": payload.enabled, "message": payload.message or "", "updated_at": now_iso(), "updated_by": admin["email"]}}, upsert=True)
+    await db.app_state.update_one(
+        {"key": "maintenance"},
+        {"$set": {"key": "maintenance", "enabled": payload.enabled, "message": payload.message or "", "updated_at": now_iso(), "updated_by": admin["email"]}},
+        upsert=True,
+    )
+    await db.maintenance_log.insert_one({
+        "id": new_id(),
+        "at": now_iso(),
+        "enabled": payload.enabled,
+        "message": payload.message or "",
+        "actor_email": admin["email"],
+        "actor_role": admin.get("admin_role"),
+    })
     return {"ok": True, "enabled": payload.enabled, "message": payload.message or ""}
 
 
