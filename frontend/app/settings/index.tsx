@@ -16,6 +16,23 @@ const ITEMS = [
     color: Colors.brandSecondary,
   },
   {
+    key: 'documents',
+    title: 'Document vault',
+    sub: 'Securely store statements, care plans, assessments',
+    icon: 'folder-outline',
+    color: Colors.streams['Independence'],
+    route: '/documents',
+  },
+  {
+    key: 'adviser',
+    title: 'Adviser portal',
+    sub: 'Manage your client roster · adviser plan',
+    icon: 'briefcase-outline',
+    color: Colors.brandPrimary,
+    route: '/adviser',
+    advisersOnly: true,
+  },
+  {
     key: 'members',
     title: 'Family members',
     sub: 'Invite family to share the dashboard',
@@ -60,11 +77,11 @@ export default function SettingsHome() {
           </Text>
         </View>
 
-        {ITEMS.map((item) => (
+        {ITEMS.filter((it) => !it.advisersOnly || user?.plan === 'adviser').map((item) => (
           <TouchableOpacity
             key={item.key}
             style={styles.row}
-            onPress={() => router.push(`/settings/${item.key}` as any)}
+            onPress={() => router.push(((item as any).route || `/settings/${item.key}`) as any)}
             testID={`settings-row-${item.key}`}
           >
             <View style={[styles.iconWrap, { backgroundColor: `${item.color}15` }]}>

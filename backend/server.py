@@ -2087,6 +2087,375 @@ async def admin_export_statements(_: dict = Depends(_require_admin)):
     return _csv_response(out, ["participant", "period", "gross", "anomalies", "uploaded_at"], "statements.csv")
 
 
+# ─────────────────────────── adviser portal (iter27-29) ───────────────────────────
+ADVISER_CLIENT_CAP = 25
+ADVISER_PLANS = {"adviser"}
+
+
+def _require_adviser_user(user: dict) -> None:
+    if user.get("plan") not in ADVISER_PLANS:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "plan_required",
+                "current_plan": user.get("plan"),
+                "required_plans": list(ADVISER_PLANS),
+                "redirect": "/pricing",
+            },
+        )
+
+
+@api.get("/adviser/summary")
+async def adviser_summary(user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    rows = await db.adviser_clients.find({"adviser_id": user_id}, {"_id": 0}).to_list(500)
+    total = len(rows)
+    active = sum(1 for r in rows if r.get("status") in ("active", "linked"))
+    invited = sum(1 for r in rows if r.get("status") == "invited")
+    return {
+        "plan": user.get("plan"),
+        "adviser_name": user.get("name"),
+        "max_clients": ADVISER_CLIENT_CAP,
+        "clients_total": total,
+        "clients_active": active,
+        "clients_invited": invited,
+        "seats_remaining": max(0, ADVISER_CLIENT_CAP - total),
+    }
+
+
+@api.get("/adviser/clients")
+async def adviser_clients(user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    rows = await db.adviser_clients.find({"adviser_id": user_id}, {"_id": 0, "invite_token": 0}).sort("created_at", -1).to_list(500)
+    return rows
+
+
+class _NewClient(BaseModel):
+    client_name: str = Field(min_length=1, max_length=120)
+    client_email: str = Field(min_length=3, max_length=320)
+    notes: Optional[str] = Field(default="", max_length=500)
+
+
+@api.post("/adviser/clients")
+async def adviser_clients_create(payload: _NewClient, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    email = payload.client_email.strip().lower()
+    if "@" not in email:
+        raise HTTPException(status_code=422, detail="Enter a valid email address.")
+    count = await db.adviser_clients.count_documents({"adviser_id": user_id})
+    if count >= ADVISER_CLIENT_CAP:
+        raise HTTPException(status_code=403, detail={"error": "client_cap_reached", "max": ADVISER_CLIENT_CAP})
+    existing = await db.adviser_clients.find_one({"adviser_id": user_id, "client_email": email})
+    if existing:
+        raise HTTPException(status_code=409, detail="That client is already in your roster.")
+    invite_token = _secrets.token_urlsafe(32)
+    doc = {
+        "id": new_id(),
+        "adviser_id": user_id,
+        "adviser_name": user.get("name"),
+        "adviser_email": user.get("email"),
+        "client_name": payload.client_name.strip(),
+        "client_email": email,
+        "notes": (payload.notes or "").strip(),
+        "status": "invited",
+        "invite_token": invite_token,
+        "linked_user_id": None,
+        "linked_household_id": None,
+        "created_at": now_iso(),
+        "invited_at": now_iso(),
+        "linked_at": None,
+    }
+    await db.adviser_clients.insert_one(doc)
+    invite_url = f"wayly://signup?plan=family&invite={invite_token}"
+    web_url = f"https://wayly.com.au/signup?plan=family&invite={invite_token}"
+    logger.info("ADVISER INVITE for %s -> %s  (mobile: %s | web: %s)", user.get("email"), email, invite_url, web_url)
+    out = {k: v for k, v in doc.items() if k not in ("_id", "invite_token")}
+    return out
+
+
+class _UpdateClient(BaseModel):
+    client_name: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+
+@api.patch("/adviser/clients/{cid}")
+async def adviser_clients_update(cid: str, payload: _UpdateClient, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not update:
+        raise HTTPException(status_code=422, detail="Nothing to update.")
+    res = await db.adviser_clients.update_one({"id": cid, "adviser_id": user_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    doc = await db.adviser_clients.find_one({"id": cid}, {"_id": 0, "invite_token": 0})
+    return doc
+
+
+@api.delete("/adviser/clients/{cid}")
+async def adviser_clients_delete(cid: str, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    res = await db.adviser_clients.delete_one({"id": cid, "adviser_id": user_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    return {"ok": True}
+
+
+@api.post("/adviser/clients/{cid}/resend-invite")
+async def adviser_resend_invite(cid: str, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    client = await db.adviser_clients.find_one({"id": cid, "adviser_id": user_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    new_token = _secrets.token_urlsafe(32)
+    await db.adviser_clients.update_one(
+        {"id": cid},
+        {"$set": {"invite_token": new_token, "invited_at": now_iso(), "status": "invited"}},
+    )
+    invite_url = f"wayly://signup?plan=family&invite={new_token}"
+    logger.info("ADVISER RE-INVITE for %s -> %s (%s)", user.get("email"), client.get("client_email"), invite_url)
+    return {"ok": True, "invited_at": now_iso()}
+
+
+@api.get("/adviser/clients/{cid}/snapshot")
+async def adviser_client_snapshot(cid: str, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    client = await db.adviser_clients.find_one({"id": cid, "adviser_id": user_id}, {"_id": 0, "invite_token": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    linked_uid = client.get("linked_user_id")
+    if not linked_uid:
+        raise HTTPException(status_code=409, detail={"error": "client_not_linked", "client": client})
+    household = await db.households.find_one({"owner_id": linked_uid}, {"_id": 0}) or {}
+    statements = await db.statements.find({"household_id": household.get("id")}, {"_id": 0}).sort("uploaded_at", -1).to_list(10)
+    recent = []
+    flagged = []
+    for s in statements:
+        gross = sum(float(li.get("total") or 0) for li in (s.get("line_items") or []))
+        recent.append({"id": s["id"], "period_label": s.get("period_label"), "uploaded_at": s.get("uploaded_at"), "gross": gross, "anomaly_count": len(s.get("anomalies") or [])})
+        for a in (s.get("anomalies") or []):
+            flagged.append({"statement_id": s["id"], "severity": a.get("severity"), "headline": a.get("headline") or a.get("title") or a.get("rule"), "detail": a.get("detail") or a.get("description")})
+    members_count = await db.users.count_documents({"household_id": household.get("id")}) if household else 0
+    return {
+        "client": client,
+        "household": household,
+        "metrics": {
+            "statements_total": len(statements),
+            "anomalies_total": sum(len(s.get("anomalies") or []) for s in statements),
+        },
+        "recent_statements": recent[:5],
+        "flagged_sample": flagged[:10],
+        "members_count": members_count,
+    }
+
+
+# Public — used by the signup deep-link to fetch invite preview.
+@api.get("/public/adviser/invite/{token}")
+async def public_adviser_invite(token: str):
+    client = await db.adviser_clients.find_one({"invite_token": token}, {"_id": 0, "invite_token": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Invite not found or already used.")
+    return {
+        "adviser_name": client.get("adviser_name"),
+        "client_name": client.get("client_name"),
+        "client_email": client.get("client_email"),
+        "notes": client.get("notes"),
+    }
+
+
+# ─────────────────────────── Document Vault (iter29) ───────────────────────────
+DOC_MAX_BYTES = 10 * 1024 * 1024          # 10 MB per file
+DOC_VAULT_MAX_BYTES = 100 * 1024 * 1024   # 100 MB per household vault
+DOC_CATEGORIES = ["assessment", "statement", "care_plan", "medical", "financial", "legal", "other"]
+
+
+async def _vault_used_bytes(household_id: str) -> int:
+    pipeline = [
+        {"$match": {"household_id": household_id}},
+        {"$group": {"_id": None, "total": {"$sum": "$size_bytes"}}},
+    ]
+    rows = await db.documents.aggregate(pipeline).to_list(1)
+    return int(rows[0]["total"]) if rows else 0
+
+
+@api.get("/documents")
+async def documents_list(as_client_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    household_id: Optional[str] = None
+    scope = "own"
+    # Adviser read-only access via ?as_client_id=<roster_id>
+    if as_client_id:
+        if user.get("plan") not in ADVISER_PLANS:
+            raise HTTPException(status_code=403, detail="Adviser plan required.")
+        client = await db.adviser_clients.find_one({"id": as_client_id, "adviser_id": user_id})
+        if not client or not client.get("linked_household_id"):
+            raise HTTPException(status_code=409, detail={"error": "client_not_linked"})
+        household_id = client["linked_household_id"]
+        scope = "adviser_readonly"
+    else:
+        h = await _get_household(user_id)
+        if not h:
+            return {"documents": [], "scope": scope, "limits": {"vault_used_bytes": 0, "vault_remaining_bytes": DOC_VAULT_MAX_BYTES, "max_file_bytes": DOC_MAX_BYTES, "max_vault_bytes": DOC_VAULT_MAX_BYTES}, "categories": DOC_CATEGORIES}
+        household_id = h["id"]
+    docs = await db.documents.find({"household_id": household_id}, {"_id": 0, "data": 0}).sort("uploaded_at", -1).to_list(500)
+    used = await _vault_used_bytes(household_id)
+    return {
+        "documents": docs,
+        "scope": scope,
+        "limits": {
+            "vault_used_bytes": used,
+            "vault_remaining_bytes": max(0, DOC_VAULT_MAX_BYTES - used),
+            "max_file_bytes": DOC_MAX_BYTES,
+            "max_vault_bytes": DOC_VAULT_MAX_BYTES,
+        },
+        "categories": DOC_CATEGORIES,
+    }
+
+
+@api.post("/documents")
+async def documents_upload(
+    file: UploadFile = File(...),
+    category: str = "other",
+    title: str = "",
+    notes: str = "",
+    user_id: str = Depends(get_current_user_id),
+):
+    h = await _require_household(user_id)
+    if category not in DOC_CATEGORIES:
+        raise HTTPException(status_code=422, detail=f"Category must be one of: {', '.join(DOC_CATEGORIES)}")
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file.")
+    if len(raw) > DOC_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"File exceeds {DOC_MAX_BYTES // 1024 // 1024}MB per-file limit.")
+    used = await _vault_used_bytes(h["id"])
+    if used + len(raw) > DOC_VAULT_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"Vault would exceed {DOC_VAULT_MAX_BYTES // 1024 // 1024}MB total. Delete older files first.")
+    doc = {
+        "id": new_id(),
+        "household_id": h["id"],
+        "uploader_id": user_id,
+        "filename": file.filename or "upload",
+        "content_type": file.content_type or "application/octet-stream",
+        "size_bytes": len(raw),
+        "category": category,
+        "title": (title or file.filename or "Untitled").strip()[:120],
+        "notes": (notes or "").strip()[:500],
+        "data": base64.b64encode(raw).decode("ascii"),
+        "uploaded_at": now_iso(),
+    }
+    await db.documents.insert_one(doc)
+    out = {k: v for k, v in doc.items() if k not in ("data",)}
+    return out
+
+
+@api.get("/documents/{doc_id}")
+async def documents_detail(doc_id: str, as_client_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0, "data": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    await _doc_authorize(doc, user_id, as_client_id)
+    return doc
+
+
+@api.get("/documents/{doc_id}/download")
+async def documents_download(doc_id: str, as_client_id: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    doc = await db.documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    await _doc_authorize(doc, user_id, as_client_id)
+    from fastapi.responses import Response
+    raw = base64.b64decode(doc.get("data") or "")
+    return Response(
+        content=raw,
+        media_type=doc.get("content_type") or "application/octet-stream",
+        headers={"Content-Disposition": f'inline; filename="{doc.get("filename", "download")}"'},
+    )
+
+
+class _DocPatch(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@api.patch("/documents/{doc_id}")
+async def documents_patch(doc_id: str, payload: _DocPatch, user_id: str = Depends(get_current_user_id)):
+    doc = await db.documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    await _doc_authorize(doc, user_id, None)
+    update: Dict[str, str] = {}
+    if payload.title is not None:
+        update["title"] = payload.title.strip()[:120]
+    if payload.category is not None:
+        if payload.category not in DOC_CATEGORIES:
+            raise HTTPException(status_code=422, detail="Invalid category.")
+        update["category"] = payload.category
+    if payload.notes is not None:
+        update["notes"] = payload.notes.strip()[:500]
+    if not update:
+        raise HTTPException(status_code=422, detail="Nothing to update.")
+    await db.documents.update_one({"id": doc_id}, {"$set": update})
+    out = await db.documents.find_one({"id": doc_id}, {"_id": 0, "data": 0})
+    return out
+
+
+@api.delete("/documents/{doc_id}")
+async def documents_delete(doc_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    await _doc_authorize(doc, user_id, None)
+    await db.documents.delete_one({"id": doc_id})
+    return {"ok": True}
+
+
+@api.post("/documents/{doc_id}/send-to-decoder")
+async def documents_send_to_decoder(doc_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    await _doc_authorize(doc, user_id, None)
+    if doc.get("category") != "statement":
+        raise HTTPException(status_code=400, detail="Only documents categorised 'statement' can be decoded.")
+    raw = base64.b64decode(doc.get("data") or "")
+    from document_extract import extract_document
+    try:
+        text, _im, _pc, _pw = await extract_document(doc.get("filename") or "doc", raw)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read document: {e}")
+    if not (text or "").strip():
+        raise HTTPException(status_code=400, detail="No readable text. Try a clearer file.")
+    # Reuse the authenticated upload pipeline for the actual decode
+    h = await _require_household(user_id)
+    user = await _get_user(user_id)
+    job_id = _submit_upload_job(text, doc.get("filename") or "vault-doc", h["id"], user_id, user.get("name", ""), len(raw))
+    return {"job_id": job_id, "status": "pending"}
+
+
+async def _doc_authorize(doc: dict, user_id: str, as_client_id: Optional[str]) -> None:
+    """A document is readable if it's in the user's own household OR via a linked adviser client."""
+    user = await _get_user(user_id)
+    if as_client_id:
+        if user.get("plan") not in ADVISER_PLANS:
+            raise HTTPException(status_code=403, detail="Adviser plan required.")
+        client = await db.adviser_clients.find_one({"id": as_client_id, "adviser_id": user_id})
+        if not client or client.get("linked_household_id") != doc.get("household_id"):
+            raise HTTPException(status_code=403, detail="Not authorised for this document.")
+        return
+    h = await _get_household(user_id)
+    if not h or h.get("id") != doc.get("household_id"):
+        raise HTTPException(status_code=403, detail="Not authorised for this document.")
+
+
 app.include_router(api)
 
 app.add_middleware(
