@@ -9,6 +9,7 @@ import { TrialCountdownBanner } from '../../src/components/AITools';
 
 type Tool = {
   key: string;
+  route?: string; // optional file slug if different from key
   title: string;
   sub: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -28,6 +29,7 @@ const TOOLS: Tool[] = [
   },
   {
     key: 'budget-calculator',
+    route: 'budget-calc',
     title: 'Budget Calculator',
     sub: 'Quarterly + annual budget for any classification level',
     icon: 'calculator-outline',
@@ -37,6 +39,7 @@ const TOOLS: Tool[] = [
   },
   {
     key: 'provider-price-checker',
+    route: 'price-checker',
     title: 'Provider Price Checker',
     sub: "Is the rate fair? Compare to network median and 1 Jul 2026 cap",
     icon: 'pricetag-outline',
@@ -46,6 +49,7 @@ const TOOLS: Tool[] = [
   },
   {
     key: 'classification-self-check',
+    route: 'classification-check',
     title: 'Classification Self-Check',
     sub: 'Quick check to see if your classification level still fits',
     icon: 'help-circle-outline',
@@ -110,7 +114,7 @@ export default function ToolsIndex() {
           <TouchableOpacity
             key={t.key}
             style={styles.card}
-            onPress={() => router.push(`/tools/${t.key}` as any)}
+            onPress={() => router.push(`/tools/${t.route || t.key}` as any)}
             testID={`tool-${t.key}`}
           >
             <View style={[styles.iconWrap, { backgroundColor: `${t.color}15` }]}>

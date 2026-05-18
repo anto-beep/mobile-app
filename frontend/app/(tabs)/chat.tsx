@@ -10,9 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  AppState,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 
@@ -25,34 +28,118 @@ const STARTER_PROMPTS = [
   "What's a clinical visit cost typically?",
 ];
 
+// 5 minutes inactivity counts as a "new session" for the resume prompt.
+const SESSION_GAP_MS = 5 * 60 * 1000;
+const LAST_ACTIVE_KEY = 'wayly:chat:last_active';
+const RESUME_DISMISSED_KEY = 'wayly:chat:resume_dismissed_at';
+
 export default function Chat() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showResume, setShowResume] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const lastActiveRef = useRef<number>(Date.now());
+
+  // Mark last-active timestamp every time the user touches the chat.
+  const touch = async () => {
+    const now = Date.now();
+    lastActiveRef.current = now;
+    try { await AsyncStorage.setItem(LAST_ACTIVE_KEY, String(now)); } catch {}
+  };
 
   useEffect(() => {
     (async () => {
+      let prior: Turn[] = [];
       try {
         const { data } = await api.get<Turn[]>('/chat/history');
-        setTurns(data || []);
+        prior = data || [];
       } catch {
-        setTurns([]);
-      } finally {
-        setLoading(false);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);
+        prior = [];
       }
+      setTurns(prior);
+
+      // Decide whether to show the resume prompt.
+      // Show it if: (a) we have prior turns AND (b) the user has been away long enough.
+      if (prior.length > 0) {
+        try {
+          const lastStr = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
+          const dismissedStr = await AsyncStorage.getItem(RESUME_DISMISSED_KEY);
+          const last = lastStr ? parseInt(lastStr, 10) : 0;
+          const dismissed = dismissedStr ? parseInt(dismissedStr, 10) : 0;
+          const now = Date.now();
+          const beenAway = !last || (now - last) > SESSION_GAP_MS;
+          // Only show the prompt if user hasn't dismissed it within this session window
+          const alreadyDecided = dismissed > last;
+          if (beenAway && !alreadyDecided) {
+            setShowResume(true);
+          }
+        } catch {
+          // No storage access — default to showing the prompt if there's history
+          setShowResume(true);
+        }
+      }
+
+      setLoading(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);
     })();
   }, []);
+
+  // Track app background → mark session boundary.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background' || state === 'inactive') {
+        AsyncStorage.setItem(LAST_ACTIVE_KEY, String(Date.now())).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const continueChat = async () => {
+    setShowResume(false);
+    await AsyncStorage.setItem(RESUME_DISMISSED_KEY, String(Date.now())).catch(() => {});
+    await touch();
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);
+  };
+
+  const startFresh = async () => {
+    const doClear = async () => {
+      try {
+        await api.delete('/chat/history').catch(() => {});
+      } catch {}
+      sessionIdRef.current = null;
+      setTurns([]);
+      setShowResume(false);
+      await AsyncStorage.setItem(RESUME_DISMISSED_KEY, String(Date.now())).catch(() => {});
+      await touch();
+    };
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      if (typeof window !== 'undefined' && window.confirm("Start a fresh chat? Your previous messages will be cleared.")) {
+        await doClear();
+      }
+    } else {
+      Alert.alert(
+        'Start a fresh chat?',
+        'Your previous messages will be cleared.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Start fresh', style: 'destructive', onPress: doClear },
+        ]
+      );
+    }
+  };
 
   const send = async (text?: string) => {
     const message = (text ?? draft).trim();
     if (!message || sending) return;
     setDraft('');
     setSending(true);
+    setShowResume(false); // first new message implicitly = "continue"
     setTurns((prev) => [...prev, { role: 'user', content: message }]);
+    await touch();
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     try {
       const { data } = await api.post('/chat', {
@@ -68,6 +155,7 @@ export default function Chat() {
       ]);
     } finally {
       setSending(false);
+      await touch();
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     }
   };
@@ -75,9 +163,17 @@ export default function Chat() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.overline}>Help</Text>
-        <Text style={styles.h1}>Ask Wayly</Text>
-        <Text style={styles.sub}>I know about your statements, your budget, and the Support at Home rules.</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.overline}>Help</Text>
+          <Text style={styles.h1}>Ask Wayly</Text>
+          <Text style={styles.sub}>I know about your statements, your budget, and the Support at Home rules.</Text>
+        </View>
+        {turns.length > 0 ? (
+          <TouchableOpacity onPress={startFresh} style={styles.newBtn} testID="chat-new-btn" accessibilityRole="button" accessibilityLabel="Start new chat">
+            <Ionicons name="add" size={16} color={Colors.brandPrimary} />
+            <Text style={styles.newBtnText}>New</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <KeyboardAvoidingView
@@ -97,6 +193,25 @@ export default function Chat() {
             </View>
           ) : (
             <>
+              {showResume && turns.length > 0 ? (
+                <View style={styles.resumeCard} testID="chat-resume-card">
+                  <View style={styles.resumeIcon}>
+                    <Ionicons name="chatbubbles" size={18} color={Colors.brandPrimary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.resumeTitle}>Welcome back</Text>
+                    <Text style={styles.resumeBody}>You have {turns.length} message{turns.length === 1 ? '' : 's'} from last time. Pick up where you left off, or start a fresh chat.</Text>
+                    <View style={styles.resumeRow}>
+                      <TouchableOpacity onPress={continueChat} style={[styles.resumeBtn, styles.resumeBtnPrimary]} testID="chat-resume-continue">
+                        <Text style={styles.resumeBtnTextPrimary}>Continue</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={startFresh} style={[styles.resumeBtn, styles.resumeBtnGhost]} testID="chat-resume-fresh">
+                        <Text style={styles.resumeBtnTextGhost}>Start fresh</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
               {turns.length === 0 && (
                 <View testID="chat-starter-prompts">
                   <Text style={styles.starterTitle}>Start with…</Text>
@@ -168,7 +283,19 @@ export default function Chat() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
+  header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 12 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, minHeight: 36 },
+  newBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
+  resumeCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: Spacing.md, marginBottom: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(212, 162, 78, 0.08)', borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.35)' },
+  resumeIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(31, 58, 95, 0.08)' },
+  resumeTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
+  resumeBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 17 },
+  resumeRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  resumeBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
+  resumeBtnPrimary: { backgroundColor: Colors.brandPrimary },
+  resumeBtnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.border },
+  resumeBtnTextPrimary: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.cream },
+  resumeBtnTextGhost: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
   h1: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
   sub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4 },

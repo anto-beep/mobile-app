@@ -497,6 +497,13 @@ async def chat_history(user_id: str = Depends(get_current_user_id)):
     return await db.chat_turns.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", 1).to_list(500)
 
 
+@api.delete("/chat/history")
+async def chat_history_clear(user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    result = await db.chat_turns.delete_many({"household_id": h["id"]})
+    return {"ok": True, "deleted": result.deleted_count}
+
+
 # ─────────────────── family thread ───────────────────
 class FamilyMessageCreate(BaseModel):
     body: str = Field(min_length=1, max_length=2000)

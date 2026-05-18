@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import BackHeader from '../../src/components/BackHeader';
 
 type NotifItem = {
   id: string;
@@ -59,6 +60,7 @@ export default function Notifications() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackHeader title="Notifications" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={

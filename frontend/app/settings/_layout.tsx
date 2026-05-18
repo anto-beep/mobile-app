@@ -12,7 +12,7 @@ export default function SettingsLayout() {
         contentStyle: { backgroundColor: Colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Settings' }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="plan" options={{ title: 'Plan & Billing' }} />
       <Stack.Screen name="members" options={{ title: 'Family members' }} />
       <Stack.Screen name="security" options={{ title: 'Security' }} />

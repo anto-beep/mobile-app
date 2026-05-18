@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { useAuth } from '../../src/context/AuthContext';
+import BackHeader from '../../src/components/BackHeader';
 
 const ITEMS = [
   {
@@ -49,7 +50,8 @@ export default function SettingsHome() {
   const { user } = useAuth();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.scroll} testID="settings-scroll">
         <View style={styles.header}>
           <Text style={styles.userName}>{user?.name || 'Your account'}</Text>

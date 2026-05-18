@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
+import BackHeader from '../../src/components/BackHeader';
 
 const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
   alert: { color: Colors.severityAlert, bg: 'rgba(160, 85, 69, 0.08)', icon: 'alert-circle' },
@@ -46,7 +47,8 @@ export default function StatementDetail() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <BackHeader title="Statement" />
         <View style={styles.loadingFill}>
           <ActivityIndicator size="large" color={Colors.brandPrimary} />
         </View>
@@ -56,7 +58,8 @@ export default function StatementDetail() {
 
   if (!stmt) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <BackHeader title="Statement" />
         <View style={styles.loadingFill}>
           <Text style={styles.emptyText}>Statement not found.</Text>
         </View>
@@ -71,7 +74,8 @@ export default function StatementDetail() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Statement" />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.overline}>Statement</Text>
         <Text style={styles.h1}>{stmt.period_label || stmt.filename}</Text>
