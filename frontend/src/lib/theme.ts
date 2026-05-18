@@ -78,3 +78,20 @@ export const formatAUD2 = (n: number | null | undefined): string => {
     maximumFractionDigits: 2,
   }).format(n);
 };
+
+// Compact AUD for chart labels: $1.4k / $12.3k / $843.
+export const formatShort = (n: number | null | undefined): string => {
+  const v = Number(n || 0);
+  if (v >= 1000) return `$${(Math.round(v / 100) / 10).toFixed(1)}k`;
+  return `$${Math.round(v)}`;
+};
+
+// Best-effort month label from a period_label ("April 2026" → "Apr") or ISO date.
+export const shortPeriod = (s: string | null | undefined): string => {
+  if (!s) return '—';
+  const m = String(s).match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+  if (m) return m[0][0].toUpperCase() + m[0].slice(1, 3).toLowerCase();
+  const d = new Date(String(s));
+  if (!isNaN(d.getTime())) return d.toLocaleString('en-AU', { month: 'short' });
+  return String(s).slice(0, 6);
+};

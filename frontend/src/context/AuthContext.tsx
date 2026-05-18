@@ -77,6 +77,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    // Best-effort backend logout (clears push devices, audit log). Don't block the user.
+    try {
+      await api.post('/auth/logout', {});
+    } catch {
+      // ignore — token may already be invalid
+    }
     await AsyncStorage.removeItem(TOKEN_KEY);
     setUser(null);
   };

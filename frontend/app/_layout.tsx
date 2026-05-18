@@ -20,6 +20,7 @@ import { AccessibilityProvider } from '../src/context/AccessibilityContext';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
+import { DeepLinkHandler } from '../src/components/DeepLinkHandler';
 import { Colors } from '../src/lib/theme';
 
 function RootStack() {
@@ -31,7 +32,8 @@ function RootStack() {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inAdminGroup = segments[0] === 'admin-auth' || segments[0] === 'admin-app';
-    if (inAdminGroup) return; // admin flow is independent of the consumer user auth
+    const isPublicRoute = segments[0] === 'reset-password';
+    if (inAdminGroup || isPublicRoute) return; // these routes manage their own auth
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (user && inAuthGroup) {
@@ -54,8 +56,10 @@ function RootStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="admin-auth" />
         <Stack.Screen name="admin-app" />
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
       </Stack>
+      <DeepLinkHandler />
       <AccessibilityWidget />
     </>
   );

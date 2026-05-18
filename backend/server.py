@@ -17,11 +17,12 @@ import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
+import re
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, Request, UploadFile
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.cors import CORSMiddleware
 
 from auth import (
@@ -158,6 +159,149 @@ async def login(payload: LoginRequest):
 async def me(user_id: str = Depends(get_current_user_id)):
     u = await _get_user(user_id)
     return _user_public(u)
+
+
+# ─────────────────── password reset / logout / account delete ───────────────────
+class _ForgotRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class _ResetRequest(BaseModel):
+    token: str = Field(min_length=20)
+    password: str = Field(min_length=8)
+
+
+RESET_TOKEN_TTL_S = 60 * 60  # 1 hour
+RESET_TOKENS: Dict[str, dict] = {}  # token -> {user_id, expires_at}  (in-memory; MVP)
+
+
+def _validate_password_strength(password: str, name: str = "", email: str = "") -> None:
+    """Mirrors the rules described in the handover doc:
+    8+ chars, upper, lower, digit, symbol; must not contain user's name/email."""
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(status_code=400, detail="Password must contain a lowercase letter.")
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(status_code=400, detail="Password must contain an uppercase letter.")
+    if not re.search(r"\d", password):
+        raise HTTPException(status_code=400, detail="Password must contain a number.")
+    if not re.search(r"[^A-Za-z0-9]", password):
+        raise HTTPException(status_code=400, detail="Password must contain a symbol.")
+    lower = password.lower()
+    # Split the name on whitespace and reject any token (3+ chars) that appears in the password.
+    for token in (name or "").lower().split():
+        if len(token) >= 3 and token in lower:
+            raise HTTPException(status_code=400, detail="Password must not contain your name.")
+    if email:
+        local = email.split("@", 1)[0].lower()
+        if local and len(local) >= 3 and local in lower:
+            raise HTTPException(status_code=400, detail="Password must not contain your email.")
+
+
+@api.post("/auth/forgot")
+async def auth_forgot(payload: _ForgotRequest):
+    """Enumeration-safe — always returns {ok: true} regardless of whether email exists."""
+    import time
+    user = await db.users.find_one({"email": payload.email.lower()}, {"_id": 0})
+    if user:
+        token = _secrets.token_urlsafe(32)
+        RESET_TOKENS[token] = {"user_id": user["id"], "expires_at": time.time() + RESET_TOKEN_TTL_S}
+        # In production we'd send via Resend. MVP: log the link so devs can test.
+        reset_url = f"wayly://reset-password?token={token}"
+        web_url = f"https://wayly.com.au/reset-password?token={token}"
+        logger.info(
+            "PASSWORD RESET REQUESTED for %s — mobile: %s — web: %s",
+            user["email"], reset_url, web_url,
+        )
+        # Store an audit notification on the user record (optional but helpful)
+        await db.password_reset_log.insert_one({
+            "id": new_id(),
+            "user_id": user["id"],
+            "email": user["email"],
+            "requested_at": now_iso(),
+        })
+    return {"ok": True}
+
+
+@api.post("/auth/reset")
+async def auth_reset(payload: _ResetRequest):
+    import time
+    entry = RESET_TOKENS.get(payload.token)
+    if not entry or entry["expires_at"] < time.time():
+        if entry:
+            RESET_TOKENS.pop(payload.token, None)
+        raise HTTPException(status_code=400, detail="This reset link has expired. Request a new one.")
+    user = await db.users.find_one({"id": entry["user_id"]}, {"_id": 0})
+    if not user:
+        RESET_TOKENS.pop(payload.token, None)
+        raise HTTPException(status_code=400, detail="Account not found.")
+    _validate_password_strength(payload.password, user.get("name", ""), user.get("email", ""))
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": hash_password(payload.password), "password_changed_at": now_iso()}},
+    )
+    RESET_TOKENS.pop(payload.token, None)
+    return {"ok": True}
+
+
+@api.post("/auth/logout")
+async def auth_logout(user_id: str = Depends(get_current_user_id)):
+    """Stateless JWT — the client clears the token. We log it for audit + push token cleanup."""
+    # Remove this user's push device tokens so they don't keep getting notifications.
+    await db.push_devices.delete_many({"user_id": user_id})
+    logger.info("User %s signed out", user_id)
+    return {"ok": True}
+
+
+@api.delete("/auth/account")
+async def auth_delete_account(user_id: str = Depends(get_current_user_id)):
+    """Full account deletion. Removes the user + every collection scoped to their household."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found")
+    household_id = user.get("household_id")
+    deleted_counts = {}
+    # Household-scoped collections
+    if household_id:
+        for coll in (
+            "households",
+            "statements",
+            "family_thread",
+            "family_messages",
+            "documents",
+            "visits",
+            "budget_alerts",
+            "provider_switch",
+            "athm",
+            "correspondence",
+            "referrals",
+            "chat_turns",
+        ):
+            try:
+                res = await db[coll].delete_many(
+                    {"household_id": household_id} if coll != "households" else {"id": household_id}
+                )
+                deleted_counts[coll] = res.deleted_count
+            except Exception as e:
+                logger.warning("Could not clean %s: %s", coll, e)
+    # User-scoped collections
+    for coll, q in (
+        ("notifications", {"user_id": user_id}),
+        ("push_devices", {"user_id": user_id}),
+        ("provider_ratings", {"user_id": user_id}),
+        ("wellbeing_logs", {"user_id": user_id}),
+    ):
+        try:
+            res = await db[coll].delete_many(q)
+            deleted_counts[coll] = res.deleted_count
+        except Exception:
+            pass
+    # The user record itself
+    await db.users.delete_one({"id": user_id})
+    deleted_counts["users"] = 1
+    logger.info("Account deleted: %s — counts: %s", user.get("email"), deleted_counts)
+    return {"ok": True, "deleted": deleted_counts}
 
 
 # ─────────────────── household ───────────────────
