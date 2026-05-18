@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, Request, UploadFile
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 from starlette.middleware.cors import CORSMiddleware
@@ -299,6 +299,181 @@ async def get_upload_job(job_id: str, user_id: str = Depends(get_current_user_id
     out = {"status": job["status"], "phase": job.get("phase", job["status"])}
     if job["status"] == "done":
         out["statement_id"] = job.get("statement_id")
+    elif job["status"] == "error":
+        out["error"] = job.get("error", "decode failed")
+    return out
+
+
+# ─────────────────── public statement decoder (free tier) ───────────────────
+# In-memory job + rate-limit stores. Acceptable for MVP; replace with Redis later.
+PUBLIC_DECODE_JOBS: Dict[str, dict] = {}
+PUBLIC_DECODE_USAGE: Dict[str, List[float]] = {}  # ip -> list of unix timestamps (last 24h)
+PUBLIC_DECODE_DAILY_LIMIT = 1
+PUBLIC_DECODE_WINDOW_S = 24 * 60 * 60
+
+
+def _client_key(request: Request, user_id: Optional[str]) -> str:
+    """Authenticated users bypass IP-keyed limit by using their user_id; everyone else is per-IP."""
+    if user_id:
+        return f"user:{user_id}"
+    # Forwarded-for first (k8s ingress) then client host
+    fwd = request.headers.get("x-forwarded-for") or ""
+    if fwd:
+        return f"ip:{fwd.split(',')[0].strip()}"
+    return f"ip:{(request.client.host if request.client else 'unknown')}"
+
+
+def _check_public_decode_quota(key: str) -> Optional[float]:
+    """Returns None if allowed; otherwise returns the unix timestamp when the next slot opens."""
+    import time
+    now = time.time()
+    bucket = [t for t in PUBLIC_DECODE_USAGE.get(key, []) if now - t < PUBLIC_DECODE_WINDOW_S]
+    PUBLIC_DECODE_USAGE[key] = bucket
+    # Authenticated users -> unlimited
+    if key.startswith("user:"):
+        return None
+    if len(bucket) >= PUBLIC_DECODE_DAILY_LIMIT:
+        oldest = min(bucket)
+        return oldest + PUBLIC_DECODE_WINDOW_S
+    return None
+
+
+def _record_public_decode(key: str) -> None:
+    import time
+    PUBLIC_DECODE_USAGE.setdefault(key, []).append(time.time())
+
+
+def _submit_public_decode_job(text: str) -> str:
+    job_id = new_id()
+    PUBLIC_DECODE_JOBS[job_id] = {"status": "pending", "created_at": now_iso()}
+
+    async def _run():
+        try:
+            from agents import parse_statement
+            data = await parse_statement(text)
+            # Normalise to a stable shape the frontend expects.
+            line_items = []
+            for li in data.get("line_items", []) or []:
+                try:
+                    line_items.append(StatementLineItem(**li).model_dump())
+                except Exception:
+                    # Best-effort: keep raw fields the FE renders.
+                    line_items.append({
+                        "service_name": li.get("service_name") or li.get("service") or "Service",
+                        "total": float(li.get("total") or 0),
+                    })
+            anomalies = []
+            for an in data.get("anomalies", []) or []:
+                try:
+                    anomalies.append(Anomaly(**an).model_dump())
+                except Exception:
+                    anomalies.append({
+                        "severity": an.get("severity") or "info",
+                        "title": an.get("title") or "Heads up",
+                        "detail": an.get("detail") or an.get("description") or "",
+                    })
+            PUBLIC_DECODE_JOBS[job_id].update({
+                "status": "done",
+                "result": {
+                    "period_label": data.get("period_label"),
+                    "summary": data.get("summary"),
+                    "line_items": line_items,
+                    "anomalies": anomalies,
+                },
+            })
+        except Exception as e:
+            logger.exception("Public decode job failed")
+            PUBLIC_DECODE_JOBS[job_id].update({"status": "error", "error": str(e) or "decode failed"})
+
+    asyncio.create_task(_run())
+    return job_id
+
+
+class _DecodeText(BaseModel):
+    text: str = Field(min_length=1, max_length=200_000)
+
+
+async def _maybe_user_id(request: Request) -> Optional[str]:
+    """Optional auth — returns user_id if a valid bearer token is present, else None."""
+    auth = request.headers.get("authorization") or ""
+    if not auth.lower().startswith("bearer "):
+        return None
+    token = auth.split(" ", 1)[1].strip()
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+        if payload.get("kind") and payload["kind"] != "user":
+            return None
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
+@api.post("/public/decode-statement-text")
+async def public_decode_statement_text(request: Request, payload: _DecodeText):
+    user_id = await _maybe_user_id(request)
+    key = _client_key(request, user_id)
+    retry_at = _check_public_decode_quota(key)
+    if retry_at is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Free decoder limit reached — 1 per 24 hours. Upgrade for unlimited.",
+            headers={"Retry-After": str(int(retry_at - __import__('time').time()))},
+        )
+    if not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Paste the statement text first.")
+    _record_public_decode(key)
+    job_id = _submit_public_decode_job(payload.text)
+    return {"job_id": job_id, "status": "pending"}
+
+
+@api.post("/public/decode-statement")
+async def public_decode_statement(request: Request, file: UploadFile = File(...)):
+    user_id = await _maybe_user_id(request)
+    key = _client_key(request, user_id)
+    retry_at = _check_public_decode_quota(key)
+    if retry_at is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Free decoder limit reached — 1 per 24 hours. Upgrade for unlimited.",
+            headers={"Retry-After": str(int(retry_at - __import__('time').time()))},
+        )
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file")
+    from document_extract import (
+        CorruptFileError,
+        FileTooLargeError,
+        PasswordProtectedError,
+        UnsupportedFormatError,
+        extract_document,
+    )
+    try:
+        text, _input_method, _page_count, _parse_warnings = await extract_document(file.filename or "", raw)
+    except UnsupportedFormatError as e:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {e}")
+    except FileTooLargeError as e:
+        raise HTTPException(status_code=413, detail=f"File too large: {e}")
+    except PasswordProtectedError:
+        raise HTTPException(status_code=400, detail="This PDF is password-protected.")
+    except CorruptFileError as e:
+        raise HTTPException(status_code=400, detail=f"Could not read file: {e}")
+    if not (text or "").strip():
+        raise HTTPException(status_code=400, detail="Could not extract text. Try a clearer photo.")
+    _record_public_decode(key)
+    job_id = _submit_public_decode_job(text)
+    return {"job_id": job_id, "status": "pending"}
+
+
+@api.get("/public/decode-job/{job_id}")
+async def public_decode_job(job_id: str):
+    job = PUBLIC_DECODE_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found or expired")
+    out = {"status": job["status"]}
+    if job["status"] == "done":
+        out["result"] = job.get("result")
     elif job["status"] == "error":
         out["error"] = job.get("error", "decode failed")
     return out
