@@ -1,11 +1,12 @@
 // Adviser — client snapshot detail screen.
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api, extractErrorMessage } from '../../../src/lib/api';
 import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../../src/lib/theme';
 import { toast } from '../../../src/components/Toast';
+import { downloadReviewPack } from '../../../src/lib/reviewPack';
 
 type Snapshot = {
   client: { client_name: string; client_email: string; status: string; notes?: string };
@@ -21,7 +22,23 @@ export default function ClientSnapshot() {
   const router = useRouter();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [notLinked, setNotLinked] = useState<null | { client_name: string; client_email: string }>(null);
+
+  const onDownload = useCallback(async () => {
+    if (!cid) return;
+    setDownloading(true);
+    try {
+      const res = await downloadReviewPack(String(cid), snap?.client?.client_name);
+      if (!res.ok) {
+        toast.error(res.error || "Couldn't download review pack");
+      } else {
+        toast.success(Platform.OS === 'web' ? 'PDF downloaded.' : 'Review pack ready.');
+      }
+    } finally {
+      setDownloading(false);
+    }
+  }, [cid, snap?.client?.client_name]);
 
   const load = useCallback(async () => {
     if (!cid) return;
@@ -126,6 +143,18 @@ export default function ClientSnapshot() {
       ) : null}
 
       <Text style={styles.disclaimer}>Read-only view. AI may be incorrect — verify before acting.</Text>
+
+      <TouchableOpacity onPress={onDownload} disabled={downloading} style={[styles.pdfCta, downloading && { opacity: 0.6 }]} testID="adviser-download-pdf">
+        {downloading ? (
+          <ActivityIndicator color={Colors.cream} />
+        ) : (
+          <>
+            <Ionicons name="download-outline" size={16} color={Colors.cream} />
+            <Text style={styles.pdfCtaText}>Download review pack (PDF)</Text>
+          </>
+        )}
+      </TouchableOpacity>
+
       <View style={{ height: 30 }} />
     </ScrollView>
   );
@@ -158,6 +187,8 @@ const styles = StyleSheet.create({
   emptyMini: { padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center' },
   emptyMiniText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted },
   disclaimer: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, fontStyle: 'italic', marginTop: Spacing.lg, textAlign: 'center' },
+  pdfCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  pdfCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
   pendingCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.35)', alignItems: 'center' },
   pendingIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212, 162, 78, 0.15)', marginBottom: Spacing.md },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 44, marginTop: Spacing.lg },

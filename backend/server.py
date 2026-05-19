@@ -2456,6 +2456,305 @@ async def _doc_authorize(doc: dict, user_id: str, as_client_id: Optional[str]) -
         raise HTTPException(status_code=403, detail="Not authorised for this document.")
 
 
+# ─────────────────────────── Visits / Calendar (iter30 - Feature 4) ───────────────────────────
+VISIT_KINDS = ["appointment", "home_visit", "telehealth", "assessment", "other"]
+
+
+class _VisitIn(BaseModel):
+    title: str = Field(min_length=1, max_length=140)
+    starts_at: str = Field(min_length=10)  # ISO datetime
+    duration_minutes: int = Field(ge=5, le=24 * 60, default=60)
+    location: Optional[str] = Field(default="", max_length=200)
+    provider: Optional[str] = Field(default="", max_length=120)
+    kind: str = "appointment"
+    notes: Optional[str] = Field(default="", max_length=600)
+
+
+class _VisitPatch(BaseModel):
+    title: Optional[str] = None
+    starts_at: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    location: Optional[str] = None
+    provider: Optional[str] = None
+    kind: Optional[str] = None
+    notes: Optional[str] = None
+
+
+def _validate_visit_kind(k: str) -> None:
+    if k not in VISIT_KINDS:
+        raise HTTPException(status_code=422, detail=f"kind must be one of: {', '.join(VISIT_KINDS)}")
+
+
+@api.get("/visits")
+async def visits_list(upcoming_only: bool = False, user_id: str = Depends(get_current_user_id)):
+    h = await _get_household(user_id)
+    if not h:
+        return []
+    q: Dict = {"household_id": h["id"]}
+    if upcoming_only:
+        q["starts_at"] = {"$gte": now_iso()}
+    rows = await db.visits.find(q, {"_id": 0}).sort("starts_at", 1 if upcoming_only else -1).to_list(500)
+    return rows
+
+
+@api.post("/visits")
+async def visits_create(payload: _VisitIn, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    _validate_visit_kind(payload.kind)
+    doc = {
+        "id": new_id(),
+        "household_id": h["id"],
+        "created_by": user_id,
+        "title": payload.title.strip(),
+        "starts_at": payload.starts_at,
+        "duration_minutes": int(payload.duration_minutes),
+        "location": (payload.location or "").strip(),
+        "provider": (payload.provider or "").strip(),
+        "kind": payload.kind,
+        "notes": (payload.notes or "").strip(),
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await db.visits.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+
+@api.get("/visits/{vid}")
+async def visits_detail(vid: str, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    v = await db.visits.find_one({"id": vid, "household_id": h["id"]}, {"_id": 0})
+    if not v:
+        raise HTTPException(status_code=404, detail="Visit not found.")
+    return v
+
+
+@api.patch("/visits/{vid}")
+async def visits_update(vid: str, payload: _VisitPatch, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if "kind" in update:
+        _validate_visit_kind(update["kind"])
+    if not update:
+        raise HTTPException(status_code=422, detail="Nothing to update.")
+    update["updated_at"] = now_iso()
+    res = await db.visits.update_one({"id": vid, "household_id": h["id"]}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Visit not found.")
+    v = await db.visits.find_one({"id": vid}, {"_id": 0})
+    return v
+
+
+@api.delete("/visits/{vid}")
+async def visits_delete(vid: str, user_id: str = Depends(get_current_user_id)):
+    h = await _require_household(user_id)
+    res = await db.visits.delete_one({"id": vid, "household_id": h["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Visit not found.")
+    return {"ok": True}
+
+
+# ─────────────────────────── Adviser review-pack PDF (iter27) ───────────────────────────
+@api.get("/adviser/clients/{cid}/review-pack.pdf")
+async def adviser_review_pack_pdf(cid: str, user_id: str = Depends(get_current_user_id)):
+    """Generate a Wayly-branded A4 PDF summarising a client's recent statements + anomalies."""
+    user = await _get_user(user_id)
+    _require_adviser_user(user)
+    client = await db.adviser_clients.find_one({"id": cid, "adviser_id": user_id}, {"_id": 0, "invite_token": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    linked_uid = client.get("linked_user_id")
+    household: dict = {}
+    statements: list = []
+    members_count = 0
+    if linked_uid:
+        household = await db.households.find_one({"owner_id": linked_uid}, {"_id": 0}) or {}
+        statements = await db.statements.find({"household_id": household.get("id")}, {"_id": 0}).sort("uploaded_at", -1).to_list(20)
+        members_count = await db.users.count_documents({"household_id": household.get("id")}) if household else 0
+
+    # Build PDF in-memory
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.lib import colors as rl_colors
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+        PageBreak,
+    )
+
+    NAVY = rl_colors.HexColor("#1F3A5F")
+    GOLD = rl_colors.HexColor("#D4A24E")
+    SAGE = rl_colors.HexColor("#7A9B7E")
+    TERRA = rl_colors.HexColor("#C5734D")
+    MUTED = rl_colors.HexColor("#5C6878")
+    CREAM = rl_colors.HexColor("#FAF7F2")
+    BORDER = rl_colors.HexColor("#E8E2D6")
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=18 * mm, rightMargin=18 * mm,
+        topMargin=18 * mm, bottomMargin=18 * mm,
+        title=f"Wayly review pack — {client.get('client_name','client')}",
+        author=user.get("name", "Wayly Adviser"),
+    )
+
+    base = getSampleStyleSheet()
+    h1 = ParagraphStyle("h1", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=22, textColor=NAVY, leading=26, spaceAfter=6)
+    h2 = ParagraphStyle("h2", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, textColor=NAVY, leading=16, spaceBefore=10, spaceAfter=6)
+    body = ParagraphStyle("body", parent=base["BodyText"], fontName="Helvetica", fontSize=10, textColor=rl_colors.HexColor("#1A1A1A"), leading=14)
+    muted = ParagraphStyle("muted", parent=body, textColor=MUTED, fontSize=9, leading=12)
+    overline = ParagraphStyle("overline", parent=muted, fontName="Helvetica-Bold", textColor=MUTED, fontSize=8, spaceAfter=2)
+
+    story = []
+    # Header
+    story.append(Paragraph("WAYLY  ·  ADVISER REVIEW PACK", overline))
+    story.append(Paragraph(f"{client.get('client_name','')}", h1))
+    story.append(Paragraph(f"Prepared by {user.get('name','')} ({user.get('email','')}) — {datetime.now(timezone.utc).strftime('%d %b %Y')}", muted))
+    story.append(Spacer(1, 6))
+
+    # Client + household card
+    rows = [
+        ["Client email", client.get("client_email", "")],
+        ["Status", (client.get("status") or "").capitalize()],
+        ["Participant", household.get("participant_name", "—") if household else "Not yet linked"],
+        ["Classification", (f"Level {household.get('classification')}" if household.get("classification") else "—")],
+        ["Provider", household.get("provider_name", "—") if household else "—"],
+        ["Household members", str(members_count) if linked_uid else "—"],
+    ]
+    if client.get("notes"):
+        rows.append(["Adviser notes", client.get("notes", "")])
+    tbl = Table(rows, colWidths=[45 * mm, None])
+    tbl.setStyle(TableStyle([
+        ("FONT", (0, 0), (-1, -1), "Helvetica", 9.5),
+        ("TEXTCOLOR", (0, 0), (0, -1), MUTED),
+        ("TEXTCOLOR", (1, 0), (1, -1), NAVY),
+        ("FONT", (1, 0), (1, -1), "Helvetica-Bold", 10),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.4, BORDER),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(Paragraph("Client & household", h2))
+    story.append(tbl)
+    story.append(Spacer(1, 8))
+
+    # Metrics
+    total_statements = len(statements)
+    total_anomalies = sum(len(s.get("anomalies") or []) for s in statements)
+    total_gross = sum(sum(float(li.get("total") or 0) for li in (s.get("line_items") or [])) for s in statements)
+    metrics = Table([
+        ["Statements (24 mo)", "Anomalies", "Gross billed"],
+        [str(total_statements), str(total_anomalies), f"${total_gross:,.0f}"],
+    ], colWidths=[None, None, None])
+    metrics.setStyle(TableStyle([
+        ("FONT", (0, 0), (-1, 0), "Helvetica", 8.5),
+        ("TEXTCOLOR", (0, 0), (-1, 0), MUTED),
+        ("FONT", (0, 1), (-1, 1), "Helvetica-Bold", 18),
+        ("TEXTCOLOR", (0, 1), (-1, 1), NAVY),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("LINEABOVE", (0, 0), (-1, 0), 0.4, BORDER),
+        ("LINEBELOW", (0, 1), (-1, 1), 0.4, BORDER),
+        ("TOPPADDING", (0, 0), (-1, 0), 6),
+        ("BOTTOMPADDING", (0, 1), (-1, 1), 10),
+    ]))
+    story.append(metrics)
+
+    # Recent statements table
+    story.append(Paragraph("Recent statements", h2))
+    if not statements:
+        story.append(Paragraph("No statements on file yet. Once the client uploads, future packs will include line-item summaries here.", muted))
+    else:
+        head = ["Period", "Uploaded", "Line items", "Anomalies", "Gross"]
+        data = [head]
+        for s in statements[:10]:
+            gross = sum(float(li.get("total") or 0) for li in (s.get("line_items") or []))
+            up = (s.get("uploaded_at") or "")[:10]
+            data.append([
+                s.get("period_label") or "—",
+                up,
+                str(len(s.get("line_items") or [])),
+                str(len(s.get("anomalies") or [])),
+                f"${gross:,.0f}",
+            ])
+        tbl = Table(data, colWidths=[40 * mm, 28 * mm, 22 * mm, 22 * mm, 28 * mm])
+        tbl.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), CREAM),
+            ("TEXTCOLOR", (0, 0), (-1, 0), MUTED),
+            ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 8.5),
+            ("FONT", (0, 1), (-1, -1), "Helvetica", 9.5),
+            ("TEXTCOLOR", (0, 1), (-1, -1), NAVY),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.4, BORDER),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(tbl)
+
+    # Flagged anomalies
+    story.append(Paragraph("Flagged items", h2))
+    flat: list = []
+    for s in statements[:10]:
+        for a in (s.get("anomalies") or []):
+            flat.append((s, a))
+    if not flat:
+        story.append(Paragraph("No anomalies flagged in this review window.", muted))
+    else:
+        sev_color = {
+            "alert": TERRA, "HIGH": TERRA,
+            "warning": GOLD, "MEDIUM": GOLD,
+            "info": SAGE, "LOW": SAGE,
+        }
+        for s, a in flat[:12]:
+            sev = (a.get("severity") or "info")
+            chip_color = sev_color.get(sev, MUTED)
+            t = Table([
+                [Paragraph(f"<b>{(a.get('headline') or a.get('title') or a.get('rule') or 'Heads up')}</b>", body),
+                 Paragraph(f"<font color='#5C6878' size='8'>{sev.upper()}</font>", muted)],
+                [Paragraph((a.get("detail") or a.get("description") or ""), muted), ""],
+                [Paragraph(f"<font color='#5C6878' size='8'>Statement: {s.get('period_label') or (s.get('uploaded_at') or '')[:10]}</font>", muted), ""],
+            ], colWidths=[None, 18 * mm])
+            t.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), CREAM),
+                ("LINEBEFORE", (0, 0), (0, -1), 2.4, chip_color),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("SPAN", (0, 1), (1, 1)),
+                ("SPAN", (0, 2), (1, 2)),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 4))
+
+    # Footer / disclaimer
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(
+        "<i>This document was generated by Wayly from the household's uploaded statements. "
+        "AI may be incorrect — verify before acting. Confidential — for the named adviser and client only.</i>",
+        muted,
+    ))
+
+    doc.build(story)
+    pdf_bytes = buf.getvalue()
+    from fastapi.responses import Response
+    safe_name = "".join(c for c in (client.get("client_name") or "client") if c.isalnum() or c in " -_").strip().replace(" ", "_")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="wayly-review-{safe_name}.pdf"'},
+    )
+
+
 app.include_router(api)
 
 app.add_middleware(

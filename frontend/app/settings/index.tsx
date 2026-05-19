@@ -24,6 +24,14 @@ const ITEMS = [
     route: '/documents',
   },
   {
+    key: 'visits',
+    title: 'Visits & calendar',
+    sub: 'Appointments, home visits, telehealth, assessments',
+    icon: 'calendar-outline',
+    color: Colors.streams['Everyday Living'],
+    route: '/visits',
+  },
+  {
     key: 'adviser',
     title: 'Adviser portal',
     sub: 'Manage your client roster · adviser plan',
