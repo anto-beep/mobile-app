@@ -227,6 +227,32 @@ frontend:
         - working: true
           agent: "main"
           comment: "Full TOTP 2FA flow validated end-to-end via curl + pyotp. Backend (MOCKED stubs): added POST /admin/auth/login (returns requires_2fa_setup with QR data URI + secret on first login, requires_2fa with temp_token on subsequent), POST /admin/auth/2fa/enable (verifies code, generates 10 single-use backup codes), POST /admin/auth/2fa/verify (accepts 6-digit TOTP OR 8-char backup code, consumes backup codes), POST /admin/auth/logout, GET /admin/auth/me. Backend uses pyotp for TOTP + qrcode for QR data URI generation. Admin JWTs are marked kind='admin' (vs admin_temp / admin_setup) and verified separately from consumer user JWTs. Frontend: AdminAuthProvider with isolated expo-secure-store (Keychain/Keystore on native, AsyncStorage fallback on web), 30-min idle auto-logout via AppState + interval poll, and a separate adminApi axios instance. 4 screens: /admin-auth/login (email + password with eye toggle), /admin-auth/2fa (6-digit code or 8-char backup), /admin-auth/setup (QR + manual secret + verify + backup codes display ONCE with copy-all + warn box), /admin-app (post-auth landing with role pill + 2FA pill + sign-out confirmation + coming-soon tiles for Milestone 2/3). Entry point: 'Wayly staff sign-in' link at bottom of consumer login. Old is_admin-gated tab in (tabs) is now hidden (href: null). Validated via curl + pyotp: login \u2192 setup \u2192 verify \u2192 backup codes; login \u2192 TOTP verify; login \u2192 backup-code verify; backup-code reuse rejected (400); /admin/auth/me works; logout works. Screenshot-verified: all 4 screens render with brand colors, QR appears, secret is copyable, FIRST-TIME SETUP badge styled."
+  - task: "Push notification deep-link routing (NotificationRouter + typed payloads + test endpoint)"
+    implemented: true
+    working: true
+    file: "backend/server.py, backend/models.py, frontend/src/components/NotificationRouter.tsx, frontend/app/_layout.tsx, frontend/app/(tabs)/notifications.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Shipped notification deep-link routing end-to-end. BACKEND (server.py + models.py): extended `NotificationItem` with `type` and `deeplink` fields, added a `NOTIF_TYPES` enum (`anomaly_alert | statement_ready | visit_reminder | family_message | wellbeing | adviser_invite_linked | billing | system`). Every existing `_push_to_user` callsite now ships a normalised payload `{type, deeplink, statement_id?, visit_id?, client_id?, notification_id}`. Anomaly notifications now route to `/statements/{id}`; uploads without anomalies fire an additional `statement_ready` push so the user lands on the new statement; wellbeing pushes carry `type=wellbeing` + `deeplink=/(tabs)/notifications`. NEW POST `/api/notifications/test` endpoint accepts `{type, title?, body?, statement_id?, visit_id?, client_id?, deeplink?}` and (a) auto-resolves the most recent statement if `statement_id` is omitted for `statement_ready`/`anomaly_alert`, (b) persists a real `NotificationItem` row, (c) fires the Expo push, (d) returns `{ok, deeplink, notification_id, data}`. Demo seed notification also carries the new `type`/`deeplink` fields.\n\nFRONTEND: NEW `src/components/NotificationRouter.tsx` — single component mounted in `app/_layout.tsx` next to DeepLinkHandler. (1) Calls `registerForPushNotifications()` whenever a user signs in (POST `/notifications/register-push`). (2) Wires `Notifications.addNotificationResponseReceivedListener` for foreground/background taps. (3) Reads `Notifications.getLastNotificationResponseAsync()` for cold-start (app launched from a tapped notification). (4) Dedupes via a `useRef<Set>` of response IDs so cold-start + foreground listeners can't double-route. Resolution priority: explicit `data.deeplink` (server-controlled) → `data.type`-based fallback (statement_ready/anomaly_alert→/statements/{id}, visit_reminder→/visits, family_message→/(tabs)/family, wellbeing→/(tabs)/notifications, adviser_invite_linked→/adviser/clients/{id}, billing→/settings/plan, system→/(tabs)/notifications). Web/simulator no-ops gracefully.\n\nNotifications screen (/(tabs)/notifications) updated to (a) render new `type`+`deeplink` fields on `NotifItem`, (b) tap on card now follows server-issued deeplink first, then `related_statement_id`, then `type`-based fallback, and (c) shows three QA pill chips at the top (Test: statement / Test: visit / Test: family) that hit the new `/notifications/test` endpoint so testers can exercise the full loop without needing a real device push.\n\nVerified e2e on web @ 390x844 (Cathy demo account): Tapping Test:statement → POST /notifications/test (200) → router.push routed to /statements/daa81e22-... (decoded statement detail rendered correctly). Tapping Test:visit → routed to /visits (GP follow-up rendered). Tapping Test:family → routed to /(tabs)/family. Then independently — tapping the persisted in-app notification cards (Visit at 10am, New family message, Statement decoded) also routed to the correct entity via the new deeplink field. Backend curl validated: type=visit_reminder→/visits, type=family_message→/(tabs)/family, type=statement_ready→/statements/{id}. NotificationRouter native listener only runs on iOS/Android — needs a development build to exercise the Expo push tap path; web fallback uses the in-app card tap which we verified."
+
+
+  - task: "Visits/Calendar (Feature 4) + Adviser Review Pack PDF download"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/app/visits/index.tsx, frontend/app/adviser/clients/[cid].tsx, frontend/src/lib/reviewPack.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "VERIFIED end-to-end on web @ 390x844. (a) /visits screen: Calendar overline + Your visits H1 + 'Appointments, home visits, telehealth and assessments' sublabel + Today/Upcoming/Past sections + per-day groupings under Upcoming. Top-right BackHeader 'Add' chip opens a slide-up sheet with Title, ISO datetime (with hint), Duration mins (numpad), Kind chip row (Appointment/Home visit/Telehealth/Assessment/Other), Location, Provider, Notes, Add visit CTA + Cancel. Tapping an existing row reopens the modal as 'Edit visit' with pre-populated fields, 'Save changes' + terracotta 'Remove visit' buttons. RefreshControl wired. Backend GET/POST/PATCH/DELETE /api/visits all return 200 (verified via UI + curl).\n\n(b) Adviser PDF Review Pack: linked Margaret Williams (client id 5687a4b8-8350-44df-8889-200b11111544) to the demo Cathy household, snapshot now renders Household card (Margaret · Level 4 · HomeCare Plus · 1 member), 4 Statements / 5 Anomalies tiles, recent statements list (Jan 2026 ×3, May 2026), Flagged items (5 anomaly cards with severity icons), AI disclaimer, and the navy 'Download review pack (PDF)' CTA. Tapping the CTA fired GET /api/adviser/clients/{cid}/review-pack.pdf → HTTP 200 application/pdf 4627 bytes, and the browser triggered a download of `wayly-review-Margaret_Williams.pdf`. PDF magic bytes verified (%PDF-) so reportlab output is valid. Fixed two latent bugs in /src/lib/reviewPack.ts: (i) `import * as FileSystem from 'expo-file-system'` was importing the new SDK 54 v19 API where downloadAsync no longer exists at the top level — switched to `'expo-file-system/legacy'`; (ii) the token storage key was hard-coded as `@wayly:token` while AuthContext uses `wayly:token` — now imports TOKEN_KEY from src/lib/api so web + native both pull the right Bearer token. Eleanor Brown still shows 'Invite pending' card (unlinked client) which exercises the 409 client_not_linked branch."
+
+
 
   - task: "Adviser portal (roster + summary + add-client invite + snapshot) and Document Vault (list + upload + decode-statement)"
     implemented: true
@@ -302,13 +328,13 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "1.5"
-  test_sequence: 7
+  version: "1.6"
+  test_sequence: 8
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Admin app Milestone 2"
+    - "Visits/Calendar + Adviser PDF Review Pack (verified)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

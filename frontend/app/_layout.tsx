@@ -21,6 +21,7 @@ import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
 import { DeepLinkHandler } from '../src/components/DeepLinkHandler';
+import { NotificationRouter } from '../src/components/NotificationRouter';
 import { Colors } from '../src/lib/theme';
 
 function RootStack() {
@@ -60,6 +61,7 @@ function RootStack() {
         <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
       </Stack>
       <DeepLinkHandler />
+      <NotificationRouter />
       <AccessibilityWidget />
     </>
   );

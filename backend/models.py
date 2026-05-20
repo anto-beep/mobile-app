@@ -104,6 +104,22 @@ class Statement(BaseModel):
 
 
 # ---------- Notifications ----------
+# Notification "type" drives mobile deep-link routing. The mobile app's
+# NotificationRouter component reads `data.type` (or the explicit `data.deeplink`)
+# from the push payload and routes accordingly. Keep these in sync with
+# `src/components/NotificationRouter.tsx`.
+NOTIF_TYPES = (
+    "anomaly_alert",       # → /statements/{statement_id}
+    "statement_ready",     # → /statements/{statement_id}
+    "visit_reminder",      # → /visits
+    "family_message",      # → /(tabs)/family
+    "wellbeing",           # → /(tabs)/notifications
+    "adviser_invite_linked",  # → /adviser/clients/{client_id}
+    "billing",             # → /settings/plan
+    "system",              # → /(tabs)/notifications
+)
+
+
 class NotificationItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=new_id)
@@ -113,6 +129,10 @@ class NotificationItem(BaseModel):
     category: str = "anomaly"
     severity: Literal["info", "warning", "alert"] = "info"
     related_statement_id: Optional[str] = None
+    # `type` powers mobile push deep-linking; `deeplink` is the optional explicit
+    # path (e.g. "/statements/abc") that overrides the type→route mapping.
+    type: Optional[str] = None
+    deeplink: Optional[str] = None
     read: bool = False
     created_at: str = Field(default_factory=now_iso)
 

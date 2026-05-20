@@ -3,10 +3,12 @@
 // - Native: use expo-file-system to download to cache + expo-sharing to open the share sheet.
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+// expo-file-system v19 moved the classic API (downloadAsync, cacheDirectory) into the
+// `expo-file-system/legacy` submodule. The new File/Directory class API doesn't yet
+// expose a simple downloadAsync with auth headers, so we deliberately use legacy here.
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-
-const TOKEN_KEY = '@wayly:token';
+import { TOKEN_KEY } from './api';
 
 function backendUrl(): string {
   // EXPO_PUBLIC_BACKEND_URL is the canonical env entry; fall back to relative for web.

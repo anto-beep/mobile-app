@@ -16,7 +16,7 @@ import logging
 import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import re
 
 from dotenv import load_dotenv
@@ -373,6 +373,7 @@ def _submit_upload_job(text: str, filename: str, household_id: str, user_id: str
             # Notify on HIGH/MEDIUM (alert/warning) anomalies
             for an in anomalies:
                 if an.get("severity") in ("alert", "warning"):
+                    deeplink = f"/statements/{stmt.id}"
                     note = NotificationItem(
                         user_id=user_id,
                         title=an.get("title", "New alert on your statement"),
@@ -380,14 +381,51 @@ def _submit_upload_job(text: str, filename: str, household_id: str, user_id: str
                         category="anomaly",
                         severity=an.get("severity", "info"),
                         related_statement_id=stmt.id,
+                        type="anomaly_alert",
+                        deeplink=deeplink,
                     )
                     await db.notifications.insert_one(note.model_dump())
                     await _push_to_user(
                         user_id,
                         title=an.get("title", "New alert"),
                         body=an.get("detail", "") or "",
-                        data={"statement_id": stmt.id, "anomaly_id": an.get("id")},
+                        data={
+                            "type": "anomaly_alert",
+                            "deeplink": deeplink,
+                            "statement_id": stmt.id,
+                            "anomaly_id": an.get("id"),
+                            "notification_id": note.id,
+                        },
                     )
+
+            # Also fire a "statement_ready" push so users land on the new statement
+            # even when there are no anomalies. Skip if there were anomalies above
+            # (avoid double-notifying for the same upload).
+            if not any((a.get("severity") in ("alert", "warning")) for a in anomalies):
+                ready_deeplink = f"/statements/{stmt.id}"
+                ready_note = NotificationItem(
+                    user_id=user_id,
+                    title="Statement decoded",
+                    body=(stmt.period_label or "Your statement") + " is ready to review.",
+                    category="statement",
+                    severity="info",
+                    related_statement_id=stmt.id,
+                    type="statement_ready",
+                    deeplink=ready_deeplink,
+                )
+                await db.notifications.insert_one(ready_note.model_dump())
+                await _push_to_user(
+                    user_id,
+                    title=ready_note.title,
+                    body=ready_note.body,
+                    data={
+                        "type": "statement_ready",
+                        "deeplink": ready_deeplink,
+                        "statement_id": stmt.id,
+                        "notification_id": ready_note.id,
+                    },
+                )
+
 
             UPLOAD_JOBS[job_id]["status"] = "done"
             UPLOAD_JOBS[job_id]["statement_id"] = stmt.id
@@ -755,6 +793,84 @@ async def register_push(body: PushTokenRegister, user_id: str = Depends(get_curr
     return {"ok": True}
 
 
+# ─────────────────── notifications — dev/QA test push ───────────────────
+class _TestPushBody(BaseModel):
+    type: str = Field(default="statement_ready")
+    title: Optional[str] = None
+    body: Optional[str] = None
+    statement_id: Optional[str] = None
+    visit_id: Optional[str] = None
+    client_id: Optional[str] = None
+    deeplink: Optional[str] = None
+
+
+@api.post("/notifications/test")
+async def notifications_test(payload: _TestPushBody, user_id: str = Depends(get_current_user_id)):
+    """Dev/QA helper: fire a sample push + in-app notification to the caller so the
+    NotificationRouter on mobile can be exercised end-to-end. Returns the deeplink
+    we resolved + the persisted NotificationItem id."""
+    # Resolve deeplink (priority: explicit body.deeplink → type-driven fallback)
+    deeplink = payload.deeplink
+    statement_id = payload.statement_id
+    visit_id = payload.visit_id
+    client_id = payload.client_id
+
+    if not deeplink:
+        if payload.type in ("statement_ready", "anomaly_alert"):
+            if not statement_id:
+                # Try most recent statement for the user's household
+                h = await _get_household(user_id)
+                if h:
+                    s = await db.statements.find_one({"household_id": h["id"]}, {"id": 1, "_id": 0}, sort=[("uploaded_at", -1)])
+                    statement_id = s and s.get("id")
+            deeplink = f"/statements/{statement_id}" if statement_id else "/(tabs)/today"
+        elif payload.type == "visit_reminder":
+            deeplink = "/visits"
+        elif payload.type == "family_message":
+            deeplink = "/(tabs)/family"
+        elif payload.type == "wellbeing":
+            deeplink = "/(tabs)/notifications"
+        elif payload.type == "adviser_invite_linked":
+            deeplink = f"/adviser/clients/{client_id}" if client_id else "/adviser"
+        elif payload.type == "billing":
+            deeplink = "/settings/plan"
+        else:
+            deeplink = "/(tabs)/notifications"
+
+    title = payload.title or {
+        "statement_ready": "Statement decoded",
+        "anomaly_alert": "Heads up on your statement",
+        "visit_reminder": "Visit coming up",
+        "family_message": "New family message",
+        "wellbeing": "Wellbeing check-in",
+        "adviser_invite_linked": "Client linked",
+        "billing": "Billing update",
+        "system": "Notification",
+    }.get(payload.type, "Wayly notification")
+    body_text = payload.body or "Tap to open."
+
+    note = NotificationItem(
+        user_id=user_id,
+        title=title,
+        body=body_text,
+        category=payload.type,
+        severity="info",
+        related_statement_id=statement_id,
+        type=payload.type,
+        deeplink=deeplink,
+    )
+    await db.notifications.insert_one(note.model_dump())
+    data: Dict[str, Any] = {"type": payload.type, "deeplink": deeplink, "notification_id": note.id}
+    if statement_id:
+        data["statement_id"] = statement_id
+    if visit_id:
+        data["visit_id"] = visit_id
+    if client_id:
+        data["client_id"] = client_id
+    await _push_to_user(user_id, title, body_text, data)
+    return {"ok": True, "deeplink": deeplink, "notification_id": note.id, "data": data}
+
+
 # ─────────────────── seed demo data on startup ───────────────────
 # ─────────────────── chat (help-chat with dashboard context) ───────────────────
 class ChatBody(BaseModel):
@@ -910,9 +1026,21 @@ async def log_wellbeing(body: WellbeingBody, user_id: str = Depends(get_current_
             body="They marked today as 'not great'. Worth checking in.",
             category="wellbeing",
             severity="warning",
+            type="wellbeing",
+            deeplink="/(tabs)/notifications",
         )
         await db.notifications.insert_one(note.model_dump())
-        await _push_to_user(h["owner_id"], note.title, note.body, {"category": "wellbeing"})
+        await _push_to_user(
+            h["owner_id"],
+            note.title,
+            note.body,
+            {
+                "type": "wellbeing",
+                "deeplink": "/(tabs)/notifications",
+                "category": "wellbeing",
+                "notification_id": note.id,
+            },
+        )
     doc.pop("_id", None)
     return doc
 
@@ -1249,6 +1377,8 @@ async def seed_demo():
             category="anomaly",
             severity="warning",
             related_statement_id=stmt.id,
+            type="anomaly_alert",
+            deeplink=f"/statements/{stmt.id}",
         )
         await db.notifications.insert_one(note.model_dump())
 
