@@ -37,10 +37,14 @@ export default function StatementDecoder() {
   }, [jobId]);
 
   const poll = async (id: string) => {
+    // Poll up to 180s total (90 × 2s sleeps). Each individual GET uses a
+    // short 8s timeout so a transient slow response doesn't kill the whole
+    // decode — we just try again on the next tick. Job-not-found (404) and
+    // axios ECONNABORTED both treated as "keep polling".
     for (let i = 0; i < 90; i++) {
       await new Promise((r) => setTimeout(r, 2000));
       try {
-        const { data } = await api.get(`/public/decode-job/${id}`);
+        const { data } = await api.get(`/public/decode-job/${id}`, { timeout: 8000 });
         if (data?.status === 'done') {
           setResult(data.result || data);
           setJobId(null);
@@ -48,11 +52,16 @@ export default function StatementDecoder() {
         }
         if (data?.status === 'error') throw new Error(data?.error || 'Decoding failed');
       } catch (e: any) {
+        // Transient: 404 (job not yet registered), axios per-call timeout,
+        // or any network blip → just keep polling until the overall 180s budget.
         if (e?.response?.status === 404) continue;
+        if (e?.code === 'ECONNABORTED') continue;
+        if (e?.message && /timeout/i.test(e.message)) continue;
+        // Real backend "error" status was raised above — re-throw it.
         if (e?.message) throw e;
       }
     }
-    throw new Error('Decoding is taking longer than expected.');
+    throw new Error('Decoding is taking longer than expected. Please try again — your free quota wasn’t used.');
   };
 
   const submit = async (file?: { uri: string; name: string; mime: string }) => {

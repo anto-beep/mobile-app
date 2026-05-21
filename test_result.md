@@ -227,6 +227,19 @@ frontend:
         - working: true
           agent: "main"
           comment: "Full TOTP 2FA flow validated end-to-end via curl + pyotp. Backend (MOCKED stubs): added POST /admin/auth/login (returns requires_2fa_setup with QR data URI + secret on first login, requires_2fa with temp_token on subsequent), POST /admin/auth/2fa/enable (verifies code, generates 10 single-use backup codes), POST /admin/auth/2fa/verify (accepts 6-digit TOTP OR 8-char backup code, consumes backup codes), POST /admin/auth/logout, GET /admin/auth/me. Backend uses pyotp for TOTP + qrcode for QR data URI generation. Admin JWTs are marked kind='admin' (vs admin_temp / admin_setup) and verified separately from consumer user JWTs. Frontend: AdminAuthProvider with isolated expo-secure-store (Keychain/Keystore on native, AsyncStorage fallback on web), 30-min idle auto-logout via AppState + interval poll, and a separate adminApi axios instance. 4 screens: /admin-auth/login (email + password with eye toggle), /admin-auth/2fa (6-digit code or 8-char backup), /admin-auth/setup (QR + manual secret + verify + backup codes display ONCE with copy-all + warn box), /admin-app (post-auth landing with role pill + 2FA pill + sign-out confirmation + coming-soon tiles for Milestone 2/3). Entry point: 'Wayly staff sign-in' link at bottom of consumer login. Old is_admin-gated tab in (tabs) is now hidden (href: null). Validated via curl + pyotp: login \u2192 setup \u2192 verify \u2192 backup codes; login \u2192 TOTP verify; login \u2192 backup-code verify; backup-code reuse rejected (400); /admin/auth/me works; logout works. Screenshot-verified: all 4 screens render with brand colors, QR appears, secret is copyable, FIRST-TIME SETUP badge styled."
+  - task: "Hotfix — Decoder 'timeout of 30000ms exceeded' on slow networks"
+    implemented: true
+    working: true
+    file: "frontend/app/tools/statement-decoder.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "User reported 'Couldn't decode. timeout of 30000ms exceeded.' — this is the global axios ECONNABORTED message. Root cause: the poll() loop awaited each `api.get('/public/decode-job/{id}')` with the global 30s axios timeout, and the catch block re-threw any error whose `.message` contained text. A SINGLE slow GET response over the Expo tunnel (under load, or transient mobile-network jank) → axios ECONNABORTED → 'timeout of 30000ms exceeded' bubbled out of the loop and killed the entire decode, even though the backend job was still running fine.\n\n**Fix (frontend-only):** Hardened the poll loop:\n1. Each poll uses a per-call 8-second timeout (`api.get(url, { timeout: 8000 })`) so a slow response can't burn the 30s global budget.\n2. Catch block now treats THREE flavours of transient failure as 'keep polling' rather than fatal: HTTP 404 (job not yet registered), axios `code === 'ECONNABORTED'`, and any error whose message matches `/timeout/i`. Only a backend-emitted job `status: error` (or other named exceptions) propagates out.\n3. Final 180s-budget message updated: 'Decoding is taking longer than expected. Please try again — your free quota wasn't used.' (matches the backend refund behavior).\n\n**Verified e2e on web** at 390x844: pasted a real (non-sample) 200-char HomeCare statement, hit Decode → result rendered in ~10s with summary, ALERT 'High weekend personal care rate' + suggested action, WARNING 'Weekend service without clear flag' + suggested action, and 3 line items. Backend LiteLLM logs show parse_statement took ~36s, polling absorbed 18 GETs without ever throwing, and the result rendered cleanly. No spurious timeout toast."
+
+
   - task: "Hotfix — Statement decoder 429 + timeout for authenticated users"
     implemented: true
     working: true
