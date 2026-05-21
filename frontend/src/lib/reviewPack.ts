@@ -2,13 +2,10 @@
 // - Web: fetch with Bearer header, then trigger an <a download> on a Blob URL.
 // - Native: use expo-file-system to download to cache + expo-sharing to open the share sheet.
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-// expo-file-system v19 moved the classic API (downloadAsync, cacheDirectory) into the
-// `expo-file-system/legacy` submodule. The new File/Directory class API doesn't yet
-// expose a simple downloadAsync with auth headers, so we deliberately use legacy here.
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { TOKEN_KEY } from './api';
+import { getToken } from './tokenStorage';
 
 function backendUrl(): string {
   // EXPO_PUBLIC_BACKEND_URL is the canonical env entry; fall back to relative for web.
@@ -19,7 +16,7 @@ function backendUrl(): string {
 }
 
 export async function downloadReviewPack(clientId: string, clientName?: string): Promise<{ ok: boolean; uri?: string; error?: string }> {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  const token = await getToken(TOKEN_KEY);
   if (!token) return { ok: false, error: 'Not signed in.' };
   const safe = (clientName || 'client').replace(/[^A-Za-z0-9 _-]/g, '').replace(/\s+/g, '_') || 'client';
   const filename = `wayly-review-${safe}.pdf`;

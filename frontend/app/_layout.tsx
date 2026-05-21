@@ -22,6 +22,8 @@ import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
 import { DeepLinkHandler } from '../src/components/DeepLinkHandler';
 import { NotificationRouter } from '../src/components/NotificationRouter';
+import { NetworkProvider } from '../src/components/NetworkProvider';
+import { BiometricGate } from '../src/components/BiometricGate';
 import { Colors } from '../src/lib/theme';
 
 function RootStack() {
@@ -52,14 +54,16 @@ function RootStack() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="admin-auth" />
-        <Stack.Screen name="admin-app" />
-        <Stack.Screen name="reset-password" />
-        <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
-      </Stack>
+      <BiometricGate>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="admin-auth" />
+          <Stack.Screen name="admin-app" />
+          <Stack.Screen name="reset-password" />
+          <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
+        </Stack>
+      </BiometricGate>
       <DeepLinkHandler />
       <NotificationRouter />
       <AccessibilityWidget />
@@ -83,14 +87,16 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AccessibilityProvider>
         <ToastProvider>
-          <AdminAuthProvider>
-            <AuthProvider>
-              <StatusBar style="dark" />
-              <ThemedShell>
-                <RootStack />
-              </ThemedShell>
-            </AuthProvider>
-          </AdminAuthProvider>
+          <NetworkProvider>
+            <AdminAuthProvider>
+              <AuthProvider>
+                <StatusBar style="dark" />
+                <ThemedShell>
+                  <RootStack />
+                </ThemedShell>
+              </AuthProvider>
+            </AdminAuthProvider>
+          </NetworkProvider>
         </ToastProvider>
       </AccessibilityProvider>
     </SafeAreaProvider>

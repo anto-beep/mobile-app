@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { toast } from '../components/Toast';
+import { getToken } from './tokenStorage';
 
 const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -12,7 +12,7 @@ export const api: AxiosInstance = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  const token = await getToken(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

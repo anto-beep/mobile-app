@@ -1,17 +1,50 @@
-// Security — password reset, account deletion
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+// Security — biometric lock, password reset, account deletion
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Switch, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { confirmWithBiometric, biometryLabel } from '../../src/lib/biometric';
+import { isBiometricLockEnabled, setBiometricLockEnabled } from '../../src/components/BiometricGate';
+import { toast } from '../../src/components/Toast';
 
 export default function Security() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [bioOn, setBioOn] = useState(false);
+  const [bioReady, setBioReady] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const v = await isBiometricLockEnabled();
+      setBioOn(v);
+      setBioReady(true);
+    })();
+  }, []);
+
+  const toggleBio = async (next: boolean) => {
+    if (Platform.OS === 'web') {
+      toast.warning('Biometric lock is only available on the iOS / Android app.');
+      return;
+    }
+    if (next) {
+      // Require successful biometric BEFORE enabling, so we never lock the user out.
+      const r = await confirmWithBiometric('Confirm to enable biometric lock');
+      if (!r.success) {
+        if (r.reason === 'no-enrolled') toast.warning('Set up Face ID / Touch ID in iOS Settings first.');
+        else if (r.reason === 'unavailable') toast.warning('This device doesn’t support biometric auth.');
+        else if (r.reason !== 'cancelled') toast.error('Biometric check failed. Try again.');
+        return;
+      }
+    }
+    await setBiometricLockEnabled(next);
+    setBioOn(next);
+    toast.success(next ? 'Biometric lock turned on.' : 'Biometric lock turned off.');
+  };
 
   const sendReset = async () => {
     if (!user?.email) return;
@@ -54,6 +87,33 @@ export default function Security() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll} testID="security-scroll">
+        <View style={styles.card} testID="security-biometric-card">
+          <View style={styles.cardHead}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+              <Ionicons name="finger-print" size={20} color={Colors.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Biometric lock</Text>
+              <Text style={styles.cardSub}>
+                {Platform.OS === 'web'
+                  ? 'Only available on the iOS / Android app.'
+                  : `Require ${biometryLabel()} to open Wayly.`}
+              </Text>
+            </View>
+            <Switch
+              value={bioOn}
+              onValueChange={toggleBio}
+              disabled={!bioReady || Platform.OS === 'web'}
+              trackColor={{ false: Colors.borderSubtle, true: Colors.brandPrimary }}
+              thumbColor={Colors.cream}
+              testID="security-biometric-switch"
+            />
+          </View>
+          <Text style={styles.helpText}>
+            When enabled, you’ll be prompted on every cold start and after 30 seconds in the background.
+          </Text>
+        </View>
+
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
@@ -106,4 +166,5 @@ const styles = StyleSheet.create({
   dangerBtn: { backgroundColor: Colors.severityAlert, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center' },
   dangerBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
   footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
+  helpText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: -Spacing.sm, lineHeight: 16 },
 });

@@ -18,6 +18,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="security" options={{ title: 'Security' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="usage" options={{ title: 'Your usage' }} />
+      <Stack.Screen name="reports" options={{ title: 'Summary report' }} />
     </Stack>
   );
 }

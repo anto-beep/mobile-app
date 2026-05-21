@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, TOKEN_KEY, extractErrorMessage } from '../lib/api';
+import { getToken, setToken, clearToken } from '../lib/tokenStorage';
 
 export type User = {
   id: string;
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     (async () => {
-      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      const token = await getToken(TOKEN_KEY);
       if (token) {
         await refresh();
       }
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const persistAndSet = async (token: string, u: User) => {
-    await AsyncStorage.setItem(TOKEN_KEY, token);
+    await setToken(TOKEN_KEY, token);
     setUser(u);
   };
 
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // ignore — token may already be invalid
     }
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    await clearToken(TOKEN_KEY);
     setUser(null);
   };
 

@@ -2885,6 +2885,240 @@ async def adviser_review_pack_pdf(cid: str, user_id: str = Depends(get_current_u
     )
 
 
+# ─────────────────── consumer summary report PDF ───────────────────
+@api.get("/reports/summary.pdf")
+async def consumer_summary_pdf(
+    period: str = "quarter",  # "quarter" | "all"
+    user_id: str = Depends(get_current_user_id),
+):
+    """Personal Wayly-branded A4 PDF for the household owner: lifetime cap, this
+    quarter spend, anomaly summary, recent statements. ?period=quarter|all controls
+    the slice. Reuses reportlab from the adviser pack."""
+    user = await _get_user(user_id)
+    h = await _require_household(user_id)
+    period = (period or "quarter").lower()
+    if period not in ("quarter", "all"):
+        period = "quarter"
+
+    # Same data Pi used by /budget/current — keep numbers consistent.
+    q_start, q_end, q_label = budget_lib.get_quarter_window()
+    statements_all = await db.statements.find({"household_id": h["id"]}, {"_id": 0}).sort("uploaded_at", -1).to_list(200)
+    if period == "quarter":
+        statements = [
+            s for s in statements_all
+            if s.get("period_start") and s.get("period_end")
+            and s["period_start"] >= q_start.isoformat()
+            and s["period_end"] <= q_end.isoformat()
+        ]
+        period_label = q_label
+    else:
+        statements = statements_all
+        period_label = "All statements"
+
+    gross_total = 0.0
+    copay_total = 0.0
+    for s in statements:
+        for li in (s.get("line_items") or []):
+            gross_total += float(li.get("total") or 0)
+            copay_total += float(li.get("contribution_paid") or 0)
+    anomalies_total = sum(len(s.get("anomalies") or []) for s in statements)
+
+    # Lifetime cap (same shape as /budget/current)
+    lifetime_cap = budget_lib.lifetime_cap(bool(h.get("is_grandfathered")))
+    lifetime_contributed = 0.0
+    for s in statements_all:
+        for li in (s.get("line_items") or []):
+            lifetime_contributed += float(li.get("contribution_paid") or 0)
+    lifetime_pct = (lifetime_contributed / lifetime_cap * 100.0) if lifetime_cap else 0.0
+
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.lib import colors as rl_colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+    NAVY = rl_colors.HexColor("#1F3A5F")
+    GOLD = rl_colors.HexColor("#D4A24E")
+    SAGE = rl_colors.HexColor("#7A9B7E")
+    TERRA = rl_colors.HexColor("#C5734D")
+    MUTED = rl_colors.HexColor("#5C6878")
+    BORDER = rl_colors.HexColor("#E8E2D6")
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=18 * mm, rightMargin=18 * mm,
+        topMargin=18 * mm, bottomMargin=18 * mm,
+        title=f"Wayly summary — {h.get('participant_name','household')}",
+        author=user.get("name", "Wayly"),
+    )
+    base = getSampleStyleSheet()
+    h1 = ParagraphStyle("h1", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=22, textColor=NAVY, leading=26, spaceAfter=6)
+    h2 = ParagraphStyle("h2", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, textColor=NAVY, leading=16, spaceBefore=10, spaceAfter=6)
+    body = ParagraphStyle("body", parent=base["BodyText"], fontName="Helvetica", fontSize=10, textColor=rl_colors.HexColor("#1A1A1A"), leading=14)
+    muted = ParagraphStyle("muted", parent=body, textColor=MUTED, fontSize=9, leading=12)
+    overline = ParagraphStyle("overline", parent=muted, fontName="Helvetica-Bold", textColor=MUTED, fontSize=8, spaceAfter=2)
+
+    def aud(v: float) -> str:
+        try:
+            return f"${v:,.2f}"
+        except Exception:
+            return f"${v}"
+
+    story = []
+    story.append(Paragraph(f"WAYLY  ·  SUMMARY REPORT  ·  {period_label.upper()}", overline))
+    story.append(Paragraph(f"{h.get('participant_name','Household')}", h1))
+    story.append(Paragraph(f"Prepared for {user.get('name','')} ({user.get('email','')}) — {datetime.now(timezone.utc).strftime('%d %b %Y')}", muted))
+    story.append(Spacer(1, 6))
+
+    # Household card
+    rows = [
+        ["Participant", h.get("participant_name", "—")],
+        ["Classification", f"Level {h.get('classification')}" if h.get("classification") else "—"],
+        ["Provider", h.get("provider_name", "—")],
+        ["Status", "Grandfathered" if h.get("is_grandfathered") else "New entrant"],
+    ]
+    tbl = Table(rows, colWidths=[45 * mm, None])
+    tbl.setStyle(TableStyle([
+        ("FONT", (0, 0), (-1, -1), "Helvetica", 9.5),
+        ("TEXTCOLOR", (0, 0), (0, -1), MUTED),
+        ("TEXTCOLOR", (1, 0), (1, -1), NAVY),
+        ("FONT", (1, 0), (1, -1), "Helvetica-Bold", 10),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.4, BORDER),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(Paragraph("Household", h2))
+    story.append(tbl)
+    story.append(Spacer(1, 8))
+
+    # Metrics tiles
+    metrics_rows = [[
+        Paragraph(f"<font color='#5C6878' size='8'>STATEMENTS</font><br/><font color='#1F3A5F' size='18'><b>{len(statements)}</b></font>", body),
+        Paragraph(f"<font color='#5C6878' size='8'>GROSS</font><br/><font color='#1F3A5F' size='18'><b>{aud(gross_total)}</b></font>", body),
+        Paragraph(f"<font color='#5C6878' size='8'>YOU PAID</font><br/><font color='#1F3A5F' size='18'><b>{aud(copay_total)}</b></font>", body),
+        Paragraph(f"<font color='#5C6878' size='8'>ANOMALIES</font><br/><font color='#C5734D' size='18'><b>{anomalies_total}</b></font>", body),
+    ]]
+    mt = Table(metrics_rows, colWidths=[None, None, None, None])
+    mt.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor("#FAF7F2")),
+        ("BOX", (0, 0), (-1, -1), 0.4, BORDER),
+        ("INNERGRID", (0, 0), (-1, -1), 0.4, BORDER),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    story.append(Paragraph(f"This {period_label.lower()}", h2))
+    story.append(mt)
+    story.append(Spacer(1, 8))
+
+    # Lifetime cap
+    story.append(Paragraph("Lifetime contribution cap", h2))
+    cap_rows = [[
+        Paragraph(f"Contributed so far<br/><font color='#1F3A5F' size='14'><b>{aud(lifetime_contributed)}</b></font>", body),
+        Paragraph(f"Cap<br/><font color='#1F3A5F' size='14'><b>{aud(lifetime_cap)}</b></font>", body),
+        Paragraph(f"Used<br/><font color='#7A9B7E' size='14'><b>{lifetime_pct:.2f}%</b></font>", body),
+    ]]
+    ct = Table(cap_rows, colWidths=[None, None, None])
+    ct.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor("#FAF7F2")),
+        ("BOX", (0, 0), (-1, -1), 0.4, BORDER),
+        ("INNERGRID", (0, 0), (-1, -1), 0.4, BORDER),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    story.append(ct)
+    story.append(Spacer(1, 8))
+
+    # Recent statements
+    story.append(Paragraph("Recent statements", h2))
+    if not statements:
+        story.append(Paragraph("No statements in this window yet.", muted))
+    else:
+        srows = [["Period", "Uploaded", "Gross", "You paid", "Anomalies"]]
+        for s in statements[:12]:
+            sgross = sum(float(li.get("total") or 0) for li in (s.get("line_items") or []))
+            scopay = sum(float(li.get("contribution_paid") or 0) for li in (s.get("line_items") or []))
+            srows.append([
+                s.get("period_label") or "—",
+                (s.get("uploaded_at") or "")[:10],
+                aud(sgross),
+                aud(scopay),
+                str(len(s.get("anomalies") or [])),
+            ])
+        st = Table(srows, colWidths=[35 * mm, 28 * mm, 28 * mm, 28 * mm, 22 * mm])
+        st.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+            ("TEXTCOLOR", (0, 0), (-1, 0), rl_colors.white),
+            ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 9),
+            ("FONT", (0, 1), (-1, -1), "Helvetica", 9),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.4, BORDER),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [rl_colors.white, rl_colors.HexColor("#FAF7F2")]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(st)
+    story.append(Spacer(1, 8))
+
+    # Flagged items (top 8 by severity)
+    flagged: list = []
+    sev_rank = {"alert": 0, "warning": 1, "info": 2}
+    for s in statements:
+        for a in (s.get("anomalies") or []):
+            flagged.append({
+                "severity": (a.get("severity") or "info").lower(),
+                "title": a.get("title") or a.get("headline") or a.get("rule") or "Heads up",
+                "detail": a.get("detail") or a.get("description") or "",
+                "period": s.get("period_label") or "",
+            })
+    flagged.sort(key=lambda x: sev_rank.get(x["severity"], 9))
+    if flagged:
+        story.append(Paragraph("Things to know", h2))
+        for f in flagged[:8]:
+            tone = TERRA if f["severity"] == "alert" else (GOLD if f["severity"] == "warning" else SAGE)
+            row_tbl = Table([[
+                Paragraph(f"<b><font color='#{tone.hexval()[2:].upper()}'>● {f['title']}</font></b><br/>"
+                          f"<font color='#5C6878' size='8'>{f['period']}</font><br/>"
+                          f"<font size='9'>{f['detail']}</font>", body),
+            ]], colWidths=[None])
+            row_tbl.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor("#FAF7F2")),
+                ("LINEBEFORE", (0, 0), (0, -1), 3, tone),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]))
+            story.append(row_tbl)
+            story.append(Spacer(1, 4))
+
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(
+        "<i>This document was generated by Wayly from your uploaded statements. AI may be incorrect — verify before acting. "
+        "Confidential — for your records only.</i>",
+        muted,
+    ))
+
+    doc.build(story)
+    pdf_bytes = buf.getvalue()
+    from fastapi.responses import Response
+    fname = f"wayly-summary-{period}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
+
+
 app.include_router(api)
 
 app.add_middleware(

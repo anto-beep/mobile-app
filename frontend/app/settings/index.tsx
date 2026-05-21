@@ -62,9 +62,17 @@ const ITEMS = [
     color: Colors.streams.Clinical,
   },
   {
+    key: 'reports',
+    title: 'Summary report',
+    sub: 'Download a Wayly-branded PDF of your last quarter',
+    icon: 'document-text-outline',
+    color: Colors.streams.Clinical,
+    route: '/settings/reports',
+  },
+  {
     key: 'security',
     title: 'Security',
-    sub: 'Password, account deletion',
+    sub: 'Biometric lock, password, account deletion',
     icon: 'shield-checkmark-outline',
     color: Colors.severityAlert,
   },
