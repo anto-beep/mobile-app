@@ -490,8 +490,9 @@ async def get_upload_job(job_id: str, user_id: str = Depends(get_current_user_id
 # In-memory job + rate-limit stores. Acceptable for MVP; replace with Redis later.
 PUBLIC_DECODE_JOBS: Dict[str, dict] = {}
 PUBLIC_DECODE_USAGE: Dict[str, List[float]] = {}  # ip -> list of unix timestamps (last 24h)
-PUBLIC_DECODE_DAILY_LIMIT = 1
+PUBLIC_DECODE_DAILY_LIMIT = 3  # Free anonymous decoder quota per 24h per IP
 PUBLIC_DECODE_WINDOW_S = 24 * 60 * 60
+PUBLIC_DECODE_JOB_TIMEOUT_S = 90  # Internal hard timeout on a single decode job
 
 
 def _client_key(request: Request, user_id: Optional[str]) -> str:
@@ -525,7 +526,20 @@ def _record_public_decode(key: str) -> None:
     PUBLIC_DECODE_USAGE.setdefault(key, []).append(time.time())
 
 
-def _submit_public_decode_job(text: str) -> str:
+def _refund_public_decode(key: str) -> None:
+    """Pop the most-recent quota mark for this client. Called when a decode
+    job fails or times out — we don't want a hung LLM to lock a free-tier
+    user out for 24 hours for a non-result."""
+    try:
+        bucket = PUBLIC_DECODE_USAGE.get(key) or []
+        if bucket:
+            bucket.pop()
+            PUBLIC_DECODE_USAGE[key] = bucket
+    except Exception:
+        pass
+
+
+def _submit_public_decode_job(text: str, refund_key: Optional[str] = None) -> str:
     job_id = new_id()
     PUBLIC_DECODE_JOBS[job_id] = {"status": "pending", "created_at": now_iso()}
 
@@ -540,7 +554,9 @@ def _submit_public_decode_job(text: str) -> str:
     async def _run():
         try:
             from agents import parse_statement
-            data = await parse_statement(text)
+            # Hard timeout — if the LLM hangs we want a fast, surfaced error
+            # rather than the mobile poll silently giving up at 180s.
+            data = await asyncio.wait_for(parse_statement(text), timeout=PUBLIC_DECODE_JOB_TIMEOUT_S)
             # Normalise to a stable shape the frontend expects.
             line_items = []
             for li in data.get("line_items", []) or []:
@@ -606,9 +622,19 @@ def _submit_public_decode_job(text: str) -> str:
                     "audit": audit,  # ★ production shape
                 },
             })
+        except asyncio.TimeoutError:
+            logger.warning("Public decode job %s exceeded %ss timeout", job_id, PUBLIC_DECODE_JOB_TIMEOUT_S)
+            PUBLIC_DECODE_JOBS[job_id].update({
+                "status": "error",
+                "error": "The decoder is taking longer than usual. Please try again — your free quota wasn't used.",
+            })
+            if refund_key:
+                _refund_public_decode(refund_key)
         except Exception as e:
             logger.exception("Public decode job failed")
             PUBLIC_DECODE_JOBS[job_id].update({"status": "error", "error": str(e) or "decode failed"})
+            if refund_key:
+                _refund_public_decode(refund_key)
 
     asyncio.create_task(_run())
     return job_id
@@ -619,18 +645,24 @@ class _DecodeText(BaseModel):
 
 
 async def _maybe_user_id(request: Request) -> Optional[str]:
-    """Optional auth — returns user_id if a valid bearer token is present, else None."""
-    auth = request.headers.get("authorization") or ""
-    if not auth.lower().startswith("bearer "):
+    """Optional auth — returns user_id if a valid bearer token is present, else None.
+    Critical: this powers the rate-limit bypass for authenticated users on the
+    public decoder endpoints. Must use the SAME decoder helpers as the rest of
+    the app (`auth.decode_token`) so JWT_SECRET / algorithms stay in lockstep.
+    Previously this function referenced undefined `jwt` / `JWT_SECRET` / `JWT_ALG`
+    symbols and silently raised NameError → every signed-in user got IP-limited
+    and hit 429 on the 2nd request."""
+    auth_header = request.headers.get("authorization") or ""
+    if not auth_header.lower().startswith("bearer "):
         return None
-    token = auth.split(" ", 1)[1].strip()
+    token = auth_header.split(" ", 1)[1].strip()
     if not token:
         return None
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
-        if payload.get("kind") and payload["kind"] != "user":
-            return None
-        return payload.get("sub")
+        # decode_token raises HTTPException on bad/expired tokens; we swallow it
+        # here so the public endpoint still works for unauthenticated users.
+        from auth import decode_token as _decode
+        return _decode(token)
     except Exception:
         return None
 
@@ -643,13 +675,17 @@ async def public_decode_statement_text(request: Request, payload: _DecodeText):
     if retry_at is not None:
         raise HTTPException(
             status_code=429,
-            detail="Free decoder limit reached — 1 per 24 hours. Upgrade for unlimited.",
+            detail=f"Free decoder limit reached — {PUBLIC_DECODE_DAILY_LIMIT} per 24 hours. Sign in for unlimited.",
             headers={"Retry-After": str(int(retry_at - __import__('time').time()))},
         )
     if not payload.text.strip():
         raise HTTPException(status_code=400, detail="Paste the statement text first.")
     _record_public_decode(key)
-    job_id = _submit_public_decode_job(payload.text)
+    # Refund the quota if the job fails or times out — but only for free-tier
+    # (IP-keyed) clients. Authenticated users have no quota so passing the key
+    # is harmless but unnecessary.
+    refund_key = key if not key.startswith("user:") else None
+    job_id = _submit_public_decode_job(payload.text, refund_key=refund_key)
     return {"job_id": job_id, "status": "pending"}
 
 
@@ -661,7 +697,7 @@ async def public_decode_statement(request: Request, file: UploadFile = File(...)
     if retry_at is not None:
         raise HTTPException(
             status_code=429,
-            detail="Free decoder limit reached — 1 per 24 hours. Upgrade for unlimited.",
+            detail=f"Free decoder limit reached — {PUBLIC_DECODE_DAILY_LIMIT} per 24 hours. Sign in for unlimited.",
             headers={"Retry-After": str(int(retry_at - __import__('time').time()))},
         )
     raw = await file.read()
@@ -687,7 +723,8 @@ async def public_decode_statement(request: Request, file: UploadFile = File(...)
     if not (text or "").strip():
         raise HTTPException(status_code=400, detail="Could not extract text. Try a clearer photo.")
     _record_public_decode(key)
-    job_id = _submit_public_decode_job(text)
+    refund_key = key if not key.startswith("user:") else None
+    job_id = _submit_public_decode_job(text, refund_key=refund_key)
     return {"job_id": job_id, "status": "pending"}
 
 
