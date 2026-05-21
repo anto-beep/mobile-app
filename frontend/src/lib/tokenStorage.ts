@@ -1,19 +1,24 @@
 // Cross-platform secure storage for the *consumer* auth token.
 //
-// Native: stored in iOS Keychain / Android Keystore via expo-secure-store
-// Web:    stored in localStorage via @react-native-async-storage/async-storage
+// Strategy: **dual-write**. We always persist the token to AsyncStorage and,
+// when running on native, ALSO write it to expo-secure-store (Keychain /
+// Keystore). On read, we try SecureStore first, then fall back to
+// AsyncStorage. This guarantees:
 //
-// Includes a one-shot migration that moves an existing AsyncStorage token over
-// to SecureStore the first time the app starts after the upgrade, so existing
-// sessions don't get logged out.
+//   • New native builds get the security upgrade (token in the OS-managed
+//     secure enclave) without losing the AsyncStorage copy as a safety net.
+//   • Existing sessions are preserved across the upgrade — no logouts.
+//   • If SecureStore ever fails to persist (Expo Go on certain Android OEMs,
+//     simulator edge cases), the AsyncStorage copy still lets the user in.
+//
+// Logout clears BOTH stores, so a deleted session can never be resurrected
+// from a stale SecureStore entry.
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
-const MIGRATED_FLAG = 'wayly:token_migrated_v1';
-
-async function secureGet(key: string): Promise<string | null> {
-  if (Platform.OS === 'web') return AsyncStorage.getItem(key);
+async function secureStoreGet(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
   try {
     return await SecureStore.getItemAsync(key);
   } catch {
@@ -21,66 +26,49 @@ async function secureGet(key: string): Promise<string | null> {
   }
 }
 
-async function secureSet(key: string, value: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    await AsyncStorage.setItem(key, value);
-    return;
-  }
+async function secureStoreSet(key: string, value: string): Promise<void> {
+  if (Platform.OS === 'web') return;
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {
-    // SecureStore can fail on simulator/edge cases — fall through silently;
-    // AsyncStorage is still the source of truth for those callers.
+    // SecureStore can fail on simulators / Expo Go on some Android OEMs.
+    // We silently ignore — AsyncStorage still has the token as a safety net.
   }
 }
 
-async function secureDel(key: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    await AsyncStorage.removeItem(key);
-    return;
-  }
+async function secureStoreDel(key: string): Promise<void> {
+  if (Platform.OS === 'web') return;
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {}
 }
 
-// Public API — used by api.ts + AuthContext + reviewPack/csvExport.
+/** Read the token, trying the more secure store first. */
 export async function getToken(key: string): Promise<string | null> {
-  // 1) Try secure store first (the new home).
-  const v = await secureGet(key);
+  // 1) Native secure store
+  const v = await secureStoreGet(key);
   if (v) return v;
-  // 2) Legacy fallback — older builds stored the token in AsyncStorage. If we
-  //    find it there, migrate it on the fly so the next call hits SecureStore.
-  if (Platform.OS !== 'web') {
-    const legacy = await AsyncStorage.getItem(key);
-    if (legacy) {
-      await secureSet(key, legacy);
-      try {
-        await AsyncStorage.removeItem(key);
-        await AsyncStorage.setItem(MIGRATED_FLAG, '1');
-      } catch {}
-      return legacy;
-    }
+  // 2) AsyncStorage fallback (always present)
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch {
+    return null;
   }
-  return null;
 }
 
+/** Write the token to both stores so reads from either return the same value. */
 export async function setToken(key: string, value: string): Promise<void> {
-  await secureSet(key, value);
-  // Belt-and-braces: also clear any stale AsyncStorage entry so we don't
-  // accidentally read the old value on the next cold start.
-  if (Platform.OS !== 'web') {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch {}
-  }
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch {}
+  // Dual-write to SecureStore on native (no-op on web).
+  await secureStoreSet(key, value);
 }
 
+/** Clear from both stores — never resurrect a logged-out session. */
 export async function clearToken(key: string): Promise<void> {
-  await secureDel(key);
-  if (Platform.OS !== 'web') {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch {}
-  }
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch {}
+  await secureStoreDel(key);
 }

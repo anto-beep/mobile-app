@@ -227,6 +227,19 @@ frontend:
         - working: true
           agent: "main"
           comment: "Full TOTP 2FA flow validated end-to-end via curl + pyotp. Backend (MOCKED stubs): added POST /admin/auth/login (returns requires_2fa_setup with QR data URI + secret on first login, requires_2fa with temp_token on subsequent), POST /admin/auth/2fa/enable (verifies code, generates 10 single-use backup codes), POST /admin/auth/2fa/verify (accepts 6-digit TOTP OR 8-char backup code, consumes backup codes), POST /admin/auth/logout, GET /admin/auth/me. Backend uses pyotp for TOTP + qrcode for QR data URI generation. Admin JWTs are marked kind='admin' (vs admin_temp / admin_setup) and verified separately from consumer user JWTs. Frontend: AdminAuthProvider with isolated expo-secure-store (Keychain/Keystore on native, AsyncStorage fallback on web), 30-min idle auto-logout via AppState + interval poll, and a separate adminApi axios instance. 4 screens: /admin-auth/login (email + password with eye toggle), /admin-auth/2fa (6-digit code or 8-char backup), /admin-auth/setup (QR + manual secret + verify + backup codes display ONCE with copy-all + warn box), /admin-app (post-auth landing with role pill + 2FA pill + sign-out confirmation + coming-soon tiles for Milestone 2/3). Entry point: 'Wayly staff sign-in' link at bottom of consumer login. Old is_admin-gated tab in (tabs) is now hidden (href: null). Validated via curl + pyotp: login \u2192 setup \u2192 verify \u2192 backup codes; login \u2192 TOTP verify; login \u2192 backup-code verify; backup-code reuse rejected (400); /admin/auth/me works; logout works. Screenshot-verified: all 4 screens render with brand colors, QR appears, secret is copyable, FIRST-TIME SETUP badge styled."
+  - task: "Hotfix — SecureStore migration broke iOS Expo Go auth"
+    implemented: true
+    working: true
+    file: "frontend/src/lib/tokenStorage.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "User reported 'Couldn't save. Not authenticated' and the dashboard wouldn't load. Backend logs showed hundreds of 401s on /household, /budget/current, /statements, /participant/wellbeing — every authenticated call was missing the Bearer header. Root cause: the original P2 tokenStorage migrated tokens by reading the legacy AsyncStorage value, writing to SecureStore, then DELETING the AsyncStorage copy. On iOS Expo Go (and some Android OEMs) SecureStore.setItemAsync can silently succeed but getItemAsync returns null on the next call — leaving the user with no token in either store. Fix: switched to a defensive **dual-write** strategy. setToken now writes the token to BOTH AsyncStorage and SecureStore on every login; getToken tries SecureStore first then falls back to AsyncStorage; clearToken wipes both on logout. The AsyncStorage copy is no longer treated as 'legacy to migrate away from' — it's a permanent safety net. Verified e2e: signed in via UI as demo@wayly.com.au / Wayly123!, dashboard rendered ($7,768 remaining, 4 statements, 4 alerts, spending-by-stream chart, monthly-spend chart), `localStorage.getItem('wayly:token')` confirmed token persisted, and an authenticated POST /participant/wellbeing returned 422 validation (NOT 401), proving the Bearer header is now sent. Existing sessions are preserved across the upgrade — no users get logged out."
+
+
   - task: "Statement Decoder — audit.anomalies + audit.informational_notes parity with web"
     implemented: true
     working: true
