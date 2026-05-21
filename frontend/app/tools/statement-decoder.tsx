@@ -65,6 +65,11 @@ export default function StatementDecoder() {
         const form = new FormData();
         form.append('file', { uri: file.uri, name: file.name, type: file.mime } as any);
         res = await api.post('/public/decode-statement', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else if (text.trim() === '__SAMPLE__') {
+        // Dev/QA — exercises the full audit.anomalies + audit.informational_notes
+        // render path without burning AI tokens. The backend `_sample` endpoint
+        // returns a pre-baked job that includes both note kinds from the spec.
+        res = await api.post('/public/decode-statement-text/_sample', {});
       } else {
         if (!text.trim()) { Alert.alert('Add some text', 'Paste the statement text first.'); setSubmitting(false); return; }
         res = await api.post('/public/decode-statement-text', { text });
@@ -166,39 +171,114 @@ export default function StatementDecoder() {
               </View>
             )}
 
-            {result && (
-              <View style={styles.results} testID="decoder-results">
-                <Text style={styles.resultsOverline}>Decoded successfully</Text>
-                {result.summary && (
-                  <View style={styles.summaryCard}>
-                    <Text style={styles.summaryLabel}>In plain English</Text>
-                    <Text style={styles.summaryText}>{result.summary}</Text>
-                  </View>
-                )}
-                {Array.isArray(result.anomalies) && result.anomalies.length > 0 && (
-                  <>
-                    <Text style={styles.sectionTitle}>Things to know</Text>
-                    {result.anomalies.map((a: any, i: number) => (
-                      <View key={i} style={[styles.anomaly, a.severity === 'alert' && styles.anomalyAlert, a.severity === 'warning' && styles.anomalyWarning]}>
-                        <Text style={styles.anomalyTitle}>{a.title}</Text>
-                        <Text style={styles.anomalyBody}>{a.detail || a.description}</Text>
-                      </View>
-                    ))}
-                  </>
-                )}
-                {Array.isArray(result.line_items) && result.line_items.length > 0 && (
-                  <>
-                    <Text style={styles.sectionTitle}>Line items ({result.line_items.length})</Text>
-                    {result.line_items.slice(0, 20).map((li: any, i: number) => (
-                      <View key={i} style={styles.lineItem}>
-                        <Text style={styles.lineService}>{li.service_name || li.service || 'Service'}</Text>
-                        <Text style={styles.lineTotal}>{formatAUD2(li.total || 0)}</Text>
-                      </View>
-                    ))}
-                  </>
-                )}
-              </View>
-            )}
+            {result && (() => {
+              // Source-of-truth resolution — production wayly.com.au returns
+              // `audit.anomalies` + `audit.informational_notes`. Some legacy
+              // builds still emit top-level keys. Accept both transparently.
+              const audit = (result as any).audit || {};
+              const anomalies: any[] = Array.isArray(audit.anomalies)
+                ? audit.anomalies
+                : Array.isArray((result as any).anomalies)
+                ? (result as any).anomalies
+                : [];
+              const informationalNotes: any[] = Array.isArray(audit.informational_notes)
+                ? audit.informational_notes
+                : Array.isArray((result as any).informational_notes)
+                ? (result as any).informational_notes
+                : [];
+              const lineItems: any[] = Array.isArray((result as any).line_items) ? (result as any).line_items : [];
+              const summary: string | undefined = (result as any).summary;
+              const periodLabel: string | undefined = (result as any).period_label;
+              return (
+                <View style={styles.results} testID="decoder-results">
+                  <Text style={styles.resultsOverline}>Decoded successfully{periodLabel ? ` · ${periodLabel}` : ''}</Text>
+                  {summary ? (
+                    <View style={styles.summaryCard}>
+                      <Text style={styles.summaryLabel}>In plain English</Text>
+                      <Text style={styles.summaryText}>{summary}</Text>
+                    </View>
+                  ) : null}
+
+                  {anomalies.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>Things to know</Text>
+                      {anomalies.map((a: any, i: number) => (
+                        <View
+                          key={a.id || i}
+                          style={[
+                            styles.anomaly,
+                            a.severity === 'alert' && styles.anomalyAlert,
+                            a.severity === 'warning' && styles.anomalyWarning,
+                          ]}
+                          testID={`decoder-anomaly-${i}`}
+                        >
+                          <View style={styles.anomalyHead}>
+                            <View
+                              style={[
+                                styles.sevBadge,
+                                a.severity === 'alert' && styles.sevBadgeAlert,
+                                a.severity === 'warning' && styles.sevBadgeWarning,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.sevBadgeText,
+                                  a.severity === 'alert' && styles.sevBadgeTextAlert,
+                                  a.severity === 'warning' && styles.sevBadgeTextWarning,
+                                ]}
+                              >
+                                {(a.severity || 'info').toUpperCase()}
+                              </Text>
+                            </View>
+                            <Text style={styles.anomalyTitle}>{a.title}</Text>
+                          </View>
+                          <Text style={styles.anomalyBody}>{a.detail || a.description}</Text>
+                          {a.suggested_action ? (
+                            <Text style={styles.anomalyAction}>→ {a.suggested_action}</Text>
+                          ) : null}
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Statement notes — informational only, no severity badges.
+                      Carries entries with kind `at_hm_active_commitment` or
+                      `previous_period_adjustment` per production spec. */}
+                  {informationalNotes.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>Statement notes</Text>
+                      <Text style={styles.sectionSub}>
+                        Context the decoder spotted — not alerts, just things worth knowing.
+                      </Text>
+                      {informationalNotes.map((n: any, i: number) => (
+                        <View key={i} style={styles.note} testID={`decoder-note-${i}`}>
+                          <View style={styles.noteHead}>
+                            <Ionicons name="information-circle-outline" size={16} color={Colors.severityInfo} />
+                            <Text style={styles.noteTitle}>{n.title || 'Statement note'}</Text>
+                          </View>
+                          {n.detail ? <Text style={styles.noteBody}>{n.detail}</Text> : null}
+                          {n.suggested_action ? (
+                            <Text style={styles.noteAction}>→ {n.suggested_action}</Text>
+                          ) : null}
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {lineItems.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>Line items ({lineItems.length})</Text>
+                      {lineItems.slice(0, 20).map((li: any, i: number) => (
+                        <View key={i} style={styles.lineItem}>
+                          <Text style={styles.lineService}>{li.service_name || li.service || 'Service'}</Text>
+                          <Text style={styles.lineTotal}>{formatAUD2(li.total || 0)}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+                </View>
+              );
+            })()}
 
             {!hasPaidAccess(user) && result && (
               <View style={styles.upsell}>
@@ -242,11 +322,32 @@ const styles = StyleSheet.create({
   summaryLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
   summaryText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, lineHeight: 21 },
   sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: Colors.brandPrimary, marginTop: Spacing.md, marginBottom: Spacing.sm },
+  sectionSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.sm, lineHeight: 17 },
   anomaly: { backgroundColor: Colors.cardBg, padding: Spacing.md, borderRadius: Radius.md, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: Colors.severityInfo },
   anomalyAlert: { borderLeftColor: Colors.severityAlert, backgroundColor: 'rgba(160, 85, 69, 0.05)' },
   anomalyWarning: { borderLeftColor: Colors.severityWarning, backgroundColor: 'rgba(212, 162, 78, 0.05)' },
-  anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
+  anomalyHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  sevBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(122, 155, 126, 0.18)' },
+  sevBadgeAlert: { backgroundColor: 'rgba(160, 85, 69, 0.18)' },
+  sevBadgeWarning: { backgroundColor: 'rgba(212, 162, 78, 0.22)' },
+  sevBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.8, color: Colors.severityInfo },
+  sevBadgeTextAlert: { color: Colors.severityAlert },
+  sevBadgeTextWarning: { color: Colors.severityWarning },
+  anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, flex: 1 },
   anomalyBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 },
+  anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandSecondary, marginTop: 6 },
+  note: {
+    backgroundColor: 'rgba(122, 155, 126, 0.06)',
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(122, 155, 126, 0.22)',
+  },
+  noteHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  noteTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, flex: 1 },
+  noteBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
+  noteAction: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandSecondary, marginTop: 4 },
   lineItem: { flexDirection: 'row', justifyContent: 'space-between', padding: Spacing.sm, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, marginBottom: 4, borderWidth: 1, borderColor: Colors.borderSubtle },
   lineService: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textPrimary, flex: 1 },
   lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },

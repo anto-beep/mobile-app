@@ -529,6 +529,14 @@ def _submit_public_decode_job(text: str) -> str:
     job_id = new_id()
     PUBLIC_DECODE_JOBS[job_id] = {"status": "pending", "created_at": now_iso()}
 
+    # Anomaly "kinds" that are *informational* (no severity badge in the UI).
+    # These match the production wayly.com.au decoder so the mobile app and
+    # web reference DecoderResultView render the same sections.
+    INFORMATIONAL_KINDS = {
+        "at_hm_active_commitment",
+        "previous_period_adjustment",
+    }
+
     async def _run():
         try:
             from agents import parse_statement
@@ -544,23 +552,58 @@ def _submit_public_decode_job(text: str) -> str:
                         "service_name": li.get("service_name") or li.get("service") or "Service",
                         "total": float(li.get("total") or 0),
                     })
-            anomalies = []
-            for an in data.get("anomalies", []) or []:
+            anomalies_raw: List[dict] = list(data.get("anomalies", []) or [])
+            # Production also surfaces "informational_notes" as a peer of anomalies.
+            # If the agent emitted them at the top level, accept them. Otherwise we
+            # split them out from `anomalies` based on a `kind`/`type` discriminator.
+            informational_notes: List[dict] = list(
+                data.get("informational_notes")
+                or (data.get("audit") or {}).get("informational_notes")
+                or []
+            )
+
+            normalised_anomalies: List[dict] = []
+            for an in anomalies_raw:
+                kind = (an.get("kind") or an.get("type") or "").strip().lower()
+                # Route informational kinds to the notes bucket.
+                if kind in INFORMATIONAL_KINDS:
+                    informational_notes.append({
+                        "kind": kind,
+                        "title": an.get("title") or "Statement note",
+                        "detail": an.get("detail") or an.get("description") or "",
+                        "suggested_action": an.get("suggested_action"),
+                    })
+                    continue
                 try:
-                    anomalies.append(Anomaly(**an).model_dump())
+                    norm = Anomaly(**an).model_dump()
+                    # carry kind/type through for the FE
+                    if kind:
+                        norm["kind"] = kind
+                    normalised_anomalies.append(norm)
                 except Exception:
-                    anomalies.append({
+                    normalised_anomalies.append({
                         "severity": an.get("severity") or "info",
                         "title": an.get("title") or "Heads up",
                         "detail": an.get("detail") or an.get("description") or "",
+                        **({"kind": kind} if kind else {}),
                     })
+
+            # Final result. We send BOTH a flat `anomalies` (legacy) and the
+            # `audit` envelope (production shape) so old + new mobile clients
+            # render correctly.
+            audit = {
+                "anomalies": normalised_anomalies,
+                "informational_notes": informational_notes,
+            }
             PUBLIC_DECODE_JOBS[job_id].update({
                 "status": "done",
                 "result": {
                     "period_label": data.get("period_label"),
                     "summary": data.get("summary"),
                     "line_items": line_items,
-                    "anomalies": anomalies,
+                    "anomalies": normalised_anomalies,  # legacy
+                    "informational_notes": informational_notes,  # convenience
+                    "audit": audit,  # ★ production shape
                 },
             })
         except Exception as e:
@@ -659,6 +702,70 @@ async def public_decode_job(job_id: str):
     elif job["status"] == "error":
         out["error"] = job.get("error", "decode failed")
     return out
+
+
+@api.post("/public/decode-statement-text/_sample")
+async def public_decode_sample():
+    """Dev/QA only — returns a fully-populated decode job that exercises both
+    `audit.anomalies` and `audit.informational_notes` (with the two production
+    note kinds: at_hm_active_commitment + previous_period_adjustment) so the
+    mobile DecoderResultView can be visually verified without burning AI calls."""
+    job_id = new_id()
+    PUBLIC_DECODE_JOBS[job_id] = {
+        "status": "done",
+        "created_at": now_iso(),
+        "result": {
+            "period_label": "May 2026",
+            "summary": (
+                "Total billed $2,184. Provider charged a weekend rate on a Tuesday visit, "
+                "and your statement carries an active AT-HM commitment from last quarter."
+            ),
+            "line_items": [
+                {"service_name": "Personal care", "total": 1240.50},
+                {"service_name": "Domestic assistance", "total": 384.00},
+                {"service_name": "Nursing", "total": 560.00},
+            ],
+            "anomalies": [
+                {
+                    "id": new_id(),
+                    "severity": "alert",
+                    "title": "Weekend rate on a Tuesday",
+                    "detail": "A personal-care visit on Tue 14 May was billed at the weekend loading rate.",
+                    "suggested_action": "Ask the provider to re-bill at the weekday rate.",
+                    "kind": "weekend_rate_misapplied",
+                },
+                {
+                    "id": new_id(),
+                    "severity": "warning",
+                    "title": "Nursing visit duration unusually long",
+                    "detail": "A 180-minute nursing visit is 3× the median for your plan.",
+                    "kind": "duration_outlier",
+                },
+            ],
+            "informational_notes": [
+                {
+                    "kind": "at_hm_active_commitment",
+                    "title": "Active AT-HM commitment",
+                    "detail": "$3,200 commitment from Q1 2026 is still being drawn down — $1,420 remaining.",
+                },
+                {
+                    "kind": "previous_period_adjustment",
+                    "title": "Adjustment from previous period",
+                    "detail": "−$42.50 credit applied for a duplicate visit in April 2026.",
+                },
+            ],
+            "audit": {
+                "anomalies": [],  # populated below
+                "informational_notes": [],  # populated below
+            },
+        },
+    }
+    # Mirror anomalies + informational_notes into the audit envelope so the
+    # response matches the production wayly.com.au shape exactly.
+    r = PUBLIC_DECODE_JOBS[job_id]["result"]
+    r["audit"]["anomalies"] = r["anomalies"]
+    r["audit"]["informational_notes"] = r["informational_notes"]
+    return {"job_id": job_id, "status": "pending"}
 
 
 @api.get("/statements", response_model=List[Statement])
