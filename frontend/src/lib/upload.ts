@@ -123,4 +123,38 @@ export async function uploadFromDocument(onProgress: UploadProgress): Promise<st
   return postFile(file.uri, file.name || 'document.pdf', mime, onProgress);
 }
 
+/** Submit a pasted statement (no file). Goes through the same job pipeline as
+ *  /statements/upload so the resulting Statement appears in the user's history
+ *  with summary, line items and anomalies. */
+export async function uploadFromText(text: string, onProgress: UploadProgress): Promise<string> {
+  const trimmed = (text || '').trim();
+  if (trimmed.length < 10) throw new Error('Paste a bit more text — at least 10 characters.');
+  onProgress('uploading', FRIENDLY_PHRASES.uploading);
+  const { data } = await api.post('/statements/upload-text', { text: trimmed });
+  const jobId = data?.job_id;
+  if (!jobId) throw new Error('No job id returned');
+
+  // Same poll pattern as postFile — text uploads skip the "reading" (OCR)
+  // phase so we go straight into "parsing".
+  onProgress('parsing', FRIENDLY_PHRASES.parsing);
+  for (let i = 0; i < 150; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    let st: any;
+    try {
+      const res = await api.get(`/statements/upload-job/${jobId}`, { timeout: 8000 });
+      st = res.data;
+    } catch {
+      continue;
+    }
+    if (st?.status === 'done') {
+      onProgress('done', FRIENDLY_PHRASES.done);
+      return st.statement_id;
+    }
+    if (st?.status === 'error') {
+      throw new Error(st.error || 'Decode failed');
+    }
+  }
+  throw new Error('Decoding is taking longer than expected. Please try again.');
+}
+
 export const uploadPhrase = (phase: UploadProgressPhase) => FRIENDLY_PHRASES[phase];

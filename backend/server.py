@@ -473,6 +473,31 @@ async def upload_statement(
     return {"job_id": job_id, "status": "pending"}
 
 
+class _UploadTextBody(BaseModel):
+    text: str = Field(min_length=10, max_length=200_000)
+    filename: Optional[str] = None
+
+
+@api.post("/statements/upload-text")
+async def upload_statement_text(
+    payload: _UploadTextBody,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Same as /statements/upload but for pasted text — no OCR phase needed.
+    Used by the mobile app's 'Paste text' option on the Statements + sheet.
+    The text goes through the SAME _submit_upload_job pipeline so the resulting
+    Statement appears in the user's history with anomalies, summary, line items
+    etc., identical to a photographed/uploaded statement."""
+    h = await _require_household(user_id)
+    user = await _get_user(user_id)
+    text = (payload.text or "").strip()
+    if len(text) < 10:
+        raise HTTPException(status_code=400, detail="Paste a bit more — at least 10 characters.")
+    fname = (payload.filename or f"pasted-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.txt").strip()
+    job_id = _submit_upload_job(text, fname, h["id"], user_id, user["name"], len(text.encode("utf-8")))
+    return {"job_id": job_id, "status": "pending"}
+
+
 @api.get("/statements/upload-job/{job_id}")
 async def get_upload_job(job_id: str, user_id: str = Depends(get_current_user_id)):
     job = UPLOAD_JOBS.get(job_id)

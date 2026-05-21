@@ -1,14 +1,18 @@
-// UploadSheet — shared bottom-sheet modal for camera/library/PDF + progress
+// UploadSheet — shared bottom-sheet modal for camera/library/PDF/paste-text + progress
 import React, { useState } from 'react';
 import {
   Modal,
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Pressable,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,6 +20,7 @@ import {
   uploadFromCamera,
   uploadFromLibrary,
   uploadFromDocument,
+  uploadFromText,
   uploadPhrase,
   UploadProgressPhase,
 } from '../lib/upload';
@@ -26,19 +31,33 @@ type Props = {
   onClose: () => void;
 };
 
+type Mode = 'menu' | 'paste';
+
 export default function UploadSheet({ visible, onClose }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<UploadProgressPhase>('picking');
+  const [mode, setMode] = useState<Mode>('menu');
+  const [pasted, setPasted] = useState('');
+
+  const reset = () => {
+    setMode('menu');
+    setPasted('');
+    setBusy(false);
+  };
+
+  const handleClose = () => {
+    if (busy) return;
+    reset();
+    onClose();
+  };
 
   const run = async (fn: typeof uploadFromCamera) => {
     setBusy(true);
     setPhase('picking');
     try {
       const statementId = await fn((p) => setPhase(p));
-      // Close sheet and navigate
-      onClose();
-      setBusy(false);
+      handleClose();
       router.push(`/statements/${statementId}` as any);
     } catch (e: any) {
       setBusy(false);
@@ -47,101 +66,178 @@ export default function UploadSheet({ visible, onClose }: Props) {
     }
   };
 
+  const submitPaste = async () => {
+    if (busy) return;
+    const trimmed = pasted.trim();
+    if (trimmed.length < 10) {
+      Alert.alert('Paste a bit more', 'We need at least a few lines of the statement to read it.');
+      return;
+    }
+    setBusy(true);
+    setPhase('uploading');
+    try {
+      const statementId = await uploadFromText(trimmed, (p) => setPhase(p));
+      handleClose();
+      router.push(`/statements/${statementId}` as any);
+    } catch (e: any) {
+      setBusy(false);
+      Alert.alert("Couldn't decode", e?.message || 'Please try again.');
+    }
+  };
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={() => !busy && onClose()}
-    >
-      <Pressable style={styles.backdrop} onPress={() => !busy && onClose()} />
-      <View style={styles.sheet} testID="upload-sheet">
-        <View style={styles.handle} />
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+      <Pressable style={styles.backdrop} onPress={handleClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kavWrap}
+        pointerEvents="box-none"
+      >
+        <View style={styles.sheet} testID="upload-sheet">
+          <View style={styles.handle} />
 
-        {busy ? (
-          <View style={styles.progressView} testID="upload-loading-view">
-            <ActivityIndicator color={Colors.brandPrimary} size="large" />
-            <Text style={styles.progressTitle}>Reading your statement…</Text>
-            <Text style={styles.progressBody}>{uploadPhrase(phase)}</Text>
-            <Text style={styles.progressHint}>This usually takes 30–90 seconds.</Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.title}>Add a statement</Text>
-            <Text style={styles.sub}>
-              Snap a photo of the paper statement, or pick a PDF you've already saved.
-            </Text>
+          {busy ? (
+            <View style={styles.progressView} testID="upload-loading-view">
+              <ActivityIndicator color={Colors.brandPrimary} size="large" />
+              <Text style={styles.progressTitle}>
+                {mode === 'paste' ? 'Reading your text…' : 'Reading your statement…'}
+              </Text>
+              <Text style={styles.progressBody}>{uploadPhrase(phase)}</Text>
+              <Text style={styles.progressHint}>
+                {mode === 'paste' ? 'Usually 10–30 seconds.' : 'This usually takes 30–90 seconds.'}
+              </Text>
+            </View>
+          ) : mode === 'paste' ? (
+            <>
+              <View style={styles.pasteHeader}>
+                <TouchableOpacity
+                  onPress={() => setMode('menu')}
+                  style={styles.backBtn}
+                  testID="paste-back"
+                  hitSlop={8}
+                >
+                  <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>Paste your statement</Text>
+                  <Text style={styles.sub}>Copy the statement text from email or your provider's portal and paste it below.</Text>
+                </View>
+              </View>
 
-            <TouchableOpacity
-              testID="action-take-photo"
-              style={styles.action}
-              onPress={() => run(uploadFromCamera)}
-            >
-              <View style={styles.iconWrap}>
-                <Ionicons name="camera-outline" size={22} color={Colors.brandPrimary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>Take a photo</Text>
-                <Text style={styles.actionSub}>Best for paper statements</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                style={styles.pasteScroll}
+                contentContainerStyle={{ paddingBottom: Spacing.md }}
+              >
+                <TextInput
+                  style={styles.pasteInput}
+                  multiline
+                  value={pasted}
+                  onChangeText={setPasted}
+                  placeholder={"e.g. HomeCare Plus — Statement May 2026\nPersonal care 14/05 $240.50\nDomestic 18/05 $84.00\nTotal: $504.50"}
+                  placeholderTextColor={Colors.textMuted}
+                  textAlignVertical="top"
+                  testID="paste-input"
+                />
+                <Text style={styles.helperText}>{pasted.trim().length} characters · minimum 10</Text>
+              </ScrollView>
 
-            <TouchableOpacity
-              testID="action-pick-library"
-              style={styles.action}
-              onPress={() => run(uploadFromLibrary)}
-            >
-              <View style={styles.iconWrap}>
-                <Ionicons name="image-outline" size={22} color={Colors.brandPrimary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>Pick from library</Text>
-                <Text style={styles.actionSub}>Use a photo you've already taken</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryCta, pasted.trim().length < 10 && { opacity: 0.45 }]}
+                onPress={submitPaste}
+                disabled={pasted.trim().length < 10}
+                testID="paste-submit"
+              >
+                <Ionicons name="sparkles-outline" size={16} color={Colors.cream} />
+                <Text style={styles.primaryCtaText}>Decode this statement</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleClose} testID="paste-cancel" style={styles.cancel}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>Add a statement</Text>
+              <Text style={styles.sub}>
+                Snap a photo of the paper statement, pick a PDF you've saved, or paste the text directly.
+              </Text>
 
-            <TouchableOpacity
-              testID="action-upload-pdf"
-              style={[styles.action, { marginBottom: Spacing.lg }]}
-              onPress={() => run(uploadFromDocument)}
-            >
-              <View style={styles.iconWrap}>
-                <Ionicons name="document-text-outline" size={22} color={Colors.brandPrimary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>Upload a PDF</Text>
-                <Text style={styles.actionSub}>If you've been emailed one</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+              <TouchableOpacity testID="action-take-photo" style={styles.action} onPress={() => run(uploadFromCamera)}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="camera-outline" size={22} color={Colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>Take a photo</Text>
+                  <Text style={styles.actionSub}>Best for paper statements</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
 
-            <TouchableOpacity onPress={onClose} testID="upload-sheet-cancel" style={styles.cancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+              <TouchableOpacity testID="action-pick-library" style={styles.action} onPress={() => run(uploadFromLibrary)}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="image-outline" size={22} color={Colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>Pick from library</Text>
+                  <Text style={styles.actionSub}>Use a photo you've already taken</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity testID="action-upload-pdf" style={styles.action} onPress={() => run(uploadFromDocument)}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="document-text-outline" size={22} color={Colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>Upload a PDF</Text>
+                  <Text style={styles.actionSub}>If you've been emailed one</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                testID="action-paste-text"
+                style={[styles.action, { marginBottom: Spacing.lg }]}
+                onPress={() => setMode('paste')}
+              >
+                <View style={styles.iconWrap}>
+                  <Ionicons name="clipboard-outline" size={22} color={Colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>Paste text</Text>
+                  <Text style={styles.actionSub}>Copy text from email or your provider's portal</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleClose} testID="upload-sheet-cancel" style={styles.cancel}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  kavWrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cardBg,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: Spacing.lg,
     paddingBottom: Spacing.xl,
+    maxHeight: '92%',
   },
   handle: {
     width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2,
     alignSelf: 'center', marginBottom: Spacing.md,
   },
   title: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
   action: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingVertical: 14, paddingHorizontal: Spacing.md,
@@ -160,4 +256,31 @@ const styles = StyleSheet.create({
   progressTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, marginTop: Spacing.sm },
   progressBody: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
   progressHint: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: Spacing.sm },
+
+  // Paste-mode styles
+  pasteHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, marginBottom: Spacing.md },
+  backBtn: {
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(31, 58, 95, 0.06)', marginTop: 2,
+  },
+  pasteScroll: { maxHeight: 280 },
+  pasteInput: {
+    backgroundColor: 'rgba(31, 58, 95, 0.03)',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    minHeight: 180,
+    padding: Spacing.md,
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    color: Colors.brandPrimary,
+    lineHeight: 19,
+  },
+  helperText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  primaryCta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, marginTop: Spacing.md,
+    minHeight: 48,
+  },
+  primaryCtaText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
 });
