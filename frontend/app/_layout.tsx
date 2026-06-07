@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { AdminAuthProvider } from '../src/context/AdminAuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
@@ -62,21 +63,50 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  // Bundled Wayly brand fonts — Feb 2026 refresh. Family names match what
-  // theme.ts → Fonts emits (Fraunces / Inter / IBM Plex Mono). True offline-first;
-  // no Google Fonts CDN, no FOIT to system serif on cold launch.
-  const [fontsLoaded] = useFonts({
+  // Bundled Wayly brand fonts — Feb 2026 refresh.
+  // IMPORTANT: We don't block app render on font loading. If a variable TTF
+  // fails to register on a given device (rare but does happen on older Expo Go
+  // builds), the app would otherwise be stuck on a white screen forever.
+  // Instead we hide the splash + render after EITHER fonts load OR a 1.5s
+  // safety timeout. Components fall back to the system font stack defined in
+  // theme.ts → SystemFonts.
+  const [fontsLoaded, fontsError] = useFonts({
     Fraunces: require('../assets/fonts/Fraunces-Variable.ttf'),
     Inter: require('../assets/fonts/Inter-VariableFont.ttf'),
     'IBM Plex Mono': require('../assets/fonts/IBMPlexMono-Regular.ttf'),
   });
+  const [ready, setReady] = React.useState(false);
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={Colors.brandPrimary} size="large" />
-      </View>
-    );
+  // Try to prevent the native splash from auto-hiding until we're ready.
+  // expo-splash-screen throws on web — guard with try/catch.
+  React.useEffect(() => {
+    try {
+      SplashScreen.preventAutoHideAsync();
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    if (fontsLoaded || fontsError) {
+      setReady(true);
+      return;
+    }
+    // Safety net: never block on fonts for more than 1.5s.
+    const t = setTimeout(() => setReady(true), 1500);
+    return () => clearTimeout(t);
+  }, [fontsLoaded, fontsError]);
+
+  React.useEffect(() => {
+    if (ready) {
+      try {
+        SplashScreen.hideAsync();
+      } catch {}
+    }
+  }, [ready]);
+
+  if (!ready) {
+    // Single warm-bg view while we wait — splash is still up on native, this is
+    // only visible on web.
+    return <View style={styles.loading} />;
   }
 
   return (

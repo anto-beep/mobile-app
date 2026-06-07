@@ -94,23 +94,53 @@ export const TouchTarget = {
   participant: 60, // Participant View buttons (older users)
 } as const;
 
-// Font families — names match the @font-face/registry entries in app/_layout.tsx
-// where we call `useFonts({ Fraunces: require('...ttf'), Inter: require('...ttf'),
-// 'IBM Plex Mono': require('...ttf') })`. The same family names are what CSS
-// would use on the web bundle, so this stays cross-platform.
-export const Fonts = {
-  // Display / decorative — Fraunces variable
-  heading: 'Fraunces',
-  headingMed: 'Fraunces',
-
-  // Body / UI — Inter variable
-  body: 'Inter',
-  bodyMed: 'Inter',
-  bodySemi: 'Inter',
-
-  // Numbers / money / statement tables — IBM Plex Mono with tabular-nums
-  mono: 'IBM Plex Mono',
-} as const;
+// Font families.
+// ---------------
+// On WEB and ANDROID, font family fallback chains "just work" — RN-web maps
+// them straight to CSS font-family stacks, and Android falls back to its
+// internal font index. On iOS, however, React Native does NOT honour fallback
+// stacks — `fontFamily: 'Fraunces, serif'` is treated as a single family name
+// that won't be found. So on iOS we ALWAYS request the exact PostScript name
+// of the bundled TTF; if that fails to register the system will fall back to
+// the default UI font automatically (no white screen).
+//
+// The TTFs are registered in app/_layout.tsx via expo-font's useFonts() with
+// keys exactly matching the strings below. Variable fonts work in Expo SDK 50+
+// but if they fail on a particular device, the system fallback kicks in.
+export const Fonts = Platform.select({
+  ios: {
+    heading: 'Fraunces',
+    headingMed: 'Fraunces',
+    body: 'Inter',
+    bodyMed: 'Inter',
+    bodySemi: 'Inter',
+    mono: 'IBM Plex Mono',
+  },
+  android: {
+    heading: 'Fraunces',
+    headingMed: 'Fraunces',
+    body: 'Inter',
+    bodyMed: 'Inter',
+    bodySemi: 'Inter',
+    mono: 'IBM Plex Mono',
+  },
+  default: {
+    // Web — CSS picks the first registered family.
+    heading: 'Fraunces, Georgia, serif',
+    headingMed: 'Fraunces, Georgia, serif',
+    body: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    bodyMed: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    bodySemi: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    mono: '"IBM Plex Mono", Menlo, monospace',
+  },
+}) as {
+  heading: string;
+  headingMed: string;
+  body: string;
+  bodyMed: string;
+  bodySemi: string;
+  mono: string;
+};
 
 // Body type scale — never below 16
 export const Type = {
