@@ -17,6 +17,11 @@ import { api } from './api';
 
 const QUEUE_KEY = 'wayly:offline_queue_v1';
 const MAX_RETRIES = 3;
+// Phase 1 hardening: any queued mutation older than this is silently dropped
+// at the next flush. Caps the blast radius if a device sits offline for weeks
+// (or if a user logs out, gets a new phone, and the old queued POSTs would
+// otherwise replay against the new account once they sign back in).
+const MAX_QUEUE_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export type QueuedMutation = {
   id: string;
@@ -75,6 +80,23 @@ export async function flushQueue(): Promise<{ replayed: number; dropped: number;
   let dropped = 0;
   try {
     let all = await readAll();
+    // Phase 1: drop anything older than MAX_QUEUE_AGE_MS BEFORE replay so
+    // we never POST stale mutations against a different session.
+    const cutoff = Date.now() - MAX_QUEUE_AGE_MS;
+    const fresh: QueuedMutation[] = [];
+    let expired = 0;
+    for (const item of all) {
+      const ts = Date.parse(item.enqueued_at || '');
+      if (Number.isFinite(ts) && ts < cutoff) {
+        expired += 1;
+        continue;
+      }
+      fresh.push(item);
+    }
+    if (expired > 0) {
+      dropped += expired;
+    }
+    all = fresh;
     const survivors: QueuedMutation[] = [];
     for (const item of all) {
       try {

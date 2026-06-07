@@ -11,6 +11,7 @@ import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
 import { AIAccuracyBanner, DecoderProgress, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 type Tab = 'snap' | 'upload' | 'paste';
 
@@ -25,6 +26,10 @@ export default function StatementDecoder() {
   const [submitting, setSubmitting] = useState(false);
   const [limitedUntil, setLimitedUntil] = useState<string | null>(null);
   const tickRef = useRef<any>(null);
+
+  // Phase 6 hardening: decoder shows OCR'd statement contents (dollar amounts,
+  // line items, anomaly detail). Block screenshot / screen-record while open.
+  useSensitiveScreen();
 
   useEffect(() => {
     if (!jobId) {

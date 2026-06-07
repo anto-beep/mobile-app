@@ -17,6 +17,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import UploadSheet from '../../src/components/UploadSheet';
 import { registerForPushNotifications } from '../../src/lib/push';
 import DashboardInsights from '../../src/components/DashboardInsights';
+import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 type StreamRow = {
   stream: string;
@@ -87,6 +88,11 @@ export default function Today() {
   const [data, setData] = useState<Derived | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Phase 6 hardening: the Today screen shows quarter-by-quarter spend, burn
+  // percentage, anomalies, and participant name — block screenshots & task
+  // switcher snapshots while it's open.
+  useSensitiveScreen();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);

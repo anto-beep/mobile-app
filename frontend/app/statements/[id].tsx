@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
 import BackHeader from '../../src/components/BackHeader';
+import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
   alert: { color: Colors.severityAlert, bg: 'rgba(192, 57, 43, 0.08)', icon: 'alert-circle' },
@@ -33,6 +34,10 @@ export default function StatementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [stmt, setStmt] = useState<Stmt | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Phase 6 hardening: prevent screenshots / screen-recording / task-switcher
+  // snapshots while a statement detail (line items, anomalies, dollar amounts) is on screen.
+  useSensitiveScreen();
 
   useEffect(() => {
     (async () => {

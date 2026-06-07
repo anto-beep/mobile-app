@@ -23,6 +23,7 @@ import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
+import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 type Doc = {
   id: string;
@@ -70,6 +71,9 @@ function fmtBytes(n: number): string {
 
 export default function Documents() {
   const router = useRouter();
+  // Phase 6: Document Vault carries care plans, financial docs, medical
+  // documents — block screenshot / screen recording.
+  useSensitiveScreen();
   const [docs, setDocs] = useState<Doc[]>([]);
   const [vault, setVault] = useState<VaultResponse['limits'] | null>(null);
   const [categories, setCategories] = useState<string[]>([]);

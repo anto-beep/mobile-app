@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api, TOKEN_KEY, extractErrorMessage } from '../lib/api';
 import { getToken, setToken, clearToken } from '../lib/tokenStorage';
+import { clearAllUserData } from '../lib/secureStorage';
+import { unregisterPushNotifications } from '../lib/push';
 
 export type User = {
   id: string;
@@ -77,13 +79,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    // Phase 3: invalidate this device's push token server-side BEFORE we
+    // drop the JWT — otherwise the backend won't recognise us.
+    try {
+      await unregisterPushNotifications();
+    } catch {}
     // Best-effort backend logout (clears push devices, audit log). Don't block the user.
     try {
       await api.post('/auth/logout', {});
     } catch {
       // ignore — token may already be invalid
     }
-    await clearToken(TOKEN_KEY);
+    // Phase 1: nuke EVERY piece of cached user data — JWT + offline queue +
+    // biometric flag + chat drafts + any other `wayly:*` key. Accessibility
+    // prefs are intentionally preserved.
+    try {
+      await clearAllUserData();
+    } catch {
+      // fallback to the narrow clear
+      await clearToken(TOKEN_KEY);
+    }
     setUser(null);
   };
 

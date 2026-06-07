@@ -16,6 +16,13 @@ import { NotificationRouter } from '../src/components/NotificationRouter';
 import { NetworkProvider } from '../src/components/NetworkProvider';
 import { BiometricGate } from '../src/components/BiometricGate';
 import { Colors } from '../src/lib/theme';
+import { installLogRedactor } from '../src/lib/logRedactor';
+
+// Phase 10 hardening: install console redactor BEFORE any other code runs.
+// In production builds this neuters console.log/info/debug and redacts JWTs,
+// emails, push tokens, AU phone numbers, TFNs from warn/error payloads.
+// In `__DEV__` it's a no-op so iteration speed stays fast.
+installLogRedactor();
 
 function RootStack() {
   const { user, loading } = useAuth();

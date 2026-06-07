@@ -4,6 +4,11 @@ import { Platform } from 'react-native';
 import { api } from './api';
 import { Colors } from './theme';
 
+// Phase 3 hardening: cache the last token registered so the logout-time
+// unregister call sends a precise device identifier (rather than fetching a
+// new token after permissions were revoked, which fails).
+let lastRegisteredToken: string | null = null;
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -51,11 +56,33 @@ export async function registerForPushNotifications(): Promise<string | null> {
         expo_push_token: token,
         platform: Platform.OS,
       });
+      lastRegisteredToken = token;
     } catch {
       // ignore — backend may not have this endpoint configured yet
     }
     return token;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Phase 3 hardening: invalidate the device's push token server-side on
+ * logout. Best-effort + non-blocking — failure should never block the user
+ * from signing out. We also clear the in-memory token cache so a subsequent
+ * login on the same device re-registers cleanly.
+ */
+export async function unregisterPushNotifications(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const token = lastRegisteredToken;
+  if (!token) return;
+  try {
+    await api.delete('/notifications/register-push', {
+      data: { expo_push_token: token },
+    });
+  } catch {
+    // ignore — token may already be invalidated server-side
+  } finally {
+    lastRegisteredToken = null;
   }
 }

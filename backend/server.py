@@ -249,8 +249,27 @@ async def auth_reset(payload: _ResetRequest):
 async def auth_logout(user_id: str = Depends(get_current_user_id)):
     """Stateless JWT — the client clears the token. We log it for audit + push token cleanup."""
     # Remove this user's push device tokens so they don't keep getting notifications.
-    await db.push_devices.delete_many({"user_id": user_id})
+    # Phase 3 hardening fix: the collection name is `push_tokens` (matches
+    # /notifications/register-push). The previous `push_devices` was a typo
+    # and silently no-op'd, leaving stale tokens active after logout.
+    try:
+        await db.push_tokens.delete_many({"user_id": user_id})
+    except Exception as e:
+        logger.warning("push_tokens cleanup failed for %s: %s", user_id, e)
     logger.info("User %s signed out", user_id)
+    return {"ok": True}
+
+
+class PushTokenUnregister(BaseModel):
+    expo_push_token: str
+
+
+@api.delete("/notifications/register-push")
+async def unregister_push(body: PushTokenUnregister, user_id: str = Depends(get_current_user_id)):
+    """Phase 3 hardening: invalidate THIS device's push token without nuking
+    other devices owned by the same user. Called from the mobile client when
+    the user logs out, so notifications stop landing on the signed-out device."""
+    await db.push_tokens.delete_one({"user_id": user_id, "expo_push_token": body.expo_push_token})
     return {"ok": True}
 
 
