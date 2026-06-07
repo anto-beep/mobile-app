@@ -132,7 +132,7 @@ function DevCodeHint() {
 }
 
 const devStyles = StyleSheet.create({
-  box: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(212, 162, 78, 0.08)', borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)', borderStyle: 'dashed' as any },
+  box: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)', borderStyle: 'dashed' as any },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   title: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 1.2, color: Colors.brandSecondary },
   body: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, lineHeight: 16, marginBottom: 8 },
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, gap: 4 },
   back: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: Spacing.lg },
   backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(212, 162, 78, 0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, marginBottom: Spacing.sm },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(183, 121, 31, 0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, marginBottom: Spacing.sm },
   badgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandSecondary, letterSpacing: 0.5, textTransform: 'uppercase' },
   title: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5, marginBottom: 6 },
   sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginBottom: Spacing.lg, lineHeight: 19 },

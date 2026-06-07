@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   currentOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 4 },
   currentPlan: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.brandPrimary, letterSpacing: 1 },
   currentMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6 },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, alignSelf: 'flex-start', backgroundColor: 'rgba(212, 162, 78, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, alignSelf: 'flex-start', backgroundColor: 'rgba(183, 121, 31, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
   bannerText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandSecondary },
   sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
   planCard: {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md,
   },
   planCardHighlight: { borderColor: Colors.brandSecondary, borderWidth: 2 },
-  planCardCurrent: { backgroundColor: 'rgba(31, 58, 95, 0.04)', borderColor: Colors.brandPrimary },
+  planCardCurrent: { backgroundColor: 'rgba(14, 77, 82, 0.04)', borderColor: Colors.brandPrimary },
   popularBadge: {
     position: 'absolute', top: -12, right: 16, backgroundColor: Colors.brandSecondary,
     paddingHorizontal: 12, paddingVertical: 4, borderRadius: 100,

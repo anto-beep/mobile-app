@@ -12,9 +12,9 @@ import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/
 const FALLBACK_SERVICES = ['Personal care', 'Domestic assistance', 'Nursing', 'Physiotherapy', 'Cleaning', 'Transport'];
 
 const VERDICT_COLORS: Record<string, string> = {
-  fair: '#3A5A40',
-  high: '#A05545',
-  low: '#8B9B82',
+  fair: Colors.success,
+  high: Colors.severityAlert,
+  low: Colors.textMuted,
 };
 
 export default function PriceChecker() {

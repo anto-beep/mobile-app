@@ -25,9 +25,9 @@ type Today = {
 };
 
 const MOOD_BTNS: { mood: 'good' | 'okay' | 'not_great'; label: string; sub: string; color: string; icon: any }[] = [
-  { mood: 'good', label: 'Good', sub: "I'm feeling well today", color: '#3A5A40', icon: 'happy-outline' },
-  { mood: 'okay', label: 'Okay', sub: 'Just a normal day', color: '#D4A24E', icon: 'remove-outline' },
-  { mood: 'not_great', label: 'Not great', sub: "I'd like someone to check in", color: '#A05545', icon: 'sad-outline' },
+  { mood: 'good', label: 'Good', sub: "I'm feeling well today", color: Colors.success, icon: 'happy-outline' },
+  { mood: 'okay', label: 'Okay', sub: 'Just a normal day', color: Colors.brandSecondary, icon: 'remove-outline' },
+  { mood: 'not_great', label: 'Not great', sub: "I'd like someone to check in", color: Colors.severityAlert, icon: 'sad-outline' },
 ];
 
 export default function Participant() {
@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
   greeting: { fontFamily: Fonts.body, fontSize: 18, color: Colors.textSecondary, marginTop: Spacing.sm, marginBottom: Spacing.lg },
   loadingFill: { padding: Spacing.xl, alignItems: 'center' },
   appointmentCard: {
-    backgroundColor: 'rgba(212, 162, 78, 0.08)', borderRadius: Radius.lg,
-    padding: Spacing.md + 4, marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)',
+    backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.lg,
+    padding: Spacing.md + 4, marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)',
   },
   appointmentOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
   appointmentTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary },

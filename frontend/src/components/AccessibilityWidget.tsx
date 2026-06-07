@@ -173,7 +173,7 @@ function ToggleRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: 'rgba(31,58,95,0.15)', true: Colors.brandSecondary }}
+        trackColor={{ false: 'rgba(14,77,82,0.15)', true: Colors.brandSecondary }}
         thumbColor={Platform.OS === 'android' ? (value ? Colors.brandPrimary : '#f4f3f4') : undefined}
         testID={testID}
       />
@@ -199,15 +199,15 @@ const styles = StyleSheet.create({
     elevation: 6,
     zIndex: 9999,
   },
-  backdrop: { flex: 1, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
   sheetWrap: {
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm,
     maxHeight: '85%',
   },
-  handle: { width: 40, height: 4, backgroundColor: 'rgba(31,58,95,0.18)', borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
+  handle: { width: 40, height: 4, backgroundColor: 'rgba(14,77,82,0.18)', borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: Spacing.md },
-  headerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(212, 162, 78, 0.15)', alignItems: 'center', justifyContent: 'center' },
+  headerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(183, 121, 31, 0.15)', alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
   subtitle: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   body: { paddingBottom: Spacing.lg, gap: Spacing.md },
@@ -220,10 +220,10 @@ const styles = StyleSheet.create({
   hint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 4 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
   toggleRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  toggleIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(212, 162, 78, 0.12)', alignItems: 'center', justifyContent: 'center' },
+  toggleIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(183, 121, 31, 0.12)', alignItems: 'center', justifyContent: 'center' },
   toggleLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
   toggleHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
-  testBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: Radius.md, backgroundColor: 'rgba(31, 58, 95, 0.06)' },
+  testBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: Radius.md, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   testBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
   footer: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 8 },
 });

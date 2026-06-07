@@ -89,7 +89,7 @@ export default function Security() {
       <ScrollView contentContainerStyle={styles.scroll} testID="security-scroll">
         <View style={styles.card} testID="security-biometric-card">
           <View style={styles.cardHead}>
-            <View style={[styles.iconWrap, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
               <Ionicons name="finger-print" size={20} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -116,7 +116,7 @@ export default function Security() {
 
         <View style={styles.card}>
           <View style={styles.cardHead}>
-            <View style={[styles.iconWrap, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
               <Ionicons name="key-outline" size={20} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -131,7 +131,7 @@ export default function Security() {
 
         <View style={[styles.card, styles.dangerCard]}>
           <View style={styles.cardHead}>
-            <View style={[styles.iconWrap, { backgroundColor: 'rgba(160, 85, 69, 0.1)' }]}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(192, 57, 43, 0.1)' }]}>
               <Ionicons name="trash-outline" size={20} color={Colors.severityAlert} />
             </View>
             <View style={{ flex: 1 }}>
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md },
-  dangerCard: { borderColor: 'rgba(160, 85, 69, 0.3)', backgroundColor: 'rgba(160, 85, 69, 0.04)' },
+  dangerCard: { borderColor: 'rgba(192, 57, 43, 0.3)', backgroundColor: 'rgba(192, 57, 43, 0.04)' },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md },
   iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },

@@ -1,37 +1,73 @@
-// Wayly brand theme — single source of truth for colors, typography, spacing
-export const Colors = {
-  background: '#FAF7F2',
-  brandPrimary: '#1F3A5F',
-  brandSecondary: '#D4A24E',
-  cream: '#FAF7F2',
+// Wayly brand theme — Feb 2026 refresh
+// ------------------------------------------------------------
+// Single source of truth for palette, typography, spacing, radii.
+// All hex literals live HERE; components must use Colors.* tokens so a future
+// palette refresh is a one-file change.
+//
+// Palette (Feb 2026):
+//   • Primary brand     #0E4D52  teal-ink            (was #1F3A5F navy)
+//   • Accent / CTA fill #A5512B  clay 500            (button bg; white text always)
+//   • Focus ring        #C2683D  clay 400            (3px outline + 2px offset)
+//   • App background    #FBF8F3  warm off-white      (was #FAF7F2)
+//   • Body text         #1C2B2D  warm ink            (was #1F3A5F navy)
+//   • Sage              #6B8F71 / body-safe #425F47
+//   • Success           #1B5733  (AA on white)
+//   • Warning           #B7791F  (AA on white)
+//   • Error             #C0392B  (AA on white)
+//
+// Typography:
+//   • Headings → Fraunces (serif, variable)
+//   • Body / UI → Inter (sans, variable)
+//   • Numbers / money / tables → IBM Plex Mono (with tabular-nums)
+//   • Body text size: 17 / line-height 1.6 (never below 16)
+//
+// Radii:
+//   • Card 16, button + input 10, pill 9999
+//
+// Touch targets:
+//   • 48 px min, 56 px primary CTA, 60 px participant-view buttons
+import { Platform } from 'react-native';
 
-  // Stream colors (from web app)
+export const Colors = {
+  // Core
+  background: '#FBF8F3',          // warm off-white app shell
+  brandPrimary: '#0E4D52',        // teal-ink — primary surfaces, headers, nav
+  brandPrimaryDeep: '#073034',    // pressed/active state of teal surfaces
+  brandSecondary: '#A5512B',      // clay 500 — CTA fill (always white text)
+  brandSecondaryDeep: '#7E3F22',  // pressed/active state of CTA
+  focusRing: '#C2683D',           // clay 400 — focus outline
+  cream: '#FBF8F3',               // alias, used for inverse text on dark surfaces
+
+  // Streams (consistent palette across charts + chips)
   streams: {
-    Clinical: '#3A5A40',
-    Independence: '#8B9B82',
-    'Everyday Living': '#A05545',
+    Clinical: '#425F47',           // body-safe sage
+    Independence: '#6B8F71',       // sage 500
+    'Everyday Living': '#A5512B',  // clay 500
   } as Record<string, string>,
 
-  // Anomaly severities
-  severityAlert: '#A05545',     // terracotta
-  severityWarning: '#D4A24E',   // gold
-  severityInfo: '#8B9B82',      // sage
+  // Anomaly severities (AA on white)
+  severityAlert: '#C0392B',       // error red
+  severityWarning: '#B7791F',     // amber warning
+  severityInfo: '#6B8F71',        // sage info
 
-  // Text
-  textPrimary: '#1F3A5F',
-  textSecondary: '#546A87',
-  textMuted: '#8B9B82',
-  textInverse: '#FAF7F2',
+  // Text — warm ink everywhere except inside dark teal surfaces
+  textPrimary: '#1C2B2D',         // warm ink
+  textSecondary: '#3D5557',       // dimmer warm ink for sub-copy
+  textMuted: '#7A8A8C',           // subtle muted grey-teal
+  textInverse: '#FFFFFF',         // text on teal-ink / clay surfaces — ALWAYS white
 
   // Surfaces
   cardBg: '#FFFFFF',
+  cardBgWarm: '#F4EFE6',          // tonal alt card on warm bg
   inputBg: '#FFFFFF',
-  border: 'rgba(31, 58, 95, 0.1)',
-  borderSubtle: 'rgba(31, 58, 95, 0.05)',
+  border: 'rgba(14, 77, 82, 0.12)',     // teal-tinted hairline
+  borderSubtle: 'rgba(14, 77, 82, 0.06)',
+  surfaceTint: 'rgba(14, 77, 82, 0.05)', // hover/pressed tint on warm bg
 
-  // Status
-  success: '#3A5A40',
-  danger: '#A05545',
+  // Status — AA-compliant on white
+  success: '#1B5733',
+  warning: '#B7791F',
+  danger: '#C0392B',
 } as const;
 
 export const Spacing = {
@@ -44,19 +80,65 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  pill: 100,
+  sm: 6,
+  md: 10,         // buttons + inputs
+  lg: 16,         // cards
+  xl: 20,
+  pill: 9999,
 } as const;
 
+// Touch targets — accessibility floor for tappable elements
+export const TouchTarget = {
+  min: 48,         // baseline (any tappable)
+  primary: 56,     // primary mobile CTAs
+  participant: 60, // Participant View buttons (older users)
+} as const;
+
+// Font families — names match the @font-face/registry entries in app/_layout.tsx
+// where we call `useFonts({ Fraunces: require('...ttf'), Inter: require('...ttf'),
+// 'IBM Plex Mono': require('...ttf') })`. The same family names are what CSS
+// would use on the web bundle, so this stays cross-platform.
 export const Fonts = {
-  heading: 'Outfit_700Bold',
-  headingMed: 'Outfit_600SemiBold',
-  body: 'Figtree_400Regular',
-  bodyMed: 'Figtree_500Medium',
-  bodySemi: 'Figtree_600SemiBold',
+  // Display / decorative — Fraunces variable
+  heading: 'Fraunces',
+  headingMed: 'Fraunces',
+
+  // Body / UI — Inter variable
+  body: 'Inter',
+  bodyMed: 'Inter',
+  bodySemi: 'Inter',
+
+  // Numbers / money / statement tables — IBM Plex Mono with tabular-nums
+  mono: 'IBM Plex Mono',
+} as const;
+
+// Body type scale — never below 16
+export const Type = {
+  // headings (Fraunces)
+  h1: { fontFamily: Fonts.heading, fontSize: 30, lineHeight: 36, fontWeight: '700' as const, letterSpacing: -0.4 },
+  h2: { fontFamily: Fonts.heading, fontSize: 24, lineHeight: 30, fontWeight: '700' as const, letterSpacing: -0.3 },
+  h3: { fontFamily: Fonts.heading, fontSize: 20, lineHeight: 26, fontWeight: '600' as const },
+  h4: { fontFamily: Fonts.heading, fontSize: 18, lineHeight: 24, fontWeight: '600' as const },
+  // body (Inter)
+  body: { fontFamily: Fonts.body, fontSize: 17, lineHeight: 27, fontWeight: '400' as const },
+  bodyMed: { fontFamily: Fonts.body, fontSize: 17, lineHeight: 27, fontWeight: '500' as const },
+  bodySemi: { fontFamily: Fonts.body, fontSize: 17, lineHeight: 27, fontWeight: '600' as const },
+  bodySmall: { fontFamily: Fonts.body, fontSize: 14, lineHeight: 21, fontWeight: '400' as const },
+  caption: { fontFamily: Fonts.body, fontSize: 12, lineHeight: 17, fontWeight: '500' as const, letterSpacing: 0.2 },
+  overline: { fontFamily: Fonts.body, fontSize: 11, lineHeight: 14, fontWeight: '600' as const, letterSpacing: 1.4, textTransform: 'uppercase' as const },
+  // numbers (IBM Plex Mono with tabular-nums)
+  number: {
+    fontFamily: Fonts.mono,
+    fontSize: 17,
+    lineHeight: 24,
+    fontVariant: ['tabular-nums' as const],
+  },
+} as const;
+
+// Helper — money values always get tabular-nums (use via <MoneyText /> wrapper).
+export const moneyStyle = {
+  fontFamily: Fonts.mono,
+  fontVariant: ['tabular-nums' as const],
 } as const;
 
 export const formatAUD = (n: number | null | undefined): string => {
@@ -95,3 +177,11 @@ export const shortPeriod = (s: string | null | undefined): string => {
   if (!isNaN(d.getTime())) return d.toLocaleString('en-AU', { month: 'short' });
   return String(s).slice(0, 6);
 };
+
+// Convenience export for places that need to know the platform's "system" stack
+// as a fallback (e.g., RN-web before fonts load).
+export const SystemFonts = Platform.select({
+  ios: { serif: 'Georgia', sans: '-apple-system', mono: 'Menlo' },
+  android: { serif: 'serif', sans: 'sans-serif', mono: 'monospace' },
+  default: { serif: 'Georgia', sans: 'system-ui', mono: 'Menlo' },
+}) as { serif: string; sans: string; mono: string };

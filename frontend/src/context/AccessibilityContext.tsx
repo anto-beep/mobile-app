@@ -2,6 +2,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
+import { Colors } from '../lib/theme';
 
 export type TextScale = 'sm' | 'md' | 'lg' | 'xl';
 export const TEXT_SCALES: Record<TextScale, number> = { sm: 0.9, md: 1.0, lg: 1.15, xl: 1.3 };
@@ -105,13 +106,13 @@ export function useA11yColors() {
     return {
       background: highContrast ? '#000000' : '#0F1924',
       cardBg: highContrast ? '#0A0A0A' : '#1A2433',
-      textPrimary: highContrast ? '#FFFFFF' : '#FAF7F2',
+      textPrimary: highContrast ? '#FFFFFF' : Colors.cream,
       textSecondary: highContrast ? '#E8E8E8' : '#A8B3C4',
       textMuted: highContrast ? '#C8C8C8' : '#7A8699',
       border: highContrast ? 'rgba(255,255,255,0.5)' : 'rgba(250, 247, 242, 0.12)',
       borderSubtle: highContrast ? 'rgba(255,255,255,0.2)' : 'rgba(250, 247, 242, 0.06)',
-      brandPrimary: highContrast ? '#FFFFFF' : '#D4A24E',
-      brandSecondary: '#D4A24E',
+      brandPrimary: highContrast ? '#FFFFFF' : Colors.brandSecondary,
+      brandSecondary: Colors.brandSecondary,
     };
   }
   if (highContrast) {

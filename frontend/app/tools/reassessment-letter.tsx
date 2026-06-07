@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
   resultHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   resultTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: Colors.brandPrimary },
-  copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: 'rgba(31, 58, 95, 0.06)' },
+  copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   copyText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
   letterText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 22 },
   caveat: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: Spacing.md, fontStyle: 'italic' },

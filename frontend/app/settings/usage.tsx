@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   value: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
   label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textSecondary },
-  planBadge: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(31, 58, 95, 0.04)', borderRadius: Radius.md, alignItems: 'center' },
+  planBadge: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(14, 77, 82, 0.04)', borderRadius: Radius.md, alignItems: 'center' },
   planBadgeText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary },
   bold: { fontFamily: Fonts.bodySemi, color: Colors.brandSecondary, letterSpacing: 0.5 },
   footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },

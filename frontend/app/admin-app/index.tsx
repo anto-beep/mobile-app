@@ -135,7 +135,7 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {p1Tickets.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
               <Text style={styles.emptyText}>No open P1 tickets — nice.</Text>
             </View>
           ) : p1Tickets.map((t) => (
@@ -155,7 +155,7 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {failedPayments.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
               <Text style={styles.emptyText}>No failed payments in the last 24 hours.</Text>
             </View>
           ) : failedPayments.map((p, i) => (
@@ -174,7 +174,7 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {dataRequests.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color="#3A5A40" />
+              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
               <Text style={styles.emptyText}>No open data requests.</Text>
             </View>
           ) : dataRequests.map((r) => {
@@ -187,7 +187,7 @@ export default function AdminInbox() {
                   <Text style={styles.rowTitle}>{r.user_name || r.user_email} · {r.type}</Text>
                   <Text style={styles.rowMeta}>{daysLeft} day{daysLeft === 1 ? '' : 's'} left (Privacy Act)</Text>
                 </View>
-                <View style={[styles.pill, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}><Text style={[styles.pillText, { color: Colors.brandSecondary }]}>{r.status}</Text></View>
+                <View style={[styles.pill, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}><Text style={[styles.pillText, { color: Colors.brandSecondary }]}>{r.status}</Text></View>
               </View>
             );
           })}
@@ -211,9 +211,9 @@ export default function AdminInbox() {
                 style={[styles.healthCell, !ok && { borderColor: Colors.danger }]}
                 testID={`health-card-${s.name.toLowerCase()}`}
               >
-                <Ionicons name={ok ? 'checkmark-circle' : 'alert-circle'} size={16} color={ok ? '#3A5A40' : Colors.danger} />
+                <Ionicons name={ok ? 'checkmark-circle' : 'alert-circle'} size={16} color={ok ? Colors.success : Colors.danger} />
                 <Text style={styles.healthName}>{s.name}</Text>
-                <Text style={[styles.healthStatus, { color: ok ? '#3A5A40' : Colors.danger }]}>{s.status}</Text>
+                <Text style={[styles.healthStatus, { color: ok ? Colors.success : Colors.danger }]}>{s.status}</Text>
               </TouchableOpacity>
             );
           })}
@@ -231,7 +231,7 @@ export default function AdminInbox() {
           }}
           testID="open-maintenance-cta"
         >
-          <View style={[styles.maintIcon, maintenance.enabled && { backgroundColor: 'rgba(160, 85, 69, 0.15)' }]}>
+          <View style={[styles.maintIcon, maintenance.enabled && { backgroundColor: 'rgba(192, 57, 43, 0.15)' }]}>
             <Ionicons name={maintenance.enabled ? 'warning' : 'build'} size={16} color={maintenance.enabled ? Colors.danger : Colors.brandPrimary} />
           </View>
           <View style={{ flex: 1 }}>
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
   h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
-  bannerDanger: { backgroundColor: 'rgba(160, 85, 69, 0.1)', borderLeftColor: Colors.danger },
-  bannerWarn: { backgroundColor: 'rgba(212, 162, 78, 0.1)', borderLeftColor: Colors.brandSecondary },
+  bannerDanger: { backgroundColor: 'rgba(192, 57, 43, 0.1)', borderLeftColor: Colors.danger },
+  bannerWarn: { backgroundColor: 'rgba(183, 121, 31, 0.1)', borderLeftColor: Colors.brandSecondary },
   bannerTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   bannerBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md, marginTop: Spacing.sm },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   linkBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4, paddingHorizontal: 4, minHeight: 28 },
   linkText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary, textTransform: 'uppercase', letterSpacing: 0.5 },
   maintRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle },
-  maintIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(31, 58, 95, 0.08)' },
+  maintIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.08)' },
   maintTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   maintMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.lg },

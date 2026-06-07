@@ -83,7 +83,7 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
   if (variant === 'free-plan') {
     return (
       <View style={styles.gate} testID="tool-gate-free-plan">
-        <View style={[styles.iconBlob, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}>
+        <View style={[styles.iconBlob, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}>
           <Ionicons name="lock-closed-outline" size={22} color={Colors.brandSecondary} />
         </View>
         <Text style={styles.gateTitle}>Paid plan needed</Text>
@@ -109,7 +109,7 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
   // unauth
   return (
     <View style={styles.gate} testID="tool-gate-unauth">
-      <View style={[styles.iconBlob, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+      <View style={[styles.iconBlob, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
         <Ionicons name="key-outline" size={22} color={Colors.brandPrimary} />
       </View>
       <Text style={styles.gateTitle}>Sign in to use this tool</Text>
@@ -222,7 +222,7 @@ export function UpgradeGate({ visible, onClose, reason }: { visible: boolean; on
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={styles.sheet} testID="upgrade-gate-modal">
         <View style={styles.handle} />
-        <View style={[styles.iconBlob, { backgroundColor: 'rgba(212, 162, 78, 0.15)', alignSelf: 'center' }]}>
+        <View style={[styles.iconBlob, { backgroundColor: 'rgba(183, 121, 31, 0.15)', alignSelf: 'center' }]}>
           <Ionicons name="sparkles-outline" size={26} color={Colors.brandSecondary} />
         </View>
         <Text style={[styles.gateTitle, { textAlign: 'center', marginTop: Spacing.md }]}>Upgrade to keep going</Text>
@@ -245,7 +245,7 @@ export function UpgradeGate({ visible, onClose, reason }: { visible: boolean; on
 const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: 'rgba(212, 162, 78, 0.1)', padding: Spacing.md,
+    backgroundColor: 'rgba(183, 121, 31, 0.1)', padding: Spacing.md,
     borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary,
     marginBottom: Spacing.md,
   },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', gap: 8,
     marginBottom: Spacing.md,
   },
-  gateLimit: { backgroundColor: 'rgba(212, 162, 78, 0.05)', borderColor: 'rgba(212, 162, 78, 0.3)' },
+  gateLimit: { backgroundColor: 'rgba(183, 121, 31, 0.05)', borderColor: 'rgba(183, 121, 31, 0.3)' },
   iconBlob: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   gateTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, letterSpacing: -0.3, marginTop: 6 },
   gateBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, textAlign: 'center' },
@@ -279,8 +279,8 @@ const styles = StyleSheet.create({
 
   trialBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(212, 162, 78, 0.1)', padding: 10, borderRadius: Radius.md,
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)',
+    backgroundColor: 'rgba(183, 121, 31, 0.1)', padding: 10, borderRadius: Radius.md,
+    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)',
   },
   trialText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.brandPrimary, flex: 1 },
   trialCta: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandSecondary, letterSpacing: 0.3 },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   payPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle },
   payPillText: { fontFamily: Fonts.bodyMed, fontSize: 10, color: Colors.textSecondary, letterSpacing: 0.3 },
 
-  backdrop: { flex: 1, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
   sheet: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: Spacing.xl },
   handle: { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
 });

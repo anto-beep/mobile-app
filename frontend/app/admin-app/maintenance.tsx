@@ -147,7 +147,7 @@ export default function AdminMaintenance() {
                 value={enabled}
                 disabled={!isSuper || saving}
                 onValueChange={(v) => confirmAndSave(v)}
-                trackColor={{ false: Colors.borderSubtle, true: 'rgba(160, 85, 69, 0.7)' }}
+                trackColor={{ false: Colors.borderSubtle, true: 'rgba(192, 57, 43, 0.7)' }}
                 thumbColor={enabled ? Colors.danger : Colors.cardBg}
                 testID="maintenance-switch"
               />
@@ -170,9 +170,9 @@ export default function AdminMaintenance() {
 
             {dirty ? (
               <TouchableOpacity style={styles.saveBtn} onPress={saveMessageOnly} disabled={saving} testID="save-message">
-                {saving ? <ActivityIndicator color={'#FAF7F2'} /> : (
+                {saving ? <ActivityIndicator color={Colors.cream} /> : (
                   <>
-                    <Ionicons name="save-outline" size={16} color={'#FAF7F2'} />
+                    <Ionicons name="save-outline" size={16} color={Colors.cream} />
                     <Text style={styles.saveBtnText}>Save message</Text>
                   </>
                 )}
@@ -193,7 +193,7 @@ export default function AdminMaintenance() {
                 </View>
               ) : history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={[styles.histDot, { backgroundColor: h.enabled ? Colors.danger : '#3A5A40' }]} />
+                  <View style={[styles.histDot, { backgroundColor: h.enabled ? Colors.danger : Colors.success }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.histTitle}>{h.enabled ? 'Enabled' : 'Disabled'}{h.message ? ` — “${h.message}”` : ''}</Text>
                     <Text style={styles.histMeta}>{new Date(h.at).toLocaleString()} · {h.actor_email}</Text>
@@ -220,11 +220,11 @@ const styles = StyleSheet.create({
   h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
   sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 },
   loader: { paddingVertical: 40, alignItems: 'center' },
-  lockedCard: { flexDirection: 'row', gap: 10, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(160, 85, 69, 0.08)', borderWidth: 1, borderColor: 'rgba(160, 85, 69, 0.3)' },
+  lockedCard: { flexDirection: 'row', gap: 10, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderWidth: 1, borderColor: 'rgba(192, 57, 43, 0.3)' },
   lockedTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   lockedBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
-  statusOn: { backgroundColor: 'rgba(160, 85, 69, 0.08)', borderColor: 'rgba(160, 85, 69, 0.4)' },
+  statusOn: { backgroundColor: 'rgba(192, 57, 43, 0.08)', borderColor: 'rgba(192, 57, 43, 0.4)' },
   statusOff: { backgroundColor: Colors.cardBg, borderColor: Colors.borderSubtle },
   statusOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted },
   statusValue: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginTop: 4 },
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
   input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: Radius.md, padding: Spacing.md, minHeight: 90, textAlignVertical: 'top' },
   help: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.brandPrimary },
-  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FAF7F2' },
-  bioHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md, padding: 10, borderRadius: Radius.md, backgroundColor: 'rgba(212, 162, 78, 0.1)' },
+  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  bioHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md, padding: 10, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.1)' },
   bioHintText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, flex: 1 },
   sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
   histCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.sm },

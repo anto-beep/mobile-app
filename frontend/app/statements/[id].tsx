@@ -14,8 +14,8 @@ import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme'
 import BackHeader from '../../src/components/BackHeader';
 
 const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
-  alert: { color: Colors.severityAlert, bg: 'rgba(160, 85, 69, 0.08)', icon: 'alert-circle' },
-  warning: { color: Colors.severityWarning, bg: 'rgba(212, 162, 78, 0.08)', icon: 'warning' },
+  alert: { color: Colors.severityAlert, bg: 'rgba(192, 57, 43, 0.08)', icon: 'alert-circle' },
+  warning: { color: Colors.severityWarning, bg: 'rgba(183, 121, 31, 0.08)', icon: 'warning' },
   info: { color: Colors.severityInfo, bg: 'rgba(139, 155, 130, 0.08)', icon: 'information-circle' },
 };
 
@@ -167,8 +167,8 @@ const styles = StyleSheet.create({
   h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
   subline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
   summaryCard: {
-    backgroundColor: 'rgba(212, 162, 78, 0.08)', borderRadius: Radius.lg, padding: Spacing.md + 4,
-    borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)', marginBottom: Spacing.lg,
+    backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.lg, padding: Spacing.md + 4,
+    borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)', marginBottom: Spacing.lg,
   },
   summaryOverline: {
     fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',

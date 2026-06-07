@@ -236,7 +236,7 @@ function Stat({ label, value, fullWidth }: { label: string; value: string; fullW
 
 function ActionRow({ icon, label, hint, onPress, loading, tone, last, testID }: { icon: any; label: string; hint?: string; onPress: () => void; loading?: boolean; tone?: 'warning' | 'danger'; last?: boolean; testID?: string }) {
   const color = tone === 'danger' ? Colors.danger : tone === 'warning' ? Colors.severityAlert : Colors.brandPrimary;
-  const iconBg = tone === 'danger' ? 'rgba(160, 85, 69, 0.12)' : tone === 'warning' ? 'rgba(212, 162, 78, 0.15)' : 'rgba(31, 58, 95, 0.08)';
+  const iconBg = tone === 'danger' ? 'rgba(192, 57, 43, 0.12)' : tone === 'warning' ? 'rgba(183, 121, 31, 0.15)' : 'rgba(14, 77, 82, 0.08)';
   return (
     <TouchableOpacity style={[styles.actionRow, !last && styles.actionRowBorder]} onPress={onPress} disabled={loading} testID={testID}>
       <View style={[styles.actionIcon, { backgroundColor: iconBg }]}><Ionicons name={icon} size={16} color={color} /></View>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   suspendedPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: Colors.danger },
   suspendedPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.cream, letterSpacing: 0.5 },
   quickActions: { flexDirection: 'row', gap: 6 },
-  quickAction: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(31, 58, 95, 0.08)' },
+  quickAction: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.08)' },
   quickActionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md },
   statCell: { flexBasis: '48%', flexGrow: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   noteSendBtn: { width: 44, height: 44, borderRadius: Radius.md, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center' },
   empty: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textMuted },
   emptyInline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textMuted, textAlign: 'center', padding: Spacing.md },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(31, 58, 95, 0.6)' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.6)' },
   modalCard: { position: 'absolute', left: 24, right: 24, top: '28%', backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, gap: 8 },
   modalTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, textAlign: 'center', letterSpacing: -0.3 },
   modalBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 19 },

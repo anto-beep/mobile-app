@@ -297,9 +297,9 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
         items.map((a, i) => {
           const bucket = severityBucket(a.severity);
           const tone = bucket === 'alert'
-            ? { c: Colors.severityAlert, icon: 'alert-circle' as const, bg: 'rgba(160, 85, 69, 0.06)' }
+            ? { c: Colors.severityAlert, icon: 'alert-circle' as const, bg: 'rgba(192, 57, 43, 0.06)' }
             : bucket === 'warn'
-              ? { c: Colors.severityWarning, icon: 'warning' as const, bg: 'rgba(212, 162, 78, 0.06)' }
+              ? { c: Colors.severityWarning, icon: 'warning' as const, bg: 'rgba(183, 121, 31, 0.06)' }
               : { c: Colors.severityInfo, icon: 'information-circle' as const, bg: 'rgba(139, 155, 130, 0.06)' };
           return (
             <TouchableOpacity
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   // Lifetime cap
   lifetimeCard: {},
   lifetimeHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(31, 58, 95, 0.06)' },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.3 },
   lifetimeNumbers: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: Spacing.md },
   lifetimeBig: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   lifetimeTrack: { height: 8, backgroundColor: 'rgba(42, 59, 50, 0.08)', borderRadius: 4, overflow: 'hidden' },
   lifetimeFill: { height: '100%', backgroundColor: '#2A3B32', borderRadius: 4 },
   // Things to know
-  countPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(31, 58, 95, 0.06)' },
+  countPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   countPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.3 },
   nothingCard: { flexDirection: 'row', gap: 12, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(139, 155, 130, 0.08)' },
   nothingTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },

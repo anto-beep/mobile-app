@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wayly">
+  <title>Wayly</title>
+  <rect width="512" height="512" rx="112" fill="#0E4D52"/>
+  <circle cx="256" cy="256" r="240" fill="url(#wayly-warmth-dk)" opacity="0.25"/>
+  <path
+    d="M 88 132 C 88 124, 96 116, 108 116 L 124 116 C 134 116, 142 122, 145 132 L 196 312 L 240 152 C 244 138, 254 130, 268 132 C 280 134, 290 142, 294 156 L 332 308 L 388 132 C 391 122, 400 116, 410 116 L 426 116 C 438 116, 446 124, 446 132"
+    fill="none" stroke="#FBF8F3" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"
+  />
+  <circle cx="446" cy="132" r="22" fill="#C2683D"/>
+  <defs>
+    <radialGradient id="wayly-warmth-dk" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FBF8F3" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#0E4D52" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

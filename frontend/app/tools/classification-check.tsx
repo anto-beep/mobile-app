@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: Spacing.md },
   resultLine: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
   bold: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
-  suggest: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: Spacing.sm, backgroundColor: 'rgba(212, 162, 78, 0.1)', borderRadius: Radius.sm, marginTop: Spacing.sm },
+  suggest: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.1)', borderRadius: Radius.sm, marginTop: Spacing.sm },
   suggestText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1, lineHeight: 18 },
   caveat: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.sm, fontStyle: 'italic', lineHeight: 16 },
 });

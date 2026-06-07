@@ -3,17 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import {
-  useFonts as useOutfit,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-} from '@expo-google-fonts/outfit';
-import {
-  useFonts as useFigtree,
-  Figtree_400Regular,
-  Figtree_500Medium,
-  Figtree_600SemiBold,
-} from '@expo-google-fonts/figtree';
+import { useFonts } from 'expo-font';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { AdminAuthProvider } from '../src/context/AdminAuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
@@ -72,10 +62,16 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  const [outfitOk] = useOutfit({ Outfit_600SemiBold, Outfit_700Bold });
-  const [figtreeOk] = useFigtree({ Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold });
+  // Bundled Wayly brand fonts — Feb 2026 refresh. Family names match what
+  // theme.ts → Fonts emits (Fraunces / Inter / IBM Plex Mono). True offline-first;
+  // no Google Fonts CDN, no FOIT to system serif on cold launch.
+  const [fontsLoaded] = useFonts({
+    Fraunces: require('../assets/fonts/Fraunces-Variable.ttf'),
+    Inter: require('../assets/fonts/Inter-VariableFont.ttf'),
+    'IBM Plex Mono': require('../assets/fonts/IBMPlexMono-Regular.ttf'),
+  });
 
-  if (!outfitOk || !figtreeOk) {
+  if (!fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={Colors.brandPrimary} size="large" />
@@ -90,7 +86,8 @@ export default function RootLayout() {
           <NetworkProvider>
             <AdminAuthProvider>
               <AuthProvider>
-                <StatusBar style="dark" />
+                {/* Status bar is teal-ink, content is white (light) */}
+                <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
                 <ThemedShell>
                   <RootStack />
                 </ThemedShell>

@@ -77,10 +77,10 @@ export function useToast() {
 }
 
 const TONE: Record<ToastKind, { bg: string; fg: string; icon: keyof typeof Ionicons.glyphMap; border: string }> = {
-  info: { bg: '#1F3A5F', fg: '#FAF7F2', icon: 'information-circle', border: '#1F3A5F' },
-  success: { bg: '#3A5A40', fg: '#FAF7F2', icon: 'checkmark-circle', border: '#3A5A40' },
-  warning: { bg: '#D4A24E', fg: '#1F3A5F', icon: 'alert-circle', border: '#D4A24E' },
-  error: { bg: '#A05545', fg: '#FAF7F2', icon: 'close-circle', border: '#A05545' },
+  info: { bg: Colors.brandPrimary, fg: Colors.cream, icon: 'information-circle', border: Colors.brandPrimary },
+  success: { bg: Colors.success, fg: Colors.cream, icon: 'checkmark-circle', border: Colors.success },
+  warning: { bg: Colors.brandSecondary, fg: Colors.brandPrimary, icon: 'alert-circle', border: Colors.brandSecondary },
+  error: { bg: Colors.severityAlert, fg: Colors.cream, icon: 'close-circle', border: Colors.severityAlert },
 };
 
 function ToastHost({ items, onDone }: { items: ToastItem[]; onDone: (id: string) => void }) {

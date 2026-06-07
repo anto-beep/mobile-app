@@ -70,7 +70,7 @@ export default function Reports() {
 
         <View style={styles.card}>
           <View style={styles.cardHead}>
-            <View style={[styles.iconWrap, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
               <Ionicons name="document-text-outline" size={22} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>

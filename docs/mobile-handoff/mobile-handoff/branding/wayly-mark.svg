@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wayly">
+  <title>Wayly</title>
+  <!-- Warm off-white tile background (neutral 50 from the spec) -->
+  <rect width="512" height="512" rx="112" fill="#FBF8F3"/>
+
+  <!-- Soft inner glow — adds warmth without being a gradient overload -->
+  <circle cx="256" cy="256" r="240" fill="url(#wayly-warmth)" opacity="0.35"/>
+
+  <!-- The "W" — a single continuous, hand-drawn stroke in teal-ink 600.
+       The terminal of the right stroke ends in a clay accent dot — the
+       "wayfinder" mark that signals direction and warmth. -->
+  <path
+    d="M 88 132
+       C 88 124, 96 116, 108 116
+       L 124 116
+       C 134 116, 142 122, 145 132
+       L 196 312
+       L 240 152
+       C 244 138, 254 130, 268 132
+       C 280 134, 290 142, 294 156
+       L 332 308
+       L 388 132
+       C 391 122, 400 116, 410 116
+       L 426 116
+       C 438 116, 446 124, 446 132"
+    fill="none"
+    stroke="#0E4D52"
+    stroke-width="38"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Wayfinder accent — single warm clay dot at the end of the right stroke -->
+  <circle cx="446" cy="132" r="22" fill="#A5512B"/>
+
+  <defs>
+    <radialGradient id="wayly-warmth" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#C9E0E1" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#FBF8F3" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

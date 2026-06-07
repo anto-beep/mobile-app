@@ -222,7 +222,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
   kavWrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.cardBg,
@@ -241,11 +241,11 @@ const styles = StyleSheet.create({
   action: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingVertical: 14, paddingHorizontal: Spacing.md,
-    backgroundColor: 'rgba(31, 58, 95, 0.03)',
+    backgroundColor: 'rgba(14, 77, 82, 0.03)',
     borderRadius: Radius.md, marginBottom: Spacing.sm,
   },
   iconWrap: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(212, 162, 78, 0.15)',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(183, 121, 31, 0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
   actionTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
@@ -261,11 +261,11 @@ const styles = StyleSheet.create({
   pasteHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, marginBottom: Spacing.md },
   backBtn: {
     width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(31, 58, 95, 0.06)', marginTop: 2,
+    backgroundColor: 'rgba(14, 77, 82, 0.06)', marginTop: 2,
   },
   pasteScroll: { maxHeight: 280 },
   pasteInput: {
-    backgroundColor: 'rgba(31, 58, 95, 0.03)',
+    backgroundColor: 'rgba(14, 77, 82, 0.03)',
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,

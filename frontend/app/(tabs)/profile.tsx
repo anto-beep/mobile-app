@@ -139,7 +139,7 @@ export default function Profile() {
           <Text style={styles.sectionLabel}>Helpful tools</Text>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/participant' as any)} testID="profile-participant-view">
-            <View style={[styles.linkIcon, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}>
+            <View style={[styles.linkIcon, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}>
               <Ionicons name="heart-outline" size={20} color={Colors.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -150,7 +150,7 @@ export default function Profile() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/tools' as any)} testID="profile-ai-tools">
-            <View style={[styles.linkIcon, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+            <View style={[styles.linkIcon, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
               <Ionicons name="construct-outline" size={20} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -161,7 +161,7 @@ export default function Profile() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/(tabs)/notifications' as any)} testID="profile-notifications">
-            <View style={[styles.linkIcon, { backgroundColor: 'rgba(160, 85, 69, 0.1)' }]}>
+            <View style={[styles.linkIcon, { backgroundColor: 'rgba(192, 57, 43, 0.1)' }]}>
               <Ionicons name="notifications-outline" size={20} color={Colors.severityAlert} />
             </View>
             <View style={{ flex: 1 }}>
@@ -185,7 +185,7 @@ export default function Profile() {
           <Text style={styles.sectionLabel}>Account</Text>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings' as any)} testID="profile-settings-web">
-            <View style={[styles.linkIcon, { backgroundColor: 'rgba(31, 58, 95, 0.08)' }]}>
+            <View style={[styles.linkIcon, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
               <Ionicons name="settings-outline" size={20} color={Colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -196,7 +196,7 @@ export default function Profile() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings/plan' as any)} testID="profile-billing-web">
-            <View style={[styles.linkIcon, { backgroundColor: 'rgba(212, 162, 78, 0.15)' }]}>
+            <View style={[styles.linkIcon, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}>
               <Ionicons name="card-outline" size={20} color={Colors.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.severityAlert },
   footer: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center' },
 
-  backdrop: { flex: 1, backgroundColor: 'rgba(31, 58, 95, 0.5)' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
   sheet: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: Spacing.xl },
   handle: { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
   modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },

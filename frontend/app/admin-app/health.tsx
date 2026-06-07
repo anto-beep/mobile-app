@@ -27,9 +27,9 @@ type ServiceDetail = Service & {
 };
 
 function statusTone(status: string) {
-  if (status === 'healthy') return { fg: '#3A5A40', bg: 'rgba(58, 90, 64, 0.12)', icon: 'checkmark-circle' as const };
-  if (status === 'degraded') return { fg: Colors.brandSecondary, bg: 'rgba(212, 162, 78, 0.15)', icon: 'alert-circle' as const };
-  return { fg: Colors.danger, bg: 'rgba(160, 85, 69, 0.12)', icon: 'close-circle' as const };
+  if (status === 'healthy') return { fg: Colors.success, bg: 'rgba(27, 87, 51, 0.12)', icon: 'checkmark-circle' as const };
+  if (status === 'degraded') return { fg: Colors.brandSecondary, bg: 'rgba(183, 121, 31, 0.15)', icon: 'alert-circle' as const };
+  return { fg: Colors.danger, bg: 'rgba(192, 57, 43, 0.12)', icon: 'close-circle' as const };
 }
 
 export default function AdminHealth() {
@@ -179,7 +179,7 @@ export default function AdminHealth() {
                             </View>
                           ) : (
                             <View style={styles.allClear}>
-                              <Ionicons name="shield-checkmark" size={14} color={'#3A5A40'} />
+                              <Ionicons name="shield-checkmark" size={14} color={Colors.success} />
                               <Text style={styles.allClearText}>No errors logged in the last 24h.</Text>
                             </View>
                           )}
@@ -253,8 +253,8 @@ const styles = StyleSheet.create({
   errMessage: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
   errTime: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted },
   allClear: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  allClearText: { fontFamily: Fonts.body, fontSize: 12, color: '#3A5A40' },
-  llmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(212, 162, 78, 0.08)', borderWidth: 1, borderColor: 'rgba(212, 162, 78, 0.3)' },
+  allClearText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.success },
+  llmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)' },
   llmText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
   llmCount: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: Spacing.lg, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border },

@@ -14,13 +14,18 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Snap a photo of your statement to upload it",
         "NSPhotoLibraryUsageDescription": "Pick a saved statement photo to upload",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIAppFonts": [
+          "Fraunces-Variable.ttf",
+          "Inter-VariableFont.ttf",
+          "IBMPlexMono-Regular.ttf"
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FAF7F2"
+        "backgroundColor": "#FBF8F3"
       },
       "edgeToEdgeEnabled": true,
       "package": "au.wayly.app",
@@ -28,6 +33,10 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
       ]
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#0E4D52",
+      "barStyle": "light-content"
     },
     "web": {
       "bundler": "metro",
@@ -39,10 +48,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/splash-image.png",
+          "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#FAF7F2"
+          "backgroundColor": "#FBF8F3"
         }
       ],
       [
@@ -61,12 +70,21 @@
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#1F3A5F"
+          "color": "#0E4D52"
         }
       ],
       "expo-web-browser",
       "expo-secure-store",
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Fraunces-Variable.ttf",
+            "./assets/fonts/Inter-VariableFont.ttf",
+            "./assets/fonts/IBMPlexMono-Regular.ttf"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -46,9 +46,9 @@ type Client = {
 };
 
 function statusTone(s: string) {
-  if (s === 'linked' || s === 'active') return { fg: '#3A5A40', bg: 'rgba(58, 90, 64, 0.1)', label: 'Linked' };
-  if (s === 'invited') return { fg: Colors.brandSecondary, bg: 'rgba(212, 162, 78, 0.14)', label: 'Invited' };
-  if (s === 'declined' || s === 'expired') return { fg: Colors.danger, bg: 'rgba(160, 85, 69, 0.1)', label: s };
+  if (s === 'linked' || s === 'active') return { fg: Colors.success, bg: 'rgba(27, 87, 51, 0.1)', label: 'Linked' };
+  if (s === 'invited') return { fg: Colors.brandSecondary, bg: 'rgba(183, 121, 31, 0.14)', label: 'Invited' };
+  if (s === 'declined' || s === 'expired') return { fg: Colors.danger, bg: 'rgba(192, 57, 43, 0.1)', label: s };
   return { fg: Colors.textMuted, bg: Colors.background, label: s };
 }
 
@@ -194,7 +194,7 @@ export default function AdviserHome() {
         {summary ? (
           <View style={styles.tileGrid}>
             <View style={styles.tile}><Text style={styles.tileValue}>{summary.clients_total}</Text><Text style={styles.tileLabel}>Total clients</Text></View>
-            <View style={styles.tile}><Text style={[styles.tileValue, { color: '#3A5A40' }]}>{summary.clients_active}</Text><Text style={styles.tileLabel}>Linked</Text></View>
+            <View style={styles.tile}><Text style={[styles.tileValue, { color: Colors.success }]}>{summary.clients_active}</Text><Text style={styles.tileLabel}>Linked</Text></View>
             <View style={styles.tile}><Text style={[styles.tileValue, { color: Colors.brandSecondary }]}>{summary.clients_invited}</Text><Text style={styles.tileLabel}>Invited</Text></View>
             <View style={styles.tile}><Text style={styles.tileValue}>{summary.seats_remaining}</Text><Text style={styles.tileLabel}>Seats left</Text></View>
           </View>
@@ -315,13 +315,13 @@ const styles = StyleSheet.create({
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase' },
   clientActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  miniBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(31, 58, 95, 0.06)', minHeight: 28 },
-  miniBtnGhost: { backgroundColor: 'rgba(160, 85, 69, 0.06)' },
+  miniBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)', minHeight: 28 },
+  miniBtnGhost: { backgroundColor: 'rgba(192, 57, 43, 0.06)' },
   miniBtnText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary },
   footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.lg, textAlign: 'center', lineHeight: 16 },
   // Locked state
   lockedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.lg },
-  lockedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(31, 58, 95, 0.06)', marginBottom: Spacing.md },
+  lockedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.06)', marginBottom: Spacing.md },
   lockedH1: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, marginBottom: 8 },
   lockedBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: Spacing.lg },
   lockedCta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 44 },

@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   chipTextActive: { color: Colors.cream },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
   ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: 'rgba(160, 85, 69, 0.08)' },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: 'rgba(192, 57, 43, 0.08)' },
   deleteBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.danger },
   cancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
   cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },

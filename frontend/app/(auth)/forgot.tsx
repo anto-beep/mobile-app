@@ -53,7 +53,7 @@ export default function Forgot() {
 
           <View style={styles.brand}>
             <View style={styles.logo}>
-              <Ionicons name="key-outline" size={18} color={'#FAF7F2'} />
+              <Ionicons name="key-outline" size={18} color={Colors.cream} />
             </View>
             <Text style={styles.brandText}>Wayly</Text>
           </View>
@@ -130,6 +130,6 @@ const styles = StyleSheet.create({
   btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.cream },
   ghostBtn: { marginTop: Spacing.sm, paddingVertical: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212, 162, 78, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
+  successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(183, 121, 31, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
   help: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.md, textAlign: 'center' },
 });

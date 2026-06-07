@@ -9,7 +9,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
-const LIGHT_COLORS = { green: '#3A5A40', amber: '#D4A24E', red: '#A05545' };
+const LIGHT_COLORS = { green: Colors.success, amber: Colors.brandSecondary, red: Colors.severityAlert };
 
 export default function CarePlanReviewer() {
   const router = useRouter();

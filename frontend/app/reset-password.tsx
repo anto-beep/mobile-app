@@ -78,7 +78,7 @@ export default function ResetPassword() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
             <View style={styles.logo}>
-              <Ionicons name="shield-checkmark" size={18} color={'#FAF7F2'} />
+              <Ionicons name="shield-checkmark" size={18} color={Colors.cream} />
             </View>
             <Text style={styles.brandText}>Wayly</Text>
           </View>
@@ -86,7 +86,7 @@ export default function ResetPassword() {
           <View style={styles.card}>
             {done ? (
               <>
-                <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={'#3A5A40'} /></View>
+                <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={Colors.success} /></View>
                 <Text style={styles.h1}>Password updated</Text>
                 <Text style={styles.sub}>Taking you back to sign in…</Text>
                 <ActivityIndicator color={Colors.brandPrimary} style={{ marginTop: Spacing.lg }} />
@@ -124,8 +124,8 @@ export default function ResetPassword() {
                 <View style={styles.rules}>
                   {strength.rules.map((r, i) => (
                     <View key={i} style={styles.ruleRow}>
-                      <Ionicons name={r.ok ? 'checkmark-circle' : 'ellipse-outline'} size={12} color={r.ok ? '#3A5A40' : Colors.textMuted} />
-                      <Text style={[styles.ruleText, r.ok && { color: '#3A5A40' }]}>{r.label}</Text>
+                      <Ionicons name={r.ok ? 'checkmark-circle' : 'ellipse-outline'} size={12} color={r.ok ? Colors.success : Colors.textMuted} />
+                      <Text style={[styles.ruleText, r.ok && { color: Colors.success }]}>{r.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   meterRow: { flexDirection: 'row', gap: 4, marginTop: 8 },
   meterBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: Colors.border },
   meterPartial: { backgroundColor: Colors.brandSecondary },
-  meterStrong: { backgroundColor: '#3A5A40' },
+  meterStrong: { backgroundColor: Colors.success },
   rules: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 100, backgroundColor: Colors.background },
   ruleText: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted },
@@ -190,5 +190,5 @@ const styles = StyleSheet.create({
   btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.cream },
   ghostBtn: { marginTop: Spacing.sm, paddingVertical: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(58, 90, 64, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
+  successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(27, 87, 51, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
 });

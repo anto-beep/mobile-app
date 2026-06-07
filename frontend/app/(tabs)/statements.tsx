@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   cardMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   alertChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-    backgroundColor: 'rgba(160, 85, 69, 0.1)', paddingHorizontal: 8, paddingVertical: 3,
+    backgroundColor: 'rgba(192, 57, 43, 0.1)', paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: 100, marginTop: 6,
   },
   alertChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.severityAlert },
