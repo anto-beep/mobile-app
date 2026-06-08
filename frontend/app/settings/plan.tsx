@@ -1,353 +1,247 @@
-// In-app Plan & Billing — current plan, trial, upgrade (Stripe in-app sheet), cancel, downgrade
-import React, { useCallback, useState } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking as RNLinking,
-} from 'react-native';
+// Phase D \u2014 Plan & Billing.
+// Billing tile-card + plan picker + checkout / cancel / trial flows.
+// Web parity: matches the four-tile billing card with addon labels +
+// participant slot meter + plan switcher. Family\u2192Solo guard enforced.
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
-import { api, extractErrorMessage } from '../../src/lib/api';
+import BackHeader from '../../src/components/BackHeader';
+import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
-import { PayMethodBadges } from '../../src/components/AITools';
+import { useParticipants } from '../../src/context/ParticipantsContext';
+import { Colors, Fonts, Radius, Spacing, Type, formatAUD2 } from '../../src/lib/theme';
+import { daysUntil, formatAUWeekday, swatchForIndex, initialOf } from '../../src/lib/format';
+import { toast } from '../../src/components/Toast';
 
-const PLANS = [
-  { key: 'free', name: 'Free', price: '$0', period: '', tagline: 'Get a feel for Wayly', features: ['1 free statement decode every 24 hours', 'Read-only dashboard preview'] },
-  { key: 'solo', name: 'Solo', price: '$19', period: '/month', tagline: 'You + your parent', features: ['Unlimited statement decoding', 'All 8 AI tools', 'Caregiver dashboard', 'Email support'], highlight: true },
-  { key: 'family', name: 'Family', price: '$39', period: '/month', tagline: 'Up to 5 family members', features: ['Everything in Solo', 'Up to 5 family members', 'Family thread', 'Sunday digest', 'Share dashboard'] },
-];
+type Plan = 'FREE' | 'SOLO' | 'FAMILY';
 
-type Subscription = {
-  plan?: string;
-  subscription_status?: string;
-  trial_ends_at?: string | null;
-  next_billing_date?: string | null;
-  cancel_at_period_end?: boolean;
+const PLAN_META: Record<Plan, { label: string; price: number; perks: string[] }> = {
+  FREE:   { label: 'Free',   price: 0,  perks: ['1 participant', '1 statement / month', 'Basic decoder'] },
+  SOLO:   { label: 'Solo',   price: 19, perks: ['1 participant', 'Unlimited statements', 'All AI tools', 'Document vault'] },
+  FAMILY: { label: 'Family', price: 39, perks: ['2 participants included', '+$19/mo per extra', 'Family wall + adviser', 'Priority support'] },
 };
 
-const formatDate = (iso?: string | null) => {
-  if (!iso) return null;
-  try {
-    return new Date(iso).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch { return null; }
-};
-
-const isPaid = (plan?: string) => ['solo', 'family', 'advisor', 'advisor_pro'].includes((plan || '').toLowerCase());
-
-export default function Plan() {
+export default function PlanSettings() {
   const router = useRouter();
-  const { user, refresh } = useAuth();
-  const [sub, setSub] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, refresh: refreshAuth } = useAuth();
+  const { participants, summary, refetch } = useParticipants();
+  const [sub, setSub] = useState<any>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [trialEligible, setTrialEligible] = useState<boolean>(false);
 
-  const load = async () => {
-    try {
-      const [s, t] = await Promise.all([
-        api.get<Subscription>('/billing/subscription').catch(() => ({ data: { plan: user?.plan || 'free' } })),
-        api.get('/billing/trial-eligibility').catch(() => ({ data: { eligible: false } })),
-      ]);
-      setSub((s as any).data || { plan: user?.plan || 'free' });
-      setTrialEligible(!!(t as any).data?.eligible);
-    } finally {
-      setLoading(false);
-    }
-  };
+  async function loadSub() {
+    try { const { data } = await api.get('/billing/subscription'); setSub(data); }
+    catch {}
+  }
+  useEffect(() => { void loadSub(); }, [user?.id, summary?.base_plan]);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  const currentPlan: Plan = (sub?.plan || user?.plan || 'FREE').toUpperCase();
+  const trialDays = sub?.trial_ends_at ? daysUntil(sub.trial_ends_at) : null;
+  const activeCount = summary?.participants_active ?? participants.length;
 
-  const startCheckout = async (planKey: string) => {
-    setBusy(planKey);
-    try {
-      const origin = Linking.createURL('/').replace(/\/$/, '');
-      const { data } = await api.post('/billing/checkout', { plan: planKey, origin_url: origin });
-      const url = data.url || data.checkout_url;
-      if (!url) throw new Error('No checkout URL returned');
-
-      // Open Stripe inside the app (in-app browser sheet)
-      const result = await WebBrowser.openAuthSessionAsync(url, origin);
-      // Best-effort: poll status if we know the session_id
-      if (data.session_id) {
-        for (let i = 0; i < 10; i++) {
-          await new Promise((r) => setTimeout(r, 2000));
-          try {
-            const st = await api.get(`/billing/status/${data.session_id}`);
-            if (st.data?.payment_status === 'paid' || st.data?.status === 'complete' || st.data?.status === 'paid') {
-              break;
-            }
-          } catch { break; }
-        }
-      }
-      await refresh();
-      await load();
-      Alert.alert('Welcome to ' + planKey.charAt(0).toUpperCase() + planKey.slice(1), 'Thanks for upgrading. Your new plan is active.');
-    } catch (e: any) {
-      Alert.alert("Couldn't start checkout", extractErrorMessage(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const startTrial = async () => {
+  async function startTrial(plan: Plan) {
     setBusy('trial');
     try {
-      await api.post('/billing/start-trial');
-      await refresh();
-      await load();
-      Alert.alert('Trial started', 'You have full access to Wayly for the next 7 days.');
-    } catch (e) {
-      Alert.alert("Couldn't start the trial", extractErrorMessage(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const cancel = async () => {
-    Alert.alert(
-      'Cancel auto-renewal?',
-      "Your plan stays active until the end of the current billing period — you just won't be charged again.",
-      [
-        { text: 'Keep my plan', style: 'cancel' },
-        {
-          text: 'Yes, cancel',
-          style: 'destructive',
-          onPress: async () => {
-            setBusy('cancel');
-            try {
-              await api.post('/billing/cancel');
-              await refresh();
-              await load();
-              Alert.alert('Cancelled', 'Auto-renewal has been turned off.');
-            } catch (e) {
-              Alert.alert("Couldn't cancel", extractErrorMessage(e));
-            } finally {
-              setBusy(null);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const downgradeToFree = async () => {
-    Alert.alert(
-      'Downgrade to Free?',
-      "You'll lose access to AI tools and the full caregiver dashboard at the end of your billing period.",
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Downgrade',
-          style: 'destructive',
-          onPress: async () => {
-            setBusy('downgrade');
-            try {
-              await api.post('/billing/downgrade-to-free');
-              await refresh();
-              await load();
-              Alert.alert('Downgraded', "You're now on the Free plan.");
-            } catch (e) {
-              Alert.alert("Couldn't downgrade", extractErrorMessage(e));
-            } finally {
-              setBusy(null);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const upgrade = async (planKey: string) => {
-    setBusy(planKey);
-    try {
-      await api.post('/billing/upgrade', { plan: planKey });
-      await refresh();
-      await load();
-      Alert.alert('Plan changed', `You're now on the ${planKey} plan.`);
-    } catch (e: any) {
-      // 402 means need new card — fall back to checkout
-      const status = e?.response?.status;
-      if (status === 402 || status === 400) {
-        await startCheckout(planKey);
-      } else {
-        Alert.alert("Couldn't change plan", extractErrorMessage(e));
-      }
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} size="large" /></View>
-      </SafeAreaView>
-    );
+      await api.post('/billing/start-trial', { plan });
+      toast.success(`Trial started \u2014 ${plan}`);
+      await Promise.all([loadSub(), refetch(), refreshAuth()]);
+    } catch (e: any) { Alert.alert('Could not start trial', e?.response?.data?.detail || e?.message); }
+    finally { setBusy(null); }
   }
 
-  const currentPlan = (sub?.plan || user?.plan || 'free').toLowerCase();
-  const trialing = sub?.subscription_status === 'trialing';
-  const cancelAtPeriodEnd = !!sub?.cancel_at_period_end;
-  const trialEnd = formatDate(sub?.trial_ends_at);
-  const nextBilling = formatDate(sub?.next_billing_date);
+  async function checkout(plan: Plan) {
+    if (plan === 'SOLO' && activeCount > 1) {
+      Alert.alert(
+        'Solo allows 1 participant',
+        `You currently have ${activeCount}. Remove the extras (or downgrade them) before switching to Solo.`,
+      );
+      return;
+    }
+    setBusy(plan);
+    try {
+      const origin = 'wayly://';
+      const { data } = await api.post('/billing/checkout', { plan, origin_url: origin });
+      if (data?.stub_mode) {
+        toast.success(`Subscription active (STUB MODE \u2014 no Stripe key configured) \u2014 ${plan}`);
+        await Promise.all([loadSub(), refetch(), refreshAuth()]);
+        return;
+      }
+      if (!data?.url) throw new Error('No checkout URL returned');
+      if (Platform.OS === 'web') {
+        Linking.openURL(data.url);
+      } else {
+        await WebBrowser.openAuthSessionAsync(data.url, 'wayly://billing/success');
+        await Promise.all([loadSub(), refetch(), refreshAuth()]);
+      }
+    } catch (e: any) { Alert.alert('Checkout failed', e?.response?.data?.detail || e?.message); }
+    finally { setBusy(null); }
+  }
+
+  async function cancel() {
+    Alert.alert('Cancel at period end?', 'You\u2019ll keep access until the end of your current billing period.', [
+      { text: 'Keep my plan', style: 'cancel' },
+      { text: 'Cancel', style: 'destructive', onPress: async () => {
+        try { await api.post('/billing/cancel', {}); toast.success('Cancellation scheduled'); await loadSub(); }
+        catch (e: any) { Alert.alert('Could not cancel', e?.response?.data?.detail || e?.message); }
+      } },
+    ]);
+  }
+
+  async function downgradeFree() {
+    if (activeCount > 1) {
+      Alert.alert('Remove extra participants first', `Free allows 1 participant. You currently have ${activeCount}.`);
+      return;
+    }
+    Alert.alert('Drop to Free?', 'You\u2019ll lose AI tools and statement upload limits.', [
+      { text: 'Keep my plan', style: 'cancel' },
+      { text: 'Switch to Free', style: 'destructive', onPress: async () => {
+        try { await api.post('/billing/downgrade-to-free', {}); toast.success('Switched to Free'); await Promise.all([loadSub(), refetch(), refreshAuth()]); }
+        catch (e: any) { Alert.alert('Could not switch', e?.response?.data?.detail || e?.message); }
+      } },
+    ]);
+  }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.scroll} testID="settings-plan-scroll">
-        {/* Current plan */}
-        <View style={styles.currentCard} testID="plan-current-card">
-          <Text style={styles.currentOverline}>Currently on</Text>
-          <Text style={styles.currentPlan}>{currentPlan.toUpperCase()}</Text>
-          {trialing && trialEnd && (
-            <View style={styles.banner}>
-              <Ionicons name="time-outline" size={14} color={Colors.brandSecondary} />
-              <Text style={styles.bannerText}>Trial ends {trialEnd}</Text>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackHeader title="Plan & billing" />
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* ─── Billing tile card ─── */}
+        <View style={styles.tileCard} testID="billing-tile-card">
+          <View style={styles.tileRow}>
+            <Tile label="Plan" value={PLAN_META[currentPlan].label} icon="card-outline" />
+            <Tile label="Monthly" value={summary ? formatAUD2(summary.monthly_total) : '\u2014'} icon="cash-outline" />
+          </View>
+          <View style={styles.tileRow}>
+            <Tile label="Participants" value={summary ? `${summary.participants_active} / ${summary.participants_max}` : '\u2014'} icon="people-outline" />
+            <Tile label="Add-ons" value={summary ? `${summary.addon_count} \u00d7 ${formatAUD2(summary.addon_price_monthly)}` : '\u2014'} icon="add-circle-outline" />
+          </View>
+          {trialDays != null && (
+            <View style={styles.trialBar} testID="billing-trial-remaining">
+              <Ionicons name="ribbon" size={16} color="#5C3D11" />
+              <Text style={styles.trialText}>
+                {trialDays > 0
+                  ? `Trial \u00b7 ${trialDays} day${trialDays === 1 ? '' : 's'} left \u00b7 ends ${formatAUWeekday(sub?.trial_ends_at)}`
+                  : `Trial ended \u00b7 ${formatAUWeekday(sub?.trial_ends_at)}`}
+              </Text>
             </View>
           )}
-          {!trialing && nextBilling && isPaid(currentPlan) && !cancelAtPeriodEnd && (
-            <Text style={styles.currentMeta}>Renews {nextBilling}</Text>
+          {!!sub?.cancel_at_period_end && (
+            <View style={[styles.trialBar, { backgroundColor: '#FBE5E0', borderColor: '#F2C5BB' }]}>
+              <Ionicons name="alert-circle" size={16} color="#A5512B" />
+              <Text style={[styles.trialText, { color: '#5C3D11' }]}>
+                Cancels {formatAUWeekday(sub.current_period_end)} \u2014 you keep access till then
+              </Text>
+            </View>
           )}
-          {cancelAtPeriodEnd && nextBilling && (
-            <Text style={[styles.currentMeta, { color: Colors.severityAlert }]}>
-              Cancels {nextBilling} — won't renew
-            </Text>
-          )}
-
-          {currentPlan === 'free' && trialEligible && (
-            <TouchableOpacity
-              onPress={startTrial}
-              disabled={busy === 'trial'}
-              style={[styles.btn, { marginTop: Spacing.md }, busy === 'trial' && { opacity: 0.6 }]}
-              testID="plan-start-trial"
-            >
-              <Text style={styles.btnText}>{busy === 'trial' ? 'Starting trial…' : 'Start 7-day free trial'}</Text>
-            </TouchableOpacity>
-          )}
-
-          {isPaid(currentPlan) && !cancelAtPeriodEnd && (
-            <TouchableOpacity onPress={cancel} disabled={busy === 'cancel'} style={[styles.outlineBtn, { marginTop: Spacing.md }]} testID="plan-cancel">
-              <Text style={styles.outlineBtnText}>{busy === 'cancel' ? 'Cancelling…' : 'Cancel auto-renewal'}</Text>
-            </TouchableOpacity>
-          )}
-
-          {isPaid(currentPlan) && (
-            <TouchableOpacity onPress={downgradeToFree} disabled={busy === 'downgrade'} style={[styles.linkBtn, { marginTop: Spacing.sm }]} testID="plan-downgrade">
-              <Text style={styles.linkBtnText}>Downgrade to Free</Text>
-            </TouchableOpacity>
+          {/* Active participants strip with add-on labels */}
+          {participants.length > 0 && (
+            <View style={styles.partRow}>
+              {participants.slice(0, 6).map((p, idx) => (
+                <View key={p.id} style={styles.partChip}>
+                  <View style={[styles.partSw, { backgroundColor: swatchForIndex(p.color_index) }]}>
+                    <Text style={styles.partInit}>{initialOf(p.first_name)}</Text>
+                  </View>
+                  <Text style={styles.partName} numberOfLines={1}>{p.first_name}</Text>
+                  {summary && idx >= summary.participants_included && (
+                    <View style={styles.addonTag}><Text style={styles.addonTagText}>+${summary.addon_price_monthly}/mo</Text></View>
+                  )}
+                </View>
+              ))}
+            </View>
           )}
         </View>
 
-        <Text style={styles.sectionLabel}>{currentPlan === 'free' ? 'Choose a plan' : 'Switch plan'}</Text>
-
-        {PLANS.map((p) => {
-          const isCurrent = p.key === currentPlan;
+        {/* ─── Plan picker ─── */}
+        <Text style={styles.sectionLabel}>Switch plan</Text>
+        {(['FREE','SOLO','FAMILY'] as Plan[]).map((p) => {
+          const meta = PLAN_META[p];
+          const isCurrent = currentPlan === p;
+          const canTrial = !isCurrent && p !== 'FREE' && !sub?.trial_used;
           return (
-            <View
-              key={p.key}
-              style={[styles.planCard, p.highlight && styles.planCardHighlight, isCurrent && styles.planCardCurrent]}
-              testID={`plan-card-${p.key}`}
-            >
-              {p.highlight && !isCurrent && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularBadgeText}>Most popular</Text>
-                </View>
-              )}
-              <View style={styles.planHead}>
-                <View>
-                  <Text style={styles.planName}>{p.name}</Text>
-                  <Text style={styles.planTag}>{p.tagline}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.planPrice}>{p.price}</Text>
-                  {!!p.period && <Text style={styles.planPeriod}>{p.period}</Text>}
-                </View>
+            <View key={p} style={[styles.planCard, isCurrent && styles.planCardActive]} testID={`plan-card-${p.toLowerCase()}`}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={styles.planTitle}>{meta.label}</Text>
+                <Text style={styles.planPrice}>{p === 'FREE' ? 'Free' : `${formatAUD2(meta.price)}/mo`}</Text>
+                {isCurrent && <View style={styles.curPill}><Text style={styles.curPillText}>CURRENT</Text></View>}
               </View>
-              {p.features.map((f, i) => (
-                <View key={i} style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={14} color={Colors.streams.Clinical} />
-                  <Text style={styles.featureText}>{f}</Text>
+              {meta.perks.map((perk) => (
+                <View key={perk} style={styles.perkRow}>
+                  <Ionicons name="checkmark" size={14} color={Colors.brandPrimary} />
+                  <Text style={styles.perk}>{perk}</Text>
                 </View>
               ))}
-
-              {isCurrent ? (
-                <View style={[styles.btn, styles.btnDisabled, { marginTop: Spacing.md }]}>
-                  <Ionicons name="checkmark" size={16} color={Colors.brandPrimary} />
-                  <Text style={[styles.btnText, { color: Colors.brandPrimary, marginLeft: 6 }]}>Current plan</Text>
+              {!isCurrent && (
+                <View style={styles.btnRow}>
+                  {canTrial && (
+                    <TouchableOpacity onPress={() => startTrial(p)} disabled={!!busy} style={[styles.btn, styles.btnGhost]} testID={`plan-trial-${p.toLowerCase()}`}>
+                      <Text style={styles.btnGhostText}>{busy === 'trial' ? 'Starting\u2026' : 'Start 7-day trial'}</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity onPress={() => p === 'FREE' ? downgradeFree() : checkout(p)} disabled={!!busy} style={[styles.btn, styles.btnSolid]} testID={`plan-cta-${p.toLowerCase()}`}>
+                    <Text style={styles.btnSolidText}>{busy === p ? 'Opening\u2026' : p === 'FREE' ? 'Drop to Free' : 'Upgrade'}</Text>
+                  </TouchableOpacity>
                 </View>
-              ) : p.key === 'free' ? (
-                isPaid(currentPlan) ? null : (
-                  <View style={{ height: Spacing.sm }} />
-                )
-              ) : (
-                <TouchableOpacity
-                  style={[styles.btn, { marginTop: Spacing.md }, busy === p.key && { opacity: 0.6 }]}
-                  onPress={() => isPaid(currentPlan) ? upgrade(p.key) : startCheckout(p.key)}
-                  disabled={!!busy}
-                  testID={`plan-select-${p.key}`}
-                >
-                  <Text style={styles.btnText}>
-                    {busy === p.key ? 'Working…' : isPaid(currentPlan) ? `Switch to ${p.name}` : `Choose ${p.name}`}
-                  </Text>
-                </TouchableOpacity>
               )}
             </View>
           );
         })}
 
-        <View style={styles.note}>
-          <Ionicons name="lock-closed-outline" size={14} color={Colors.textMuted} />
-          <Text style={styles.noteText}>
-            Payments are processed securely by Stripe. Pricing in AUD, includes GST. Cancel anytime.
-          </Text>
-        </View>
-
-        <PayMethodBadges />
+        {currentPlan !== 'FREE' && !sub?.cancel_at_period_end && (
+          <TouchableOpacity onPress={cancel} style={styles.cancelRow} testID="billing-cancel">
+            <Text style={styles.cancelText}>Cancel subscription</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function Tile({ label, value, icon }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }) {
+  return (
+    <View style={styles.tile}>
+      <Ionicons name={icon} size={16} color={Colors.brandPrimary} />
+      <Text style={styles.tileLabel}>{label}</Text>
+      <Text style={styles.tileValue} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  currentCard: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.lg,
-  },
-  currentOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 4 },
-  currentPlan: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.brandPrimary, letterSpacing: 1 },
-  currentMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6 },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, alignSelf: 'flex-start', backgroundColor: 'rgba(183, 121, 31, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
-  bannerText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandSecondary },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  planCard: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md,
-  },
-  planCardHighlight: { borderColor: Colors.brandSecondary, borderWidth: 2 },
-  planCardCurrent: { backgroundColor: 'rgba(14, 77, 82, 0.04)', borderColor: Colors.brandPrimary },
-  popularBadge: {
-    position: 'absolute', top: -12, right: 16, backgroundColor: Colors.brandSecondary,
-    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 100,
-  },
-  popularBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.cream, letterSpacing: 1, textTransform: 'uppercase' },
-  planHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.md },
-  planName: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  planTag: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  planPrice: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  planPeriod: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  featureText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, flex: 1 },
-  btn: { backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', minHeight: 50 },
-  btnDisabled: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.brandPrimary },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  outlineBtn: { borderWidth: 1, borderColor: Colors.severityAlert, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center' },
-  outlineBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.severityAlert },
-  linkBtn: { paddingVertical: 8, alignItems: 'center' },
-  linkBtnText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, textDecorationLine: 'underline' },
-  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: Spacing.md, marginTop: Spacing.sm },
-  noteText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, flex: 1, lineHeight: 16 },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  tileCard: { backgroundColor: Colors.cardBg, borderRadius: 16, padding: Spacing.md, margin: Spacing.md, borderWidth: 1, borderColor: Colors.border, gap: 10 },
+  tileRow: { flexDirection: 'row', gap: 10 },
+  tile: { flex: 1, backgroundColor: '#F4ECE0', borderRadius: 12, padding: Spacing.sm, gap: 4 },
+  tileLabel: { ...Type.caption, color: Colors.textSecondary, fontFamily: Fonts.bodyMed },
+  tileValue: { ...Type.h3, color: Colors.textPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  trialBar: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FAEFD4', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#E8D9B3' },
+  trialText: { ...Type.body, color: '#5C3D11', fontFamily: Fonts.bodySemi, flex: 1 },
+  partRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  partChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F4ECE0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
+  partSw: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  partInit: { color: '#fff', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700' },
+  partName: { ...Type.caption, color: Colors.textPrimary, fontFamily: Fonts.bodyMed, maxWidth: 90 },
+  addonTag: { backgroundColor: '#F9E5C4', borderRadius: 9999, paddingHorizontal: 6, paddingVertical: 1 },
+  addonTagText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 9, fontWeight: '700' },
+
+  sectionLabel: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingTop: 6, paddingBottom: 4 },
+  planCard: { backgroundColor: Colors.cardBg, borderRadius: 14, padding: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 10, borderWidth: 1, borderColor: Colors.border, gap: 6 },
+  planCardActive: { borderColor: Colors.brandPrimary, borderWidth: 2 },
+  planTitle: { ...Type.h3, color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 20 },
+  planPrice: { ...Type.body, color: Colors.textSecondary, fontFamily: Fonts.bodyMed, marginLeft: 4 },
+  curPill: { marginLeft: 'auto', backgroundColor: Colors.brandPrimary, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
+  curPillText: { color: '#fff', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  perkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 1 },
+  perk: { ...Type.body, color: Colors.textSecondary },
+
+  btnRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  btn: { flex: 1, paddingVertical: 12, borderRadius: 9999, alignItems: 'center' },
+  btnGhost: { borderWidth: 1.5, borderColor: Colors.brandPrimary },
+  btnGhostText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  btnSolid: { backgroundColor: Colors.brandPrimary },
+  btnSolidText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700' },
+
+  cancelRow: { alignItems: 'center', paddingVertical: 20 },
+  cancelText: { color: Colors.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },
 });

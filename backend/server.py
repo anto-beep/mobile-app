@@ -3315,6 +3315,7 @@ from routes.account import router as account_router  # noqa: E402
 from routes.participants import router as participants_router  # noqa: E402
 from routes.billing import router as billing_router, webhook_router as billing_webhook_router  # noqa: E402
 from routes.auth_extra import router as auth_extra_router  # noqa: E402
+from routes.modules import router as modules_router  # noqa: E402
 from migrations.migrate_households_to_participants import run as run_participant_migration  # noqa: E402
 
 app.include_router(account_router)
@@ -3322,6 +3323,7 @@ app.include_router(participants_router)
 app.include_router(billing_router)
 app.include_router(billing_webhook_router)
 app.include_router(auth_extra_router)
+app.include_router(modules_router)
 
 
 @app.on_event("startup")

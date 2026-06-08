@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../src/lib/theme';
-import { useAuth } from '../../src/context/AuthContext';
 
+// Phase B \u2014 4-tab bottom nav per MOBILE_AGENT_DASHBOARD_PROMPT spec.
+// Dashboard \u00b7 Family wall \u00b7 Statements \u00b7 More
+// All other historical screens (chat, family v1, profile, notifications)
+// are still routable, just hidden from the tab bar.
 export default function TabsLayout() {
-  const { user } = useAuth();
   return (
     <Tabs
       screenOptions={{
@@ -18,52 +20,45 @@ export default function TabsLayout() {
           paddingTop: 6,
           height: 84,
         },
-        tabBarLabelStyle: {
-          fontFamily: Fonts.bodyMed,
-          fontSize: 11,
-          marginBottom: 4,
-        },
+        tabBarLabelStyle: { fontFamily: Fonts.bodyMed, fontSize: 11, marginBottom: 4 },
       }}
     >
       <Tabs.Screen
         name="today"
         options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sunny-outline" size={size} color={color} />,
+          title: 'Dashboard',
+          tabBarTestID: 'tabbar-dashboard',
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="family"
+        options={{
+          title: 'Family wall',
+          tabBarTestID: 'tabbar-family-wall',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-circle-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="statements"
         options={{
           title: 'Statements',
+          tabBarTestID: 'tabbar-statements',
           tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Help',
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="family"
-        options={{
-          title: 'Family',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
+        name="more"
         options={{
           title: 'More',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
+          tabBarTestID: 'tabbar-more',
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="notifications"
-        options={{ href: null }}
-      />
+      {/* Off-tabbar but still reachable via deep-links / drawer */}
+      <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }
