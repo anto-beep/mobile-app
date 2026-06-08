@@ -3309,6 +3309,29 @@ async def consumer_summary_pdf(
 
 app.include_router(api)
 
+# Phase A — multi-participant, refresh-token rotation, billing.
+# These live in routes/*.py so server.py doesn't grow further.
+from routes.account import router as account_router  # noqa: E402
+from routes.participants import router as participants_router  # noqa: E402
+from routes.billing import router as billing_router, webhook_router as billing_webhook_router  # noqa: E402
+from routes.auth_extra import router as auth_extra_router  # noqa: E402
+from migrations.migrate_households_to_participants import run as run_participant_migration  # noqa: E402
+
+app.include_router(account_router)
+app.include_router(participants_router)
+app.include_router(billing_router)
+app.include_router(billing_webhook_router)
+app.include_router(auth_extra_router)
+
+
+@app.on_event("startup")
+async def _phase_a_startup() -> None:
+    try:
+        await run_participant_migration()
+    except Exception as e:
+        logger.warning("Phase A migration failed (non-fatal): %s", e)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

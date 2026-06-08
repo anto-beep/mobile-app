@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { AdminAuthProvider } from '../src/context/AdminAuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
+import { ParticipantsProvider } from '../src/context/ParticipantsContext';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
@@ -123,11 +124,13 @@ export default function RootLayout() {
           <NetworkProvider>
             <AdminAuthProvider>
               <AuthProvider>
-                {/* Status bar is teal-ink, content is white (light) */}
-                <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
-                <ThemedShell>
-                  <RootStack />
-                </ThemedShell>
+                <ParticipantsProvider>
+                  {/* Status bar is teal-ink, content is white (light) */}
+                  <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
+                  <ThemedShell>
+                    <RootStack />
+                  </ThemedShell>
+                </ParticipantsProvider>
               </AuthProvider>
             </AdminAuthProvider>
           </NetworkProvider>

@@ -18,6 +18,8 @@ import UploadSheet from '../../src/components/UploadSheet';
 import { registerForPushNotifications } from '../../src/lib/push';
 import DashboardInsights from '../../src/components/DashboardInsights';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
+import { WaylyHeader } from '../../src/components/WaylyHeader';
+import { TrialCountdownBanner } from '../../src/components/TrialCountdownBanner';
 
 type StreamRow = {
   stream: string;
@@ -246,6 +248,8 @@ export default function Today() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <WaylyHeader />
+      <TrialCountdownBanner />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandPrimary} />}

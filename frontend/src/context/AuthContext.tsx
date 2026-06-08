@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api, TOKEN_KEY, extractErrorMessage } from '../lib/api';
-import { getToken, setToken, clearToken } from '../lib/tokenStorage';
+import { getAccessToken, persistTokens, clearTokens } from '../lib/tokens';
 import { clearAllUserData } from '../lib/secureStorage';
 import { unregisterPushNotifications } from '../lib/push';
 
@@ -11,6 +11,7 @@ export type User = {
   role: 'caregiver' | 'participant';
   plan: string;
   household_id?: string | null;
+  account_id?: string | null;
   created_at: string;
   is_admin?: boolean;
   subscription_status?: string | null;
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     (async () => {
-      const token = await getToken(TOKEN_KEY);
+      const token = await getAccessToken();
       if (token) {
         await refresh();
       }
@@ -53,17 +54,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persistAndSet = async (token: string, u: User) => {
-    await setToken(TOKEN_KEY, token);
+  const persistAndSet = async (token: string, refresh: string | undefined, u: User) => {
+    await persistTokens(token, refresh);
     setUser(u);
   };
 
   const login = async (email: string, password: string) => {
     try {
-      const { data } = await api.post('/auth/login', { email, password });
-      await persistAndSet(data.token, data.user);
+      // Phase A: prefer /v2 (returns refresh_token). Falls back to legacy /login if /v2 is unavailable.
+      const { data } = await api.post('/auth/login/v2', { email, password });
+      await persistAndSet(data.token, data.refresh_token, data.user);
       return data.user as User;
     } catch (err) {
+      // Fallback to legacy /login (no refresh token) so older backends still work.
+      const status = (err as any)?.response?.status;
+      if (status === 404 || status === 405) {
+        const { data } = await api.post('/auth/login', { email, password });
+        await persistAndSet(data.token, undefined, data.user);
+        return data.user as User;
+      }
       throw new Error(extractErrorMessage(err, 'Could not sign in'));
     }
   };
@@ -71,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (email: string, password: string, name: string) => {
     try {
       const { data } = await api.post('/auth/signup', { email, password, name, role: 'caregiver' });
-      await persistAndSet(data.token, data.user);
+      await persistAndSet(data.token, data.refresh_token, data.user);
       return data.user as User;
     } catch (err) {
       throw new Error(extractErrorMessage(err, 'Could not create your account'));
@@ -79,39 +88,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    // Phase 3: invalidate this device's push token server-side BEFORE we
-    // drop the JWT — otherwise the backend won't recognise us.
-    try {
-      await unregisterPushNotifications();
-    } catch {}
-    // Best-effort backend logout (clears push devices, audit log). Don't block the user.
-    try {
-      await api.post('/auth/logout', {});
-    } catch {
-      // ignore — token may already be invalid
-    }
-    // Phase 1: nuke EVERY piece of cached user data — JWT + offline queue +
-    // biometric flag + chat drafts + any other `wayly:*` key. Accessibility
-    // prefs are intentionally preserved.
-    try {
-      await clearAllUserData();
-    } catch {
-      // fallback to the narrow clear
-      await clearToken(TOKEN_KEY);
-    }
+    try { await unregisterPushNotifications(); } catch {}
+    try { await api.post('/auth/logout', {}); } catch {}
+    try { await clearAllUserData(); }
+    catch { await clearTokens(); }
     setUser(null);
   };
 
   const loginWithGoogle = async () => {
     const { startGoogleAuth } = await import('../lib/google');
     const { token, user: u } = await startGoogleAuth();
-    await persistAndSet(token, u);
+    await persistAndSet(token, undefined, u);
     return u as User;
   };
 
   const finishGoogleSession = async (sessionId: string) => {
     const { data } = await api.post('/auth/google-session', { session_id: sessionId });
-    await persistAndSet(data.token, data.user);
+    await persistAndSet(data.token, data.refresh_token, data.user);
     return data.user as User;
   };
 
@@ -127,3 +120,6 @@ export const useAuth = (): AuthState => {
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 };
+
+// Re-export TOKEN_KEY for back-compat callers.
+export { TOKEN_KEY };
