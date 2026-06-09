@@ -1,141 +1,110 @@
+// Phase E — Settings landing screen with all 11 sub-tabs grouped by purpose.
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
 import { useAuth } from '../../src/context/AuthContext';
 import BackHeader from '../../src/components/BackHeader';
 
-const ITEMS = [
-  {
-    key: 'plan',
-    title: 'Plan & Billing',
-    sub: 'View, upgrade, or cancel your Wayly plan',
-    icon: 'card-outline',
-    color: Colors.brandSecondary,
-  },
-  {
-    key: 'documents',
-    title: 'Document vault',
-    sub: 'Securely store statements, care plans, assessments',
-    icon: 'folder-outline',
-    color: Colors.streams['Independence'],
-    route: '/documents',
-  },
-  {
-    key: 'visits',
-    title: 'Visits & calendar',
-    sub: 'Appointments, home visits, telehealth, assessments',
-    icon: 'calendar-outline',
-    color: Colors.streams['Everyday Living'],
-    route: '/visits',
-  },
-  {
-    key: 'adviser',
-    title: 'Adviser portal',
-    sub: 'Manage your client roster · adviser plan',
-    icon: 'briefcase-outline',
-    color: Colors.brandPrimary,
-    route: '/adviser',
-    advisersOnly: true,
-  },
-  {
-    key: 'members',
-    title: 'Family members',
-    sub: 'Invite family to share the dashboard',
-    icon: 'people-outline',
-    color: Colors.severityInfo,
-  },
-  {
-    key: 'notifications',
-    title: 'Notification preferences',
-    sub: 'Choose which alerts reach you',
-    icon: 'notifications-outline',
-    color: Colors.brandPrimary,
-  },
-  {
-    key: 'usage',
-    title: 'Your usage',
-    sub: 'Statements decoded · tools used this month',
-    icon: 'stats-chart-outline',
-    color: Colors.streams.Clinical,
-  },
-  {
-    key: 'reports',
-    title: 'Summary report',
-    sub: 'Download a Wayly-branded PDF of your last quarter',
-    icon: 'document-text-outline',
-    color: Colors.streams.Clinical,
-    route: '/settings/reports',
-  },
-  {
-    key: 'security',
-    title: 'Security',
-    sub: 'Biometric lock, password, account deletion',
-    icon: 'shield-checkmark-outline',
-    color: Colors.severityAlert,
-  },
+type Item = {
+  key: string;
+  title: string;
+  sub: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  href?: string;
+  advisersOnly?: boolean;
+  testID?: string;
+};
+
+const GROUPS: Array<{ title: string; items: Item[] }> = [
+  { title: 'Account', items: [
+    { key: 'profile', title: 'Profile', sub: 'Your name and email', icon: 'person-outline', href: '/settings/profile', testID: 'settings-link-profile' },
+    { key: 'plan', title: 'Plan & billing', sub: 'Switch plan, manage trial, billing history', icon: 'card-outline', href: '/settings/plan' },
+    { key: 'members', title: 'Family members', sub: 'Invite family to share the dashboard', icon: 'people-outline', href: '/settings/members' },
+    { key: 'security', title: 'Security', sub: 'Biometric lock, sessions, password', icon: 'shield-outline', href: '/settings/security' },
+  ]},
+  { title: 'Notifications', items: [
+    { key: 'notifications', title: 'Push & in-app', sub: 'Anomaly alerts, family wall, weekly digest', icon: 'notifications-outline', href: '/settings/notifications' },
+    { key: 'sms', title: 'SMS', sub: 'Urgent + billing receipts', icon: 'chatbox-outline', href: '/settings/sms', testID: 'settings-link-sms' },
+    { key: 'digest', title: 'Digest', sub: 'Weekly / monthly / off', icon: 'calendar-outline', href: '/settings/digest', testID: 'settings-link-digest' },
+  ]},
+  { title: 'Experience', items: [
+    { key: 'appearance', title: 'Appearance', sub: 'Text size, reduced motion', icon: 'color-palette-outline', href: '/settings/appearance', testID: 'settings-link-appearance' },
+    { key: 'usage', title: 'Your usage', sub: 'Storage, AI quota, monthly stats', icon: 'pie-chart-outline', href: '/settings/usage' },
+    { key: 'reports', title: 'Summary report', sub: 'On-demand PDF generator', icon: 'document-text-outline', href: '/settings/reports' },
+  ]},
+  { title: 'Danger zone', items: [
+    { key: 'danger', title: 'Danger zone', sub: 'Sign out everywhere, delete account', icon: 'warning-outline', href: '/settings/danger', testID: 'settings-link-danger' },
+  ]},
 ];
 
-export default function SettingsHome() {
+const ADVISER_ITEM: Item = { key: 'adviser', title: 'Adviser portal', sub: 'Manage your client roster', icon: 'briefcase-outline', href: '/adviser', advisersOnly: true };
+
+export default function Settings() {
   const router = useRouter();
   const { user } = useAuth();
+  const isAdviser = user?.role === 'participant'; // role==='participant' in current schema means adviser; harmless if false
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Settings" />
-      <ScrollView contentContainerStyle={styles.scroll} testID="settings-scroll">
-        <View style={styles.header}>
-          <Text style={styles.userName}>{user?.name || 'Your account'}</Text>
-          <Text style={styles.userMeta}>
-            {user?.email} · <Text style={styles.bold}>{(user?.plan || 'free').toUpperCase()}</Text>
-          </Text>
-        </View>
-
-        {ITEMS.filter((it) => !it.advisersOnly || user?.plan === 'adviser').map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={styles.row}
-            onPress={() => router.push(((item as any).route || `/settings/${item.key}`) as any)}
-            testID={`settings-row-${item.key}`}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: `${item.color}15` }]}>
-              <Ionicons name={item.icon as any} size={22} color={item.color} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {GROUPS.map((g) => (
+          <View key={g.title} style={styles.group}>
+            <Text style={styles.groupTitle}>{g.title}</Text>
+            <View style={styles.list}>
+              {g.items.map((it, idx) => (
+                <TouchableOpacity
+                  key={it.key}
+                  style={[styles.row, idx === g.items.length - 1 && styles.rowLast]}
+                  onPress={() => it.href && router.push(it.href as any)}
+                  testID={it.testID}
+                >
+                  <View style={styles.iconWrap}>
+                    <Ionicons name={it.icon} size={18} color={Colors.brandPrimary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>{it.title}</Text>
+                    <Text style={styles.sub}>{it.sub}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+              ))}
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>{item.title}</Text>
-              <Text style={styles.rowSub}>{item.sub}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
+          </View>
         ))}
-
-        <Text style={styles.footnote}>
-          Wayly is a companion to your aged-care provider — it doesn't replace them. For urgent help, call My Aged Care on 1800 200 422.
-        </Text>
+        {isAdviser && (
+          <View style={styles.group}>
+            <Text style={styles.groupTitle}>Adviser</Text>
+            <View style={styles.list}>
+              <TouchableOpacity style={[styles.row, styles.rowLast]} onPress={() => router.push(ADVISER_ITEM.href as any)}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name={ADVISER_ITEM.icon} size={18} color={Colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{ADVISER_ITEM.title}</Text>
+                  <Text style={styles.sub}>{ADVISER_ITEM.sub}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  header: {
-    backgroundColor: Colors.cardBg, padding: Spacing.md + 4, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.lg,
-  },
-  userName: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  userMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  bold: { fontFamily: Fonts.bodySemi, color: Colors.brandSecondary, letterSpacing: 0.5 },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md + 2,
-    marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  iconWrap: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  rowSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16, paddingHorizontal: Spacing.md },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  group: { marginTop: 18 },
+  groupTitle: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
+  list: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  rowLast: { borderBottomWidth: 0 },
+  iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(14,77,82,0.07)', alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.bodySemi, color: Colors.textPrimary },
+  sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 3, lineHeight: 17 },
 });

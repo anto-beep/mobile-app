@@ -23,6 +23,14 @@ type ShellProps = {
 export function ScreenShell({
   title, subtitle, children, loading, onRefresh, refreshing, hideHeader, useBack,
 }: ShellProps) {
+  // Loading: render skeleton list rather than a spinner.
+  // We import lazily to keep the bundle small for screens that never load.
+  // (LoadingBlock kept for callers that prefer the small spinner.)
+  let body = children;
+  if (loading) {
+    const { ListSkeleton } = require('./Skeleton');
+    body = <ListSkeleton rows={4} />;
+  }
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {!hideHeader && (useBack ? <BackHeader title={title} /> : <><WaylyHeader /><TrialCountdownBanner /></>)}
@@ -38,7 +46,7 @@ export function ScreenShell({
             {!!subtitle && <Text style={styles.sub}>{subtitle}</Text>}
           </View>
         )}
-        {loading ? <LoadingBlock /> : children}
+        {body}
       </ScrollView>
     </SafeAreaView>
   );

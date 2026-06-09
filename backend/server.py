@@ -161,6 +161,37 @@ async def me(user_id: str = Depends(get_current_user_id)):
     return _user_public(u)
 
 
+# ─────────────────── PATCH /auth/me / revoke-all / account delete ───────────────────
+class _ProfilePatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+
+
+@api.patch("/auth/me", response_model=UserPublic)
+async def patch_me(body: _ProfilePatch, user_id: str = Depends(get_current_user_id)):
+    """Phase E hardening: edit basic profile fields (name only for now). Email
+    changes are intentionally NOT exposed via this endpoint \u2014 they require a
+    confirmation flow that we haven't built yet."""
+    updates = {k: v for k, v in body.model_dump(exclude_unset=True).items() if v is not None}
+    if updates:
+        updates["name"] = updates["name"].strip()
+        await db.users.update_one({"id": user_id}, {"$set": updates})
+    u = await _get_user(user_id)
+    return _user_public(u)
+
+
+@api.post("/auth/revoke-all")
+async def revoke_all_sessions(user_id: str = Depends(get_current_user_id)):
+    """Phase E danger-zone: invalidate every refresh token + push device row
+    for the calling user. After this returns the client logs out locally."""
+    from refresh_tokens import revoke_all_for_user
+    count = await revoke_all_for_user(user_id)
+    try:
+        await db.push_tokens.delete_many({"user_id": user_id})
+    except Exception:
+        pass
+    return {"ok": True, "revoked": count}
+
+
 # ─────────────────── password reset / logout / account delete ───────────────────
 class _ForgotRequest(BaseModel):
     email: str = Field(min_length=3, max_length=320)
