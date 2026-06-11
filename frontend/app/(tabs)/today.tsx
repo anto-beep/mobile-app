@@ -20,6 +20,7 @@ import DashboardInsights from '../../src/components/DashboardInsights';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 import { WaylyHeader } from '../../src/components/WaylyHeader';
 import { TrialCountdownBanner } from '../../src/components/TrialCountdownBanner';
+import { RecentActivityPanel } from '../../src/components/RecentActivityPanel';
 
 type StreamRow = {
   stream: string;
@@ -484,6 +485,8 @@ export default function Today() {
             )}
           </>
         )}
+
+        <RecentActivityPanel />
 
         <View style={{ height: 80 }} />
       </ScrollView>

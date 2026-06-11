@@ -9,7 +9,9 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { AdminAuthProvider } from '../src/context/AdminAuthContext';
 import { AccessibilityProvider } from '../src/context/AccessibilityContext';
 import { ParticipantsProvider } from '../src/context/ParticipantsContext';
+import { ScenarioProvider } from '../src/context/ScenarioContext';
 import { OnboardingGate } from '../src/components/OnboardingGate';
+import { SchemaBanner } from '../src/components/SchemaBanner';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
@@ -126,12 +128,14 @@ export default function RootLayout() {
             <AdminAuthProvider>
               <AuthProvider>
                 <ParticipantsProvider>
-                  {/* Status bar is teal-ink, content is white (light) */}
-                  <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
-                  <OnboardingGate />
-                  <ThemedShell>
-                    <RootStack />
-                  </ThemedShell>
+                  <ScenarioProvider>
+                    <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
+                    <OnboardingGate />
+                    <SchemaBanner />
+                    <ThemedShell>
+                      <RootStack />
+                    </ThemedShell>
+                  </ScenarioProvider>
                 </ParticipantsProvider>
               </AuthProvider>
             </AdminAuthProvider>

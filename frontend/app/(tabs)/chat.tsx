@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { useScenario } from '../../src/context/ScenarioContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 
 type Turn = { id?: string; role: 'user' | 'assistant'; content: string };
@@ -34,6 +35,7 @@ const LAST_ACTIVE_KEY = 'wayly:chat:last_active';
 const RESUME_DISMISSED_KEY = 'wayly:chat:resume_dismissed_at';
 
 export default function Chat() {
+  const scenario = useScenario();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
@@ -142,6 +144,21 @@ export default function Chat() {
     await touch();
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     try {
+      // PHASE 5 GUARDRAIL: pre-flight the question through the boundary
+      // classifier BEFORE invoking the LLM. If the engine returns ROUTE_OUT
+      // or ESCALATE we render the deterministic contact-card response in
+      // the chat thread and never call /chat. See handoff §5.7.
+      const probe = await scenario.boundaryProbe(message);
+      if (probe.boundary !== 'SAFE_TO_EXPLAIN') {
+        const contacts = scenario.getContacts(probe.contacts || []);
+        const lead = probe.boundary === 'ESCALATE'
+          ? "This one needs a real person, fast. Wayly doesn't give legal or financial advice, so I'll point you straight to who can help:"
+          : "A specialist can answer this best — Wayly doesn't give legal or financial advice. Here's where to start:";
+        const lines = contacts.map((c) => `\u2022 ${c.label} \u2014 ${c.phone}${c.hours ? ` (${c.hours})` : ''}`).join('\n');
+        const safeLines = lines || '\u2022 Visit https://wayly.com.au/contacts for the up-to-date list of who to call.';
+        setTurns((prev) => [...prev, { role: 'assistant', content: `${lead}\n\n${safeLines}` }]);
+        return;  // hard-stop \u2014 never call /chat for non-SAFE queries.
+      }
       const { data } = await api.post('/chat', {
         message,
         session_id: sessionIdRef.current,

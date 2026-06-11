@@ -28,6 +28,10 @@ export default function More() {
   const groups: Group[] = [
     { title: 'Today', items: [
       { label: 'Dashboard', icon: 'sunny-outline', href: '/(tabs)/today', testID: 'more-link-dashboard' },
+      { label: 'Timeline', icon: 'time-outline', href: '/timeline', testID: 'more-link-timeline' },
+      { label: 'Log scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },
+      { label: 'Guided workflows', icon: 'compass-outline', href: '/workflows', testID: 'more-link-workflows' },
+      { label: 'Alerts', icon: 'alert-circle-outline', href: '/alerts', testID: 'more-link-alerts' },
       { label: 'Family wall', icon: 'people-circle-outline', href: '/family-wall', testID: 'more-link-family-wall' },
       { label: 'Visits', icon: 'calendar-outline', href: '/visits' },
       { label: 'Documents', icon: 'folder-outline', href: '/documents' },
