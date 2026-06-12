@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 export default function Login() {
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('cathy@example.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -98,9 +99,12 @@ export default function Login() {
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.brand} testID="auth-brand">
-            <View style={styles.logo}>
-              <Ionicons name="leaf-outline" size={20} color={Colors.cream} />
-            </View>
+            <Image
+              source={require('../../assets/branding/wayly-mark.png')}
+              style={styles.logoImg}
+              accessibilityLabel="Wayly"
+              resizeMode="contain"
+            />
             <Text style={styles.brandText}>Wayly</Text>
           </View>
 
@@ -108,7 +112,7 @@ export default function Login() {
             <Text style={styles.overline}>Sign in</Text>
             <Text style={styles.h1} testID="auth-title">Welcome back</Text>
             <Text style={styles.sub}>
-              Calm, clear-headed care for your parent's Support at Home journey.
+              Calm, clear-headed care for your parent&apos;s Support at Home journey.
             </Text>
 
             <View style={{ height: Spacing.lg }} />
@@ -135,7 +139,7 @@ export default function Login() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                placeholder="••••••••"
                 placeholderTextColor={Colors.textMuted}
                 style={[styles.input, styles.passwordInput]}
                 autoComplete="password"
@@ -171,10 +175,16 @@ export default function Login() {
             <TouchableOpacity
               testID="auth-login-button"
               onPress={onSubmit}
-              disabled={submitting}
-              style={[styles.btn, submitting && { opacity: 0.6 }]}
+              disabled={submitting || cooldownSec > 0}
+              style={[styles.btn, (submitting || cooldownSec > 0) && { opacity: 0.6 }]}
             >
-              <Text style={styles.btnText}>{submitting ? 'Signing in…' : 'Sign in'}</Text>
+              <Text style={styles.btnText}>
+                {cooldownSec > 0
+                  ? `Try again in ${Math.ceil(cooldownSec / 60)} min`
+                  : submitting
+                  ? 'Signing in…'
+                  : 'Sign in'}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.dividerRow}>
@@ -233,6 +243,7 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.brandPrimary,
     alignItems: 'center', justifyContent: 'center',
   },
+  logoImg: { width: 40, height: 40, borderRadius: 8 },
   brandText: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
   card: {
     backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4,
@@ -284,8 +295,5 @@ const styles = StyleSheet.create({
   demoText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, flex: 1 },
   demoBold: { fontFamily: Fonts.bodySemi, color: Colors.textPrimary },
   staffLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
-  staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
-});
-ction: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
   staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
 });
