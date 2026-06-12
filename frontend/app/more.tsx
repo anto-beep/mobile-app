@@ -61,6 +61,7 @@ export default function More() {
       { label: 'Audit log', icon: 'shield-checkmark-outline', href: '/audit', testID: 'more-link-audit' },
       { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat' },
       { label: 'Search', icon: 'search-outline', href: '/search', testID: 'more-link-search' },
+      { label: 'Diagnostics', icon: 'pulse-outline', href: '/diagnostics', testID: 'more-link-diagnostics' },
     ]},
   ];
 

@@ -101,10 +101,59 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
     }
     try {
       const { data } = await api.get('/account');
-      const parts: Participant[] = (data?.participants ?? []).filter((p: Participant) => p.status !== 'REMOVED');
+
+      // Schema-tolerant unpacking. We've seen the response shape vary
+      // between our sandbox builds and the prod web app:
+      //   - sandbox  : { summary, participants, addons }
+      //   - alt v1   : { account: {...}, participants: [...] }
+      //   - flat     : { participants: [...] }  (no summary; web computes it)
+      const rawParts = (data?.participants ?? data?.account?.participants ?? []) as any[];
+      const parts: Participant[] = (rawParts || [])
+        .filter((p: any) => (p?.status || 'ACTIVE') !== 'REMOVED')
+        // Normalise: fold the alternative `flag_keys` shape into `flags` so
+        // the MeansNotDisclosedChip selector always reads from the same key.
+        .map((p: any) => ({
+          ...p,
+          flags: Array.isArray(p?.flags)
+            ? p.flags
+            : (Array.isArray(p?.flag_keys) ? p.flag_keys : []),
+        }));
       setParticipants(parts);
-      setSummary(data?.summary ?? null);
-      setAddons(data?.addons ?? []);
+
+      // Synthesise summary if the prod payload doesn't carry one. We mirror
+      // the sandbox shape so every downstream consumer (Billing tile-card,
+      // ParticipantSwitcher cap-check) keeps working.
+      const fromServer = data?.summary || data?.account?.summary;
+      if (fromServer) {
+        setSummary(fromServer);
+      } else if (parts.length > 0) {
+        const plan = (user?.plan || 'free').toUpperCase() as AccountSummary['base_plan'];
+        const max = plan === 'FAMILY' ? 10 : 1;
+        const included = plan === 'FAMILY' ? 2 : 1;
+        const addonCount = Math.max(0, parts.length - included);
+        setSummary({
+          account_id: data?.account?.id || user?.account_id || user?.household_id || 'derived',
+          base_plan: plan,
+          base_plan_status: user?.subscription_status || 'derived',
+          trial_ends_at: user?.trial_ends_at || null,
+          base_price_monthly: plan === 'FAMILY' ? 39 : plan === 'SOLO' ? 19 : 0,
+          addon_price_monthly: 19,
+          addon_count: addonCount,
+          addon_monthly_total: addonCount * 19,
+          monthly_total: (plan === 'FAMILY' ? 39 : plan === 'SOLO' ? 19 : 0) + addonCount * 19,
+          participants_included: included,
+          participants_active: parts.length,
+          participants_max: max,
+          seat_limit: max,
+          seats_used: parts.length,
+          pending_downgrade_to: null,
+          pending_downgrade_at: null,
+        });
+      } else {
+        setSummary(null);
+      }
+
+      setAddons((data?.addons ?? data?.account?.addons ?? []) as Addon[]);
       // Resolve active.
       const saved = await AsyncStorage.getItem(LS_KEY).catch(() => null);
       const fromSaved = saved && parts.find((p) => p.id === saved);
