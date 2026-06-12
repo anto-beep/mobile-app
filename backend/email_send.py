@@ -18,10 +18,6 @@ load_dotenv(ROOT_DIR / ".env")
 
 logger = logging.getLogger("wayly.email")
 
-# Brand-consistent fallback. The user-provided dev/test sender is
-# onboarding@resend.dev; a verified prod domain should overwrite this.
-DEFAULT_FROM = "Wayly <onboarding@resend.dev>"
-
 
 def _client():
     """Lazy resend client — imported on demand so missing dep doesn't break boot."""
@@ -32,6 +28,19 @@ def _client():
         return None
     resend.api_key = api_key
     return resend
+
+
+def _resolve_from(from_email: Optional[str]) -> Optional[str]:
+    """Resolution order:
+      1. Explicit `from_email=` argument (only used by tests / one-offs)
+      2. `RESEND_FROM_EMAIL` env var (the canonical source of truth)
+    If neither is set we return None so `send_email` can refuse to send,
+    rather than silently delivering from a wrong address.
+    """
+    if from_email and from_email.strip():
+        return from_email.strip()
+    env_val = os.environ.get("RESEND_FROM_EMAIL", "").strip()
+    return env_val or None
 
 
 def send_email(
@@ -57,11 +66,13 @@ def send_email(
         )
         return False
 
-    sender = (
-        from_email
-        or os.environ.get("RESEND_FROM_EMAIL", "").strip()
-        or DEFAULT_FROM
-    )
+    sender = _resolve_from(from_email)
+    if not sender:
+        logger.error(
+            "Refusing to send: RESEND_FROM_EMAIL env var is empty and no from_email argument given. "
+            "Set RESEND_FROM_EMAIL in backend/.env (e.g. 'Wayly <hello@wayly.com.au>').",
+        )
+        return False
     try:
         params: dict = {
             "from": sender,
@@ -73,7 +84,7 @@ def send_email(
             params["text"] = text
         resp = resend.Emails.send(params)  # type: ignore[attr-defined]
         msg_id = (resp or {}).get("id") if isinstance(resp, dict) else None
-        logger.info("Resend OK to=%s subject=%r id=%s", to, subject, msg_id)
+        logger.info("Resend OK to=%s from=%r subject=%r id=%s", to, sender, subject, msg_id)
         return True
     except Exception as e:
         logger.exception("Resend send FAILED to=%s subject=%r: %s", to, subject, e)

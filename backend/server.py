@@ -1367,12 +1367,14 @@ from routes.documents import router as documents_router  # noqa: E402
 from routes.visits import router as visits_router  # noqa: E402
 from routes.adviser import router as adviser_router  # noqa: E402
 from routes.admin import router as admin_router, seed_tickets as _seed_admin_tickets  # noqa: E402
+from routes.reports import router as reports_router  # noqa: E402
 
 app.include_router(statements_router)
 app.include_router(documents_router)
 app.include_router(visits_router)
 app.include_router(adviser_router)
 app.include_router(admin_router)
+app.include_router(reports_router)
 
 
 @app.on_event("startup")

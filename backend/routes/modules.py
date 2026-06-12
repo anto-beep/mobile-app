@@ -37,13 +37,8 @@ async def list_budget_alerts(p: dict = Depends(get_active_participant)):
 
 
 # ─────────────────────── REPORTS (summary index) ───────────────────────
-@router.get("/reports")
-async def list_reports(p: dict = Depends(get_active_participant)):
-    # The existing /reports/summary.pdf endpoint already generates a PDF
-    # on demand. This endpoint surfaces the *index* of previously-generated
-    # reports (a future migration will persist them).
-    items = await _list("generated_reports", p)
-    return {"items": items, "active_participant_id": p["id"]}
+# Replaced by routes/reports.py which owns the full Reports tab now —
+# per-participant library, 8 report types, persisted PDFs.
 
 
 # ─────────────────────── HOSPITAL HANDOVER ───────────────────────
