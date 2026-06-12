@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,19 +19,57 @@ import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 export default function Login() {
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('demo@wayly.com.au');
-  const [password, setPassword] = useState('Wayly123!');
+  const [email, setEmail] = useState('cathy@example.com');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 429 cool-down — backend signals "Please wait N minute(s)". We parse the
+  // hint, start a local countdown, and disable the Sign-in button until it
+  // reaches zero so users don't keep slamming the rate limiter.
+  const [cooldownSec, setCooldownSec] = useState(0);
+  const timerRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (cooldownSec <= 0) return;
+    timerRef.current = setInterval(() => {
+      setCooldownSec((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [cooldownSec]);
+
+  function startCooldown(seconds: number) {
+    setCooldownSec(Math.max(1, Math.min(600, Math.round(seconds))));
+  }
+
+  function friendlyError(err: any): string {
+    const status = err?.response?.status;
+    const detail = err?.response?.data?.detail || err?.message || '';
+    // Backend phrases its 429 as "...wait 1 minute(s)..." or similar.
+    if (status === 429 || /too many|rate limit|wait \d+ minute/i.test(String(detail))) {
+      const m = String(detail).match(/(\d+)\s*minute/i);
+      const mins = m ? parseInt(m[1], 10) : 1;
+      startCooldown(mins * 60);
+      return `Too many sign-in attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'} — Wayly is just rate-limiting to keep accounts safe.`;
+    }
+    if (status === 401 || /invalid (email|password|credentials)/i.test(String(detail))) {
+      return 'That email and password combination didn\u2019t match. Try again or use "Forgot password?" below.';
+    }
+    if (!status || /network/i.test(String(detail))) {
+      return 'Couldn\u2019t reach Wayly. Check your internet connection and try again.';
+    }
+    return detail || 'Could not sign in';
+  }
 
   const onSubmit = async () => {
+    if (cooldownSec > 0) return;
     setError(null);
     setSubmitting(true);
     try {
-      const u = await login(email.trim(), password);
+      await login(email.trim(), password);
       router.replace('/(tabs)/today');
     } catch (e: any) {
-      setError(e?.message || 'Could not sign in');
+      setError(friendlyError(e));
     } finally {
       setSubmitting(false);
     }
@@ -91,15 +129,29 @@ export default function Login() {
             <View style={{ height: Spacing.md }} />
 
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              testID="auth-password-input"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder="••••••••"
-              placeholderTextColor={Colors.textMuted}
-              style={styles.input}
-            />
+            <View style={styles.passwordWrap}>
+              <TextInput
+                testID="auth-password-input"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                placeholderTextColor={Colors.textMuted}
+                style={[styles.input, styles.passwordInput]}
+                autoComplete="password"
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                testID="auth-password-toggle"
+                onPress={() => setShowPassword((s) => !s)}
+                style={styles.eyeBtn}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
             {error && (
               <Text style={styles.error} testID="auth-error">
@@ -153,7 +205,7 @@ export default function Login() {
             <View style={styles.demoChip} testID="auth-demo-chip">
               <Ionicons name="information-circle-outline" size={14} color={Colors.textSecondary} />
               <Text style={styles.demoText}>
-                Try the demo: <Text style={styles.demoBold}>demo@wayly.com.au / Wayly123!</Text>
+                Test on production: <Text style={styles.demoBold}>cathy@example.com / testpass123</Text>
               </Text>
             </View>
 
@@ -199,6 +251,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14,
     borderWidth: 1, borderColor: Colors.border,
   },
+  passwordWrap: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 48 },
+  eyeBtn: { position: 'absolute', right: 4, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' },
   error: {
     fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.severityAlert, marginTop: Spacing.md,
   },
@@ -229,5 +284,8 @@ const styles = StyleSheet.create({
   demoText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, flex: 1 },
   demoBold: { fontFamily: Fonts.bodySemi, color: Colors.textPrimary },
   staffLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
+  staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
+});
+ction: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
   staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
 });
