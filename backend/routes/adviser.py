@@ -115,6 +115,17 @@ async def adviser_clients_create(payload: NewClient, user_id: str = Depends(get_
         "ADVISER INVITE for %s -> %s  (mobile: %s | web: %s)",
         user.get("email"), email, invite_url, web_url,
     )
+    try:
+        from email_send import send_adviser_invite
+        send_adviser_invite(
+            to=email,
+            adviser_name=user.get("name") or user.get("email", "Your adviser"),
+            client_name=payload.client_name.strip(),
+            invite_link_mobile=invite_url,
+            invite_link_web=web_url,
+        )
+    except Exception as e:
+        logger.warning("Adviser invite email dispatch failed (non-fatal): %s", e)
     return {k: v for k, v in doc.items() if k not in ("_id", "invite_token")}
 
 

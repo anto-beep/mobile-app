@@ -2,8 +2,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../src/lib/theme';
 
-// Phase B \u2014 4-tab bottom nav per MOBILE_AGENT_DASHBOARD_PROMPT spec.
-// Dashboard \u00b7 Family wall \u00b7 Statements \u00b7 More
+// Phase B \u2014 5-tab bottom nav.
+// Dashboard \u00b7 Family wall \u00b7 Statements \u00b7 Tools \u00b7 More
 // All other historical screens (chat, family v1, profile, notifications)
 // are still routable, just hidden from the tab bar.
 export default function TabsLayout() {
@@ -45,6 +45,14 @@ export default function TabsLayout() {
           title: 'Statements',
           tabBarTestID: 'tabbar-statements',
           tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tools"
+        options={{
+          title: 'Tools',
+          tabBarTestID: 'tabbar-tools',
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

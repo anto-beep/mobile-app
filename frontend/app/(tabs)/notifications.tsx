@@ -43,11 +43,8 @@ export default function Notifications() {
     try {
       const { data } = await api.get('/notifications');
       setItems(data?.items || []);
-      // Mark all as read silently
-      const unreadIds = (data?.items || []).filter((i: NotifItem) => !i.read).map((i: NotifItem) => i.id);
-      if (unreadIds.length > 0) {
-        api.post('/notifications/read', { ids: unreadIds }).catch(() => {});
-      }
+      // Don't mark-all-as-read on load. We want each tap to reduce the
+      // unread count and only mark that single notification as read.
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -150,6 +147,11 @@ export default function Notifications() {
                 },
               ]}
               onPress={() => {
+                // Mark this single notification read (decrements unread badge)
+                if (!n.read) {
+                  setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+                  api.post('/notifications/read', { ids: [n.id] }).catch(() => {});
+                }
                 // Priority: server-issued deeplink → related_statement_id fallback → type-based fallback
                 const dl = (n.deeplink || '').trim();
                 if (dl && dl.startsWith('/')) {

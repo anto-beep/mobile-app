@@ -97,13 +97,16 @@ const TOOLS: Tool[] = [
 
 export default function ToolsIndex() {
   const router = useRouter();
+  const canGoBack = router.canGoBack();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} testID="tools-scroll">
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+        {canGoBack ? (
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+            <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        ) : null}
         <Text style={styles.overline}>Helpful tools</Text>
         <Text style={styles.h1}>AI tools</Text>
         <Text style={styles.sub}>Quick answers when you need them — all included with Solo and Family plans.</Text>

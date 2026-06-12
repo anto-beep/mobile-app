@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import BackHeader from '../../src/components/BackHeader';
 
 type Prefs = {
   push_alert?: boolean;
@@ -68,7 +69,10 @@ export default function NotificationsPrefs() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}><View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View></SafeAreaView>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <BackHeader title="Push & in-app" />
+        <View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View>
+      </SafeAreaView>
     );
   }
 
@@ -76,7 +80,8 @@ export default function NotificationsPrefs() {
   const emailRows = ROWS.filter((r) => r.section === 'email');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Push & in-app" />
       <ScrollView contentContainerStyle={styles.scroll} testID="prefs-scroll">
         <Text style={styles.sectionLabel}>Push notifications</Text>
         <View style={styles.card}>

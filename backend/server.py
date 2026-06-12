@@ -239,14 +239,18 @@ async def auth_forgot(payload: _ForgotRequest):
     if user:
         token = _secrets.token_urlsafe(32)
         RESET_TOKENS[token] = {"user_id": user["id"], "expires_at": time.time() + RESET_TOKEN_TTL_S}
-        # In production we'd send via Resend. MVP: log the link so devs can test.
         reset_url = f"wayly://reset-password?token={token}"
         web_url = f"https://wayly.com.au/reset-password?token={token}"
         logger.info(
             "PASSWORD RESET REQUESTED for %s — mobile: %s — web: %s",
             user["email"], reset_url, web_url,
         )
-        # Store an audit notification on the user record (optional but helpful)
+        # Send real email via Resend (no-op + log if RESEND_API_KEY missing).
+        try:
+            from email_send import send_password_reset
+            send_password_reset(user["email"], reset_url, web_url)
+        except Exception as e:
+            logger.warning("Reset email dispatch failed (non-fatal): %s", e)
         await db.password_reset_log.insert_one({
             "id": new_id(),
             "user_id": user["id"],
