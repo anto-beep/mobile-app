@@ -3,11 +3,42 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { api } from './api';
 import { Colors } from './theme';
+import { mapWebPathToNative } from './scenarioSchema';
 
 // Phase 3 hardening: cache the last token registered so the logout-time
 // unregister call sends a precise device identifier (rather than fetching a
 // new token after permissions were revoked, which fails).
 let lastRegisteredToken: string | null = null;
+
+/**
+ * Resolve a push-notification payload into a router-friendly native path.
+ *
+ * Scenario-engine alerts arrive with `data` shaped like:
+ *   { kind: "alert" | "event" | "state", participant_id, alert_id?, next_action_link? }
+ * Other (legacy) notifications may carry a free-form `deeplink` string.
+ *
+ * Resolution order, per handoff §7:
+ *   1. If `next_action_link` is present → run it through `mapWebPathToNative`.
+ *   2. If `kind === "alert"` + `participant_id` → /participants/:id/timeline
+ *   3. If `kind === "event"` + `participant_id` → /participants/:id/timeline
+ *   4. Fallback to /alerts.
+ */
+export function resolvePushDestination(data: Record<string, any> | null | undefined): string {
+  const d = data || {};
+  if (typeof d.next_action_link === 'string') {
+    const mapped = mapWebPathToNative(d.next_action_link);
+    if (mapped) return mapped;
+  }
+  if (typeof d.deeplink === 'string' && d.deeplink.startsWith('/')) {
+    return d.deeplink;
+  }
+  if (d.participant_id && (d.kind === 'alert' || d.kind === 'event' || d.kind === 'state')) {
+    return `/participants/${d.participant_id}/timeline`;
+  }
+  if (d.kind === 'alert') return '/alerts';
+  if (d.kind === 'event') return '/timeline';
+  return '/alerts';
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

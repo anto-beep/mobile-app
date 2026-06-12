@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useParticipants } from '../context/ParticipantsContext';
 import { Colors, Spacing, Radius, Fonts, Type } from '../lib/theme';
 import { swatchForIndex, initialOf, shortFirstName } from '../lib/format';
+import { MeansNotDisclosedChip } from './MeansNotDisclosedChip';
 
 export function ParticipantSwitcher() {
   const { participants, active, summary, setActive } = useParticipants();
@@ -26,6 +27,13 @@ export function ParticipantSwitcher() {
     summary == null || summary.participants_active < summary.participants_max;
   const collapsed = participants.length <= 1;
 
+  // Phase E polish: surface flags carried on the participant record. The
+  // server includes `flags: string[]` (and a richer `flags_payload`) when
+  // available; this is the only piece of UI that needs to peek at flags.
+  const flags = (active as any)?.flags;
+  const flagsArray: string[] = Array.isArray(flags) ? flags : (Array.isArray((active as any)?.flags_payload) ? (active as any).flags_payload.map((f: any) => f?.key).filter(Boolean) : []);
+  const hasMND = flagsArray.some((f) => typeof f === 'string' && f.toLowerCase().includes('means_not_disclosed'));
+
   const pill = (
     <View testID="participant-switcher-trigger" style={[styles.pill, { borderLeftColor: swatch }]}>
       <View style={[styles.swatch, { backgroundColor: swatch }]}>
@@ -35,6 +43,7 @@ export function ParticipantSwitcher() {
       <View style={styles.classChip}>
         <Text style={styles.classText}>L{active.classification}</Text>
       </View>
+      <MeansNotDisclosedChip active={hasMND} />
       {!collapsed && <Ionicons name="chevron-down" size={14} color={Colors.textInverse} />}
     </View>
   );

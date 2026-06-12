@@ -12,6 +12,7 @@ import { ParticipantsProvider } from '../src/context/ParticipantsContext';
 import { ScenarioProvider } from '../src/context/ScenarioContext';
 import { OnboardingGate } from '../src/components/OnboardingGate';
 import { SchemaBanner } from '../src/components/SchemaBanner';
+import { PushDeepLinkListener } from '../src/components/PushDeepLinkListener';
 import { ToastProvider } from '../src/components/Toast';
 import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
@@ -132,6 +133,7 @@ export default function RootLayout() {
                     <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
                     <OnboardingGate />
                     <SchemaBanner />
+                    <PushDeepLinkListener />
                     <ThemedShell>
                       <RootStack />
                     </ThemedShell>
