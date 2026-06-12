@@ -23,6 +23,11 @@ export function RecentActivityPanel() {
       try {
         const r = await getTimeline(active.id, 5);
         if (!cancelled) setItems(r?.items || []);
+      } catch (e: any) {
+        // Scenario engine may be unavailable on preview backends or during
+        // transient outages — degrade silently so the dashboard still renders.
+        if (!cancelled) setItems([]);
+        if (__DEV__) console.warn('[RecentActivity] timeline fetch failed:', e?.message || e);
       } finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };

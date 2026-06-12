@@ -30,6 +30,10 @@ export default function Timeline() {
       const r = await getTimeline(active.id, 80);
       setItems(r?.items || []);
       setLifecycle(r?.lifecycle_state);
+    } catch (e: any) {
+      // Scenario engine may be unavailable — show an empty state instead of crashing.
+      setItems([]);
+      if (__DEV__) console.warn('[Timeline] fetch failed:', e?.message || e);
     } finally { setLoading(false); setRefreshing(false); }
   }, [active, getTimeline]);
 

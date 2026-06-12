@@ -24,6 +24,9 @@ export default function AlertsInbox() {
     try {
       const r = await getAlerts(active.id);
       setItems(r || []);
+    } catch (e: any) {
+      setItems([]);
+      if (__DEV__) console.warn('[Alerts] fetch failed:', e?.message || e);
     } finally { setLoading(false); setRefreshing(false); }
   }, [active, getAlerts]);
   useEffect(() => { void load(false); }, [load, participantSig]);

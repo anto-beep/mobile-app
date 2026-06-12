@@ -25,6 +25,9 @@ export default function ParticipantTimeline() {
     try {
       const r = await getTimeline(String(id), 80);
       setItems(r?.items || []); setFirst(r?.first_name); setLifecycle(r?.lifecycle_state);
+    } catch (e: any) {
+      setItems([]);
+      if (__DEV__) console.warn('[ParticipantTimeline] fetch failed:', e?.message || e);
     } finally { setLoading(false); setRefreshing(false); }
   }, [id, getTimeline]);
   useEffect(() => { void load(false); }, [load]);
