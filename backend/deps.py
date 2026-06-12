@@ -55,3 +55,54 @@ async def require_household(user_id: str) -> dict:
     if not h:
         raise HTTPException(status_code=400, detail="No household yet — create one first.")
     return h
+
+
+async def push_to_user(user_id: str, title: str, body: str, data: Optional[dict] = None) -> None:
+    """Fire an Expo push notification to all of a user's registered devices.
+
+    Shared by statements / notifications / admin route modules. Mirrors the
+    original `_push_to_user` previously inlined in server.py.
+    """
+    devices = await db.push_tokens.find({"user_id": user_id}, {"_id": 0}).to_list(20)
+    if not devices:
+        return
+    try:
+        from exponent_server_sdk import PushClient, PushMessage
+        client = PushClient()
+        for d in devices:
+            try:
+                client.publish(
+                    PushMessage(
+                        to=d["expo_push_token"],
+                        title=title,
+                        body=body,
+                        data=data or {},
+                        sound="default",
+                        priority="high",
+                    )
+                )
+            except Exception as e:
+                logger.warning(
+                    "Expo push failed for token %s: %s",
+                    d.get("expo_push_token", "")[:20], e,
+                )
+    except Exception as e:
+        logger.warning("exponent_server_sdk not available: %s", e)
+
+
+def csv_response(rows: list, headers: list, filename: str):
+    """Tiny helper used by admin CSV exports. Kept here so multiple route
+    modules can reach for it without duplicating the boilerplate."""
+    from fastapi.responses import Response
+    import csv as _csv
+    import io as _io
+    buf = _io.StringIO()
+    w = _csv.writer(buf)
+    w.writerow(headers)
+    for r in rows:
+        w.writerow([(r.get(h, "") if isinstance(r, dict) else "") for h in headers])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
