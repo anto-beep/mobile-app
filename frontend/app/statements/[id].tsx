@@ -27,7 +27,9 @@ type Stmt = {
   uploaded_at: string;
   summary?: string;
   line_items: any[];
-  anomalies: { id: string; severity: 'alert' | 'warning' | 'info'; title: string; detail: string; suggested_action?: string | null }[];
+  anomalies: { id: string; severity: 'alert' | 'warning' | 'info'; title: string; detail: string; suggested_action?: string | null; rule?: string | null; dollar_impact?: number | null; evidence?: string[] | null }[];
+  anomaly_dollar_impact_total?: number | null;
+  informational_notes?: { kind?: string; title?: string; detail?: string }[];
 };
 
 export default function StatementDetail() {
@@ -98,23 +100,44 @@ export default function StatementDetail() {
 
         {(stmt.anomalies || []).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Things to know</Text>
+            <View style={styles.anomaliesHead}>
+              <Text style={styles.sectionTitle}>Things to know</Text>
+              {(stmt.anomaly_dollar_impact_total ?? 0) > 0 ? (
+                <View style={styles.impactPill} testID="anomalies-total-impact">
+                  <Text style={styles.impactPillText}>Potential impact: {formatAUD2(stmt.anomaly_dollar_impact_total || 0)}</Text>
+                </View>
+              ) : null}
+            </View>
             {stmt.anomalies.map((a) => {
               const s = SEVERITY[a.severity] || SEVERITY.info;
               return (
                 <View
                   key={a.id}
                   style={[styles.anomalyCard, { borderColor: s.color, backgroundColor: s.bg }]}
-                  testID={`statement-anomaly-card-${a.id}`}
+                  testID={`anomaly-${a.rule || a.id}`}
                 >
                   <View style={styles.anomalyHead}>
                     <Ionicons name={s.icon} size={18} color={s.color} />
                     <Text style={[styles.anomalyTitle, { color: s.color }]}>{a.title}</Text>
+                    {a.dollar_impact != null && a.dollar_impact > 0 ? (
+                      <Text style={[styles.anomalyDollar, { color: s.color }]} testID={`anomaly-dollar-${a.id}`}>{formatAUD2(a.dollar_impact)}</Text>
+                    ) : null}
                   </View>
                   <Text style={styles.anomalyDetail}>{a.detail}</Text>
                   {a.suggested_action && (
                     <Text style={styles.anomalyAction}>→ {a.suggested_action}</Text>
                   )}
+                  {Array.isArray(a.evidence) && a.evidence.length > 0 ? (
+                    <View testID={`anomaly-evidence-${a.id}`} style={styles.evidenceBox}>
+                      <Text style={styles.evidenceTitle}>Why was this flagged?</Text>
+                      {a.evidence.slice(0, 4).map((line, i) => (
+                        <Text key={i} style={styles.evidenceLine}>• {line}</Text>
+                      ))}
+                    </View>
+                  ) : null}
+                  {a.rule ? (
+                    <Text style={styles.anomalyRule} testID={`anomaly-rule-${a.id}`}>{a.rule}</Text>
+                  ) : null}
                 </View>
               );
             })}
@@ -190,6 +213,14 @@ const styles = StyleSheet.create({
   anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, flex: 1 },
   anomalyDetail: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, marginTop: 6, lineHeight: 19 },
   anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, fontStyle: 'italic', marginTop: 8 },
+  anomalyDollar: { fontFamily: Fonts.bodySemi, fontSize: 13 },
+  anomaliesHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md, gap: 8, flexWrap: 'wrap' },
+  impactPill: { backgroundColor: 'rgba(192, 57, 43, 0.10)', borderRadius: 100, paddingHorizontal: 10, paddingVertical: 5 },
+  impactPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.severityAlert, letterSpacing: 0.3 },
+  evidenceBox: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' },
+  evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },
+  evidenceLine: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, lineHeight: 17 },
+  anomalyRule: { fontFamily: 'Courier', fontSize: 10, color: Colors.textMuted, marginTop: 8, letterSpacing: 0.3 },
   lineItem: {
     backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md,
     marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,

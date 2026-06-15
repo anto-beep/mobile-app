@@ -1,4 +1,6 @@
-// Contribution Estimator
+// Contribution Estimator — iter 48 parity. Four cohorts (full / part / cshc /
+// self), optional Services-Australia rate inputs for part & cshc, and a
+// branched result based on rate_basis (exact / user_supplied / band_range).
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,20 +11,27 @@ import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
-const PENSION_OPTIONS = [
-  { key: 'full', label: 'Full pension' },
-  { key: 'part', label: 'Part pension' },
-  { key: 'self_funded', label: 'Self-funded' },
+type Cohort = 'full' | 'part' | 'cshc' | 'self';
+const COHORTS: { key: Cohort; label: string; ratesEditable: boolean }[] = [
+  { key: 'full', label: 'Full pension',          ratesEditable: false },
+  { key: 'part', label: 'Part pension',          ratesEditable: true  },
+  { key: 'cshc', label: 'CSHC',                   ratesEditable: true  },
+  { key: 'self', label: 'Self-funded',           ratesEditable: false },
 ];
 
 export default function ContributionEstimator() {
   const router = useRouter();
   const { user } = useAuth();
-  const [pension, setPension] = useState('full');
+  const [cohort, setCohort] = useState<Cohort>('full');
   const [classification, setClassification] = useState(4);
   const [annualSpend, setAnnualSpend] = useState('');
+  const [indepRate, setIndepRate] = useState('');
+  const [edRate, setEdRate] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const cohortMeta = COHORTS.find((c) => c.key === cohort)!;
 
   if (!hasPaidAccess(user)) {
     return (
@@ -41,16 +50,29 @@ export default function ContributionEstimator() {
   const submit = async () => {
     setLoading(true);
     setResult(null);
+    setErr(null);
     try {
-      const { data } = await api.post('/public/contribution-estimator', {
-        pension_status: pension,
+      const body: any = {
+        pension_status: cohort,
         classification,
         annual_spend: parseFloat(annualSpend) || 0,
-      });
+      };
+      if (cohortMeta.ratesEditable) {
+        if (indepRate) body.independence_rate_pct = parseFloat(indepRate);
+        if (edRate) body.everyday_rate_pct = parseFloat(edRate);
+      }
+      const { data } = await api.post('/public/contribution-estimator', body);
       setResult(data);
-    } catch (e) {
-      Alert.alert("Couldn't estimate", extractErrorMessage(e));
+    } catch (e: any) {
+      setErr(extractErrorMessage(e, "Couldn't estimate"));
     } finally { setLoading(false); }
+  };
+
+  const isBand = result?.rate_basis === 'band_range';
+  const verboseRate = (s: any) => {
+    if (s.rate_pct != null) return `${s.rate_pct}%`;
+    if (s.rate_pct_low != null) return `${s.rate_pct_low}–${s.rate_pct_high}%`;
+    return '';
   };
 
   return (
@@ -60,14 +82,14 @@ export default function ContributionEstimator() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
           <Text style={styles.h1}>What will I pay?</Text>
-          <Text style={styles.sub}>Estimate your participant contribution per quarter and year.</Text>
+          <Text style={styles.sub}>Quarter and annual contribution estimates by cohort.</Text>
           <AIAccuracyBanner tool="contribution-estimator" />
 
           <Text style={styles.label}>Pension status</Text>
           <View style={styles.row}>
-            {PENSION_OPTIONS.map((p) => (
-              <TouchableOpacity key={p.key} style={[styles.chip, pension === p.key && styles.chipActive]} onPress={() => setPension(p.key)} testID={`contrib-pension-${p.key}`}>
-                <Text style={[styles.chipText, pension === p.key && styles.chipTextActive]}>{p.label}</Text>
+            {COHORTS.map((p) => (
+              <TouchableOpacity key={p.key} style={[styles.chip, cohort === p.key && styles.chipActive]} onPress={() => setCohort(p.key)} testID={`ce-pension-${p.key}`}>
+                <Text style={[styles.chipText, cohort === p.key && styles.chipTextActive]}>{p.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -84,21 +106,59 @@ export default function ContributionEstimator() {
           <Text style={styles.label}>Planned annual spend ($)</Text>
           <TextInput style={styles.input} keyboardType="numeric" value={annualSpend} onChangeText={setAnnualSpend} placeholder="e.g. 24000" placeholderTextColor={Colors.textMuted} testID="contrib-spend" />
 
+          {cohortMeta.ratesEditable && (
+            <View testID="ce-rate-inputs">
+              <Text style={styles.label}>Your contribution letter (optional)</Text>
+              <Text style={styles.hint}>If Services Australia has sent your specific rates, enter them here for an exact figure.</Text>
+              <View style={styles.rateRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rateLabel}>Independence %</Text>
+                  <TextInput style={styles.input} keyboardType="numeric" value={indepRate} onChangeText={setIndepRate} placeholder="e.g. 12" placeholderTextColor={Colors.textMuted} testID="ce-independence-rate" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rateLabel}>Everyday %</Text>
+                  <TextInput style={styles.input} keyboardType="numeric" value={edRate} onChangeText={setEdRate} placeholder="e.g. 20" placeholderTextColor={Colors.textMuted} testID="ce-everyday-rate" />
+                </View>
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity onPress={submit} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="contrib-submit">
             {loading ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Estimate it</Text>}
           </TouchableOpacity>
 
+          {err && <Text style={styles.error} testID="ce-error">{err}</Text>}
+
           {result && (
             <View style={styles.result} testID="contrib-result">
               <Text style={styles.resultOverline}>Estimated contribution</Text>
-              <Text style={styles.resultAmount}>{formatAUD(result.annual_contribution || 0)}/yr</Text>
-              <Text style={styles.resultSub}>{formatAUD(result.quarterly_contribution || 0)}/quarter</Text>
+              {isBand ? (
+                <>
+                  <Text style={styles.resultAmount} testID="ce-annual-range">
+                    {formatAUD(result.annual_contribution_low || 0)}–{formatAUD(result.annual_contribution_high || 0)}/yr
+                  </Text>
+                  <View style={styles.caveat} testID="ce-caveat">
+                    <Ionicons name="information-circle-outline" size={14} color={Colors.brandSecondary} />
+                    <Text style={styles.caveatText}>{result.caveat || 'Your actual rate is set by Services Australia. Enter the rates from your contribution letter above for an exact figure.'}</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.resultAmount} testID="ce-annual">{formatAUD(result.annual_contribution || 0)}/yr</Text>
+                  <Text style={styles.resultSub}>{formatAUD(result.quarterly_contribution || 0)}/quarter</Text>
+                </>
+              )}
               {Array.isArray(result.by_stream) && (
                 <View style={{ marginTop: Spacing.md, gap: 6 }}>
                   {result.by_stream.map((s: any) => (
                     <View key={s.stream} style={styles.streamRow}>
-                      <Text style={styles.streamName}>{s.stream}</Text>
-                      <Text style={styles.streamAmt}>{formatAUD(s.contribution || 0)}/yr</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.streamName}>{s.stream}</Text>
+                        {verboseRate(s) ? <Text style={styles.streamPct}>{verboseRate(s)}</Text> : null}
+                      </View>
+                      <Text style={styles.streamAmt}>
+                        {s.contribution != null ? `${formatAUD(s.contribution)}/yr` : `${formatAUD(s.contribution_low || 0)}–${formatAUD(s.contribution_high || 0)}/yr`}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -121,6 +181,7 @@ const styles = StyleSheet.create({
   h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
   sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.md },
   label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 8 },
+  hint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginBottom: 6 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
   chipSmall: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
@@ -128,14 +189,20 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
   chipTextActive: { color: Colors.cream },
   input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.cardBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border },
+  rateRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  rateLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, marginBottom: 4 },
   btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
   btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
+  error: { marginTop: Spacing.md, padding: 10, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.severityAlert, fontFamily: Fonts.body, fontSize: 12, color: Colors.severityAlert, lineHeight: 17 },
   result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
   resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
-  resultAmount: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.brandPrimary, letterSpacing: -1 },
+  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.8 },
   resultSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+  caveat: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, marginTop: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary },
+  caveatText: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, lineHeight: 17 },
   streamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   streamName: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.textSecondary },
+  streamPct: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 1 },
   streamAmt: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
   note: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: Spacing.md, fontStyle: 'italic', lineHeight: 17 },
 });

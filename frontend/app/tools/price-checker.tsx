@@ -74,8 +74,12 @@ export default function PriceChecker() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
-          <Text style={styles.sub}>We'll compare against the network median and the 1 July 2026 cap.</Text>
+          <Text style={styles.sub}>We'll compare against the network median. National price caps were deferred indefinitely in May 2026 — providers price competitively below this median.</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
+          <View style={styles.capsNote} testID="pc-caps-note">
+            <Ionicons name="information-circle-outline" size={14} color={Colors.brandSecondary} />
+            <Text style={styles.capsNoteText}>National price caps were deferred indefinitely in May 2026 — the verdict below is median-only.</Text>
+          </View>
 
           <Text style={styles.label}>Service</Text>
           <View style={styles.row}>
@@ -111,11 +115,13 @@ export default function PriceChecker() {
                   <Text style={styles.statLabel}>Network median</Text>
                   <Text style={styles.statValue}>{formatAUD2(result.median)}</Text>
                 </View>
-                <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Cap (1 Jul)</Text>
-                  <Text style={styles.statValue}>{formatAUD2(result.cap)}</Text>
-                </View>
               </View>
+              {result.caps_note ? (
+                <View style={styles.capsNote} testID="pc-result-caps-note">
+                  <Ionicons name="information-circle-outline" size={12} color={Colors.brandSecondary} />
+                  <Text style={styles.capsNoteText}>{result.caps_note}</Text>
+                </View>
+              ) : null}
               {result.suggested_action && (
                 <View style={styles.action}>
                   <Ionicons name="arrow-forward" size={14} color={Colors.brandPrimary} />
@@ -156,4 +162,6 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, marginTop: 2 },
   action: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
   actionText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1, fontStyle: 'italic' },
+  capsNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary, marginTop: Spacing.sm, marginBottom: Spacing.sm },
+  capsNoteText: { flex: 1, fontFamily: Fonts.body, fontSize: 11, color: Colors.textPrimary, lineHeight: 15 },
 });

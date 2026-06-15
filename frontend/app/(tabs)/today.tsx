@@ -35,7 +35,9 @@ type RawBudget = {
   classification?: number;
   classification_label?: string;
   quarter_label?: string;
-  quarterly_total?: number;
+  quarterly_gross?: number;
+  quarterly_usable?: number;
+  care_management_quarterly?: number;
   spent_this_quarter?: number;       // mobile shape
   remaining_this_quarter?: number;   // mobile shape
   burn_pct?: number;                 // mobile shape
@@ -59,7 +61,7 @@ type Derived = {
   classification_label: string;
   quarter_label: string;
   provider_name: string;
-  quarterly_total: number;
+  quarterly_usable: number;
   spent_this_quarter: number;
   remaining_this_quarter: number;
   burn_pct: number;
@@ -99,16 +101,18 @@ export default function Today() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [pathways, setPathways] = useState<any[]>([]);
 
   const load = async () => {
     try {
       setError(null);
       // Fetch in parallel — graceful for any failures
-      const [bRes, hRes, sRes, nRes] = await Promise.all([
+      const [bRes, hRes, sRes, nRes, pRes] = await Promise.all([
         api.get<RawBudget>('/budget/current').catch((e) => ({ data: null, _err: e })),
         api.get('/household').catch(() => ({ data: null })),
         api.get('/statements').catch(() => ({ data: [] })),
         api.get('/notifications').catch(() => ({ data: { items: [], unread: 0 } })),
+        api.get('/budget/eligible-pathways').catch(() => ({ data: null })),
       ]);
 
       // If budget call failed (e.g. no household), surface the error
@@ -134,7 +138,12 @@ export default function Today() {
         return { stream: s.stream, allocated, spent, remaining, pct };
       });
 
-      const quarterlyTotal = num(b.quarterly_total, streams.reduce((a, s) => a + s.allocated, 0));
+      // Iter 48 broke `quarterly_usable` → falls back through quarterly_usable,
+      // legacy quarterly_usable, and finally the sum of streams.
+      const quarterlyTotal = num(
+        (b as any).quarterly_usable ?? (b as any).quarterly_usable,
+        streams.reduce((a, s) => a + s.allocated, 0),
+      );
       const spentThisQuarter = num(
         b.spent_this_quarter,
         streams.reduce((a, s) => a + s.spent, 0)
@@ -188,7 +197,7 @@ export default function Today() {
         classification_label: b.classification_label || (household ? `Level ${household.classification}` : ''),
         quarter_label: b.quarter_label || '',
         provider_name: household?.provider_name || '',
-        quarterly_total: quarterlyTotal,
+        quarterly_usable: quarterlyTotal,
         spent_this_quarter: spentThisQuarter,
         remaining_this_quarter: remainingThisQuarter,
         burn_pct: burnPct,
@@ -203,6 +212,7 @@ export default function Today() {
         latest_statement: latest,
       });
       setUnread(num((nRes as any).data?.unread));
+      setPathways(((pRes as any).data?.eligible) || []);
     } catch (e: any) {
       setError(extractErrorMessage(e, 'Could not load your dashboard'));
     } finally {
@@ -267,7 +277,7 @@ export default function Today() {
                 {[
                   data.quarter_label,
                   data.classification_label,
-                  data.quarterly_total > 0 ? `${formatAUD(data.quarterly_total)}/qtr` : null,
+                  data.quarterly_usable > 0 ? `${formatAUD(data.quarterly_usable)}/qtr` : null,
                   data.provider_name ? `Provider: ${data.provider_name}` : null,
                 ].filter(Boolean).join(' · ')}
               </Text>
@@ -311,7 +321,7 @@ export default function Today() {
                 {formatAUD(data.remaining_this_quarter)}
               </Text>
               <Text style={styles.heroSub}>
-                of {formatAUD(data.quarterly_total)} ·{' '}
+                of {formatAUD(data.quarterly_usable)} ·{' '}
                 <Text style={styles.heroSubBold}>{formatAUD(data.spent_this_quarter)} spent</Text>
               </Text>
               <View style={styles.progressTrack}>
@@ -327,7 +337,7 @@ export default function Today() {
                   <Text style={styles.statOverline}>This quarter</Text>
                 </View>
                 <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{formatAUD(data.spent_this_quarter)}</Text>
-                <Text style={styles.statHint} numberOfLines={2}>of {formatAUD(data.quarterly_total)} · {formatAUD(data.remaining_this_quarter)} left</Text>
+                <Text style={styles.statHint} numberOfLines={2}>of {formatAUD(data.quarterly_usable)} · {formatAUD(data.remaining_this_quarter)} left</Text>
               </View>
 
               <TouchableOpacity
@@ -488,6 +498,29 @@ export default function Today() {
 
         <RecentActivityPanel />
 
+        {pathways.length > 0 && (
+          <View style={styles.pathwayTile} testID="dashboard-pathways">
+            <View style={styles.pathwayHead}>
+              <Ionicons name="compass-outline" size={16} color={Colors.brandPrimary} />
+              <Text style={styles.pathwayTitle}>Pathways the participant may qualify for</Text>
+            </View>
+            {pathways.map((p: any) => (
+              <View key={p.pathway} style={styles.pathwayRow} testID={`dashboard-pathway-${p.pathway}`}>
+                <Text style={styles.pathwayName}>{p.title}</Text>
+                {p.section_ref ? <Text style={styles.pathwaySection}>{p.section_ref}</Text> : null}
+                {p.reason ? <Text style={styles.pathwayReason}>{p.reason}</Text> : null}
+                <TouchableOpacity
+                  onPress={() => router.push(`/tools/reassessment-letter?letter_type=${encodeURIComponent(p.next_step?.split('letter_type=')[1] || 'rcp_assessment')}` as any)}
+                  style={styles.pathwayCta}
+                  testID={`dashboard-pathway-cta-${p.pathway}`}
+                >
+                  <Text style={styles.pathwayCtaText}>Draft a letter →</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={{ height: 80 }} />
       </ScrollView>
 
@@ -566,4 +599,13 @@ const styles = StyleSheet.create({
   emptyStmtTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
   emptyStmtBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
   fab: { position: 'absolute', right: Spacing.lg, bottom: Spacing.lg, width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.brandPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+  pathwayTile: { marginTop: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 10 },
+  pathwayHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pathwayTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
+  pathwayRow: { padding: 10, backgroundColor: Colors.background, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 4 },
+  pathwayName: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.textPrimary },
+  pathwaySection: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, letterSpacing: 0.3 },
+  pathwayReason: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 17, marginTop: 2 },
+  pathwayCta: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: 'rgba(14, 77, 82, 0.08)', marginTop: 4 },
+  pathwayCtaText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
 });

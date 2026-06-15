@@ -85,9 +85,9 @@ const TOOLS: Tool[] = [
     trialNote: '7-day free trial',
   },
   {
-    key: 'family-coordinator',
-    title: 'Family Coordinator',
-    sub: 'Ask anything about Support at Home — the friendliest niece in Australia',
+    key: 'aged-care-qa',
+    title: 'Aged Care Q&A',
+    sub: "Plain-English answers about Support at Home, grounded in the Aged Care Act 2024",
     icon: 'chatbubbles-outline',
     color: Colors.brandPrimary,
     badge: { label: 'Solo & Family', tone: 'navy' },
