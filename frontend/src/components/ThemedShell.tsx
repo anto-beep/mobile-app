@@ -34,8 +34,12 @@ import { useAccessibility } from '../context/AccessibilityContext';
 export function ThemedShell({ children }: { children: React.ReactNode }) {
   const a11y = useAccessibility();
 
-  // Sync scale into the Text patch so every subsequent render uses it.
-  // Also bump a key when scale changes so the tree re-mounts and picks up the new scale.
+  // Sync scale into the Text patch SYNCHRONOUSLY during render so every child
+  // Text gets the right fontSize on its very first render after a scale change.
+  // Setting this in useEffect creates a 1-cycle lag where the first render
+  // after a scale change still uses the OLD scale — which is why the
+  // Appearance pills appeared not to affect text size.
+  (Text as any).__waylyScale = a11y.scale;
   useEffect(() => {
     (Text as any).__waylyScale = a11y.scale;
   }, [a11y.scale]);

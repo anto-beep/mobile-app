@@ -425,10 +425,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Visits/Calendar + Adviser PDF Review Pack (verified)"
+    - "Statement Decoder free-tier quota (1 free/30d for free plan, unlimited for paid)"
+    - "Settings screens (Reports, Members, Appearance, Security) — BackHeader + SafeArea"
+    - "Appearance text-size pills actually scale Text components app-wide"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "JUNE 2026 SESSION — verification pass. Fixes shipped this iteration: (1) Statement Decoder free-tier 1 free decode per rolling 30 days for plan='free' (paid plans bypass) — implemented in /app/backend/routes/statements.py: _check_free_tier_quota() called from /api/statements/upload + /api/statements/upload-text; raises 402 with retry_at_unix + redirect='/pricing' when exhausted; _record_free_tier_use() stamps user.free_decode_last_at_ts. (2) Settings screens UI fixes: members.tsx now renders <BackHeader title='Family members'/> (was imported but not rendered, so screen had no back button); reports.tsx fixed JSX syntax bug — title=\\\"Summary Reports\\\" (escaped quotes) was breaking the prop; settings/index.tsx + appearance.tsx fixed Colors.bg (undefined) → Colors.background so background renders. (3) Appearance text-size now actually works: ThemedShell was setting Text.__waylyScale in useEffect → 1-cycle lag meant the first render after a scale change still used the OLD scale. Now set synchronously during render so children get the right scale on their first mount under the keyed remount. Please test both backend quota logic and frontend visual flow."
 
 agent_communication:
     - agent: "main"

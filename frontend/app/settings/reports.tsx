@@ -62,7 +62,7 @@ export default function Reports() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title=\"Summary Reports\" />
+      <BackHeader title="Summary Reports" />
       <ScrollView contentContainerStyle={styles.scroll} testID="reports-scroll">
         <Text style={styles.overline}>SUMMARY REPORTS</Text>
         <Text style={styles.h1}>Your Wayly snapshot</Text>

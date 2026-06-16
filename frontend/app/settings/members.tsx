@@ -87,6 +87,7 @@ export default function Members() {
   if (!isFamilyPlan) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <BackHeader title="Family members" />
         <View style={styles.gateCard} testID="members-upgrade-gate">
           <Ionicons name="people-outline" size={32} color={Colors.brandSecondary} />
           <Text style={styles.gateTitle}>Family invites are on Family plan</Text>
@@ -101,6 +102,7 @@ export default function Members() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Family members" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" testID="members-scroll">
           <Text style={styles.sectionLabel}>Members</Text>
