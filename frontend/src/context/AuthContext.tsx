@@ -19,8 +19,18 @@ export type User = {
   trial_used?: boolean;
 };
 
+export type Subscription = {
+  plan: string;          // 'FREE' | 'SOLO' | 'FAMILY' (server returns upper)
+  status: string | null; // 'active' | 'trialing' | null
+  trial_ends_at?: string | null;
+  current_period_end?: string | null;
+  cancel_at_period_end?: boolean;
+  stub_mode?: boolean;
+};
+
 type AuthState = {
   user: User | null;
+  subscription: Subscription | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, name: string) => Promise<User>;
@@ -32,43 +42,59 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-// Reconcile the user record with the live Stripe subscription so that the
-// rest of the app (paywalls, header badge, trial CTAs) sees the SAME effective
-// plan everywhere — production data can drift if a Stripe webhook missed, and
-// `users.plan` will say "free" while `/billing/subscription` says "family".
-// Always trust the subscription when it's active or trialing.
-async function reconcileUserWithSubscription(u: User): Promise<User> {
+// Fetch the Stripe subscription. Single source of truth for the active plan.
+async function fetchSubscription(): Promise<Subscription | null> {
   try {
     const { data } = await api.get('/billing/subscription');
-    if (!data) return u;
-    const subPlan: string = String(data.plan || '').toLowerCase();
-    const status: string | null = data.status || null;
-    const subActive = status === 'active' || status === 'trialing';
+    if (!data) return null;
     return {
-      ...u,
-      // When the subscription is active/trialing, its plan is the source of truth.
-      plan: subActive && subPlan && subPlan !== 'free' ? subPlan : u.plan,
-      subscription_status: status ?? u.subscription_status ?? null,
-      trial_ends_at: data.trial_ends_at ?? u.trial_ends_at ?? null,
-      // If the user is currently in a trial OR has ever been in one, mark as used.
-      trial_used: u.trial_used || status === 'trialing' || !!data.trial_ends_at,
+      plan: String(data.plan || 'FREE').toUpperCase(),
+      status: data.status || null,
+      trial_ends_at: data.trial_ends_at ?? null,
+      current_period_end: data.current_period_end ?? null,
+      cancel_at_period_end: !!data.cancel_at_period_end,
+      stub_mode: !!data.stub_mode,
     };
-  } catch {
-    return u;
+  } catch (err) {
+    if (typeof console !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.warn('[auth] subscription fetch failed; falling back to user.plan', err);
+    }
+    return null;
   }
+}
+
+// Reconcile the user record with the live Stripe subscription so that the
+// rest of the app (paywalls, header badge, trial CTAs) sees the SAME effective
+// plan everywhere — production data can drift if a Stripe webhook missed and
+// `users.plan` will say "free" while `/billing/subscription` says "family".
+function mergeUserWithSub(u: User, sub: Subscription | null): User {
+  if (!sub) return u;
+  const subPlan = sub.plan.toLowerCase();
+  const subActive = sub.status === 'active' || sub.status === 'trialing';
+  return {
+    ...u,
+    plan: subActive && subPlan && subPlan !== 'free' ? subPlan : u.plan,
+    subscription_status: sub.status ?? u.subscription_status ?? null,
+    trial_ends_at: sub.trial_ends_at ?? u.trial_ends_at ?? null,
+    trial_used: u.trial_used || sub.status === 'trialing' || !!sub.trial_ends_at,
+  };
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
     try {
       const { data } = await api.get<User>('/auth/me');
-      const merged = await reconcileUserWithSubscription(data);
-      setUser(merged);
+      const sub = await fetchSubscription();
+      setSubscription(sub);
+      setUser(mergeUserWithSub(data, sub));
     } catch {
       setUser(null);
+      setSubscription(null);
     }
   };
 
@@ -82,10 +108,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persistAndSet = async (token: string, refresh: string | undefined, u: User) => {
-    await persistTokens(token, refresh);
-    const merged = await reconcileUserWithSubscription(u);
-    setUser(merged);
+  const persistAndSet = async (token: string, refreshToken: string | undefined, u: User) => {
+    await persistTokens(token, refreshToken);
+    const sub = await fetchSubscription();
+    setSubscription(sub);
+    setUser(mergeUserWithSub(u, sub));
   };
 
   const login = async (email: string, password: string) => {
@@ -138,7 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, finishGoogleSession, logout, refresh }}>
+    <AuthContext.Provider value={{ user, subscription, loading, login, signup, loginWithGoogle, finishGoogleSession, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,7 +6,7 @@ export default function Referrals() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/referrals');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Referrals" subtitle="Wayly credit for inviting other families" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Referrals" subtitle="Wayly credit for inviting other families" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="gift-outline"

@@ -7,7 +7,7 @@ export default function Audit() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/audit');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Audit log" subtitle="Every privacy‑sensitive action on this account" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Audit log" subtitle="Every privacy‑sensitive action on this account" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="shield-checkmark-outline"

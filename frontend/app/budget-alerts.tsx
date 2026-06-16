@@ -9,7 +9,7 @@ export default function BudgetAlerts() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/budget/alerts');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Budget alerts" subtitle="Lines that are running ahead of plan" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Budget alerts" subtitle="Lines that are running ahead of plan" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="alert-circle-outline"

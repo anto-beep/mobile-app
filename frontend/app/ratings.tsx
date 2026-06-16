@@ -28,7 +28,7 @@ export default function Ratings() {
   }
 
   return (
-    <ScreenShell title="Provider ratings" subtitle="How is your provider performing?" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Provider ratings" subtitle="How is your provider performing?" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       <View style={styles.card}>
         <Text style={styles.title}>Add a rating</Text>
         <View style={styles.stars}>

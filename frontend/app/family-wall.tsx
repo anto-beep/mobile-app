@@ -9,7 +9,7 @@ export default function FamilyWall() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/family/wall');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Family wall" subtitle="Recent activity across this participant's circle" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Family wall" subtitle="Recent activity across this participant's circle" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="people-circle-outline"

@@ -5,7 +5,7 @@ import { useApi } from '../src/lib/useApi';
 export default function ProviderSwitch() {
   const { data, loading, refreshing, refresh } = useApi<any>('/provider-switch/status');
   return (
-    <ScreenShell title="Switch provider" subtitle="Move services to a new aged‑care provider" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Switch provider" subtitle="Move services to a new aged‑care provider" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {!data?.in_progress ? (
         <EmptyState
           icon="swap-horizontal-outline"

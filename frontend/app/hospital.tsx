@@ -6,7 +6,7 @@ export default function Hospital() {
   const { data, loading, refreshing, refresh } = useApi<any>('/hospital/handover');
   const empty = !data || (!data.summary && !(data.medications || []).length);
   return (
-    <ScreenShell title="Hospital handover" subtitle="What an ED triage nurse needs in 30 seconds" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Hospital handover" subtitle="What an ED triage nurse needs in 30 seconds" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {empty ? (
         <EmptyState
           icon="medkit-outline"

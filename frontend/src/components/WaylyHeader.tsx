@@ -23,7 +23,7 @@ type Props = { transparent?: boolean };
 
 export function WaylyHeader({ transparent = false }: Props) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, subscription } = useAuth();
   const { participantSig } = useParticipants();
   const [unread, setUnread] = useState(0);
 
@@ -42,7 +42,7 @@ export function WaylyHeader({ transparent = false }: Props) {
     return () => { cancelled = true; };
   }, [participantSig, user?.id]);
 
-  const plan = (user?.plan || 'free').toUpperCase();
+  const plan = (subscription?.plan && subscription.plan !== 'FREE' ? subscription.plan : (user?.plan || 'free')).toUpperCase();
 
   return (
     <View style={[styles.bar, transparent && styles.transparent]}>

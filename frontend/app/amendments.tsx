@@ -7,7 +7,7 @@ export default function Amendments() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/amendments');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Amendments" subtitle="Statement disputes lodged with providers" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Amendments" subtitle="Statement disputes lodged with providers" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="create-outline"

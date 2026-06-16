@@ -7,7 +7,7 @@ export default function AtHm() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/at-hm');
   const items = data?.items || [];
   return (
-    <ScreenShell title="AT & home mods" subtitle="Assistive tech and home modifications tracker" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="AT & home mods" subtitle="Assistive tech and home modifications tracker" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="construct-outline"

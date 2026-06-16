@@ -7,7 +7,7 @@ export default function Correspondence() {
   const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/correspondence');
   const items = data?.items || [];
   return (
-    <ScreenShell title="Correspondence" subtitle="Letters, emails and outcomes from providers" loading={loading} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenShell useBack title="Correspondence" subtitle="Letters, emails and outcomes from providers" loading={loading} onRefresh={refresh} refreshing={refreshing}>
       {items.length === 0 ? (
         <EmptyState
           icon="mail-outline"
