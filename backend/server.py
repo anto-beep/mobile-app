@@ -443,103 +443,6 @@ async def current_budget(user_id: str = Depends(get_current_user_id)):
 
 
 # ─────────────────── seed demo data on startup ───────────────────
-# ─────────────────── chat (help-chat with dashboard context) ───────────────────
-class ChatBody(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-
-
-@api.post("/chat")
-async def chat(body: ChatBody, user_id: str = Depends(get_current_user_id)):
-    h = await _require_household(user_id)
-    user = await _get_user(user_id)
-    classification = h["classification"]
-    q_start, q_end, q_label = budget_lib.get_quarter_window()
-    docs = await db.statements.find({"household_id": h["id"]}, {"_id": 0}).to_list(200)
-    items: List[dict] = []
-    for s in docs:
-        items.extend(s.get("line_items", []))
-    burn = budget_lib.compute_burn(items, q_start, q_end)
-    contributions = budget_lib.compute_contributions(items)
-    cap_amount = budget_lib.lifetime_cap(h.get("is_grandfathered", False))
-    latest_summary = (
-        sorted(docs, key=lambda d: d.get("uploaded_at", ""), reverse=True)[0].get("summary")
-        if docs else "No statements uploaded yet."
-    )
-    burn_str = ", ".join(f"{k}: ${v:,.2f}" for k, v in burn.items())
-    context = (
-        f"You are Kindred — Wayly's calm aged-care helper for caregivers in Australia. "
-        f"User is {user['name']} caring for {h['participant_name']} on {budget_lib.CLASSIFICATIONS[classification]['label']}. "
-        f"Provider: {h['provider_name']}. Quarter: {q_label}. Quarterly budget ${budget_lib.quarterly_budget(classification):,.2f}. "
-        f"Burn so far: {burn_str or 'no spend yet'}. Lifetime contributions ${contributions:,.2f} of ${cap_amount:,.2f}. "
-        f"Latest statement summary: {latest_summary}. "
-        "Tone: warm, plain English, never alarmist. Two-three sentences max unless asked for detail."
-    )
-    session_id = body.session_id or f"chat-{h['id']}"
-    try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        api_key = os.environ.get("EMERGENT_LLM_KEY")
-        if not api_key:
-            raise RuntimeError("EMERGENT_LLM_KEY not set")
-        chat_inst = LlmChat(
-            api_key=api_key, session_id=session_id, system_message=context
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929").with_params(max_tokens=600)
-        reply = await chat_inst.send_message(UserMessage(text=body.message))
-        reply_text = str(reply or "")
-    except Exception:
-        logger.exception("chat failed")
-        reply_text = "I'm having trouble reaching my brain at the moment — try again in a minute."
-
-    await db.chat_turns.insert_many([
-        {"id": new_id(), "household_id": h["id"], "role": "user", "content": body.message, "created_at": now_iso()},
-        {"id": new_id(), "household_id": h["id"], "role": "assistant", "content": reply_text, "created_at": now_iso()},
-    ])
-    return {"reply": reply_text, "session_id": session_id}
-
-
-@api.get("/chat/history")
-async def chat_history(user_id: str = Depends(get_current_user_id)):
-    h = await _require_household(user_id)
-    return await db.chat_turns.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", 1).to_list(500)
-
-
-@api.delete("/chat/history")
-async def chat_history_clear(user_id: str = Depends(get_current_user_id)):
-    h = await _require_household(user_id)
-    result = await db.chat_turns.delete_many({"household_id": h["id"]})
-    return {"ok": True, "deleted": result.deleted_count}
-
-
-# ─────────────────── family thread ───────────────────
-class FamilyMessageCreate(BaseModel):
-    body: str = Field(min_length=1, max_length=2000)
-    related_statement_id: Optional[str] = None
-
-
-@api.post("/family-thread")
-async def post_family_message(payload: FamilyMessageCreate, user_id: str = Depends(get_current_user_id)):
-    h = await _require_household(user_id)
-    user = await _get_user(user_id)
-    msg = {
-        "id": new_id(),
-        "household_id": h["id"],
-        "author_id": user_id,
-        "author_name": user["name"],
-        "body": payload.body,
-        "related_statement_id": payload.related_statement_id,
-        "created_at": now_iso(),
-    }
-    response = dict(msg)  # snapshot before Mongo mutates with _id
-    await db.family_messages.insert_one(msg)
-    return response
-
-
-@api.get("/family-thread")
-async def list_family_messages(user_id: str = Depends(get_current_user_id)):
-    h = await _require_household(user_id)
-    docs = await db.family_messages.find({"household_id": h["id"]}, {"_id": 0}).sort("created_at", 1).to_list(500)
-    return docs
-
 
 # ─────────────────── participant view ───────────────────
 @api.get("/participant/today")
@@ -1238,6 +1141,7 @@ from routes.adviser import router as adviser_router  # noqa: E402
 from routes.admin import router as admin_router, seed_tickets as _seed_admin_tickets  # noqa: E402
 from routes.reports import router as reports_router  # noqa: E402
 from routes.notifications import router as notifications_router  # noqa: E402
+from routes.chat import router as chat_router  # noqa: E402
 
 app.include_router(statements_router)
 app.include_router(documents_router)
@@ -1246,6 +1150,7 @@ app.include_router(adviser_router)
 app.include_router(admin_router)
 app.include_router(reports_router)
 app.include_router(notifications_router)
+app.include_router(chat_router)
 
 
 @app.on_event("startup")
