@@ -32,6 +32,32 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+// Reconcile the user record with the live Stripe subscription so that the
+// rest of the app (paywalls, header badge, trial CTAs) sees the SAME effective
+// plan everywhere — production data can drift if a Stripe webhook missed, and
+// `users.plan` will say "free" while `/billing/subscription` says "family".
+// Always trust the subscription when it's active or trialing.
+async function reconcileUserWithSubscription(u: User): Promise<User> {
+  try {
+    const { data } = await api.get('/billing/subscription');
+    if (!data) return u;
+    const subPlan: string = String(data.plan || '').toLowerCase();
+    const status: string | null = data.status || null;
+    const subActive = status === 'active' || status === 'trialing';
+    return {
+      ...u,
+      // When the subscription is active/trialing, its plan is the source of truth.
+      plan: subActive && subPlan && subPlan !== 'free' ? subPlan : u.plan,
+      subscription_status: status ?? u.subscription_status ?? null,
+      trial_ends_at: data.trial_ends_at ?? u.trial_ends_at ?? null,
+      // If the user is currently in a trial OR has ever been in one, mark as used.
+      trial_used: u.trial_used || status === 'trialing' || !!data.trial_ends_at,
+    };
+  } catch {
+    return u;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refresh = async () => {
     try {
       const { data } = await api.get<User>('/auth/me');
-      setUser(data);
+      const merged = await reconcileUserWithSubscription(data);
+      setUser(merged);
     } catch {
       setUser(null);
     }
@@ -57,7 +84,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const persistAndSet = async (token: string, refresh: string | undefined, u: User) => {
     await persistTokens(token, refresh);
-    setUser(u);
+    const merged = await reconcileUserWithSubscription(u);
+    setUser(merged);
   };
 
   const login = async (email: string, password: string) => {

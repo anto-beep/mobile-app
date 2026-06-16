@@ -40,6 +40,12 @@ export default function PlanSettings() {
   const currentPlan: Plan = (sub?.plan || user?.plan || 'FREE').toUpperCase();
   const trialDays = sub?.trial_ends_at ? daysUntil(sub.trial_ends_at) : null;
   const activeCount = summary?.participants_active ?? participants.length;
+  const PLAN_RANK: Record<Plan, number> = { FREE: 0, SOLO: 1, FAMILY: 2 };
+  const ctaLabelFor = (target: Plan) => {
+    if (target === 'FREE') return 'Drop to Free';
+    if (PLAN_RANK[target] > PLAN_RANK[currentPlan]) return 'Upgrade';
+    return `Switch to ${PLAN_META[target].label}`;
+  };
 
   async function startTrial(plan: Plan) {
     setBusy('trial');
@@ -180,7 +186,7 @@ export default function PlanSettings() {
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity onPress={() => p === 'FREE' ? downgradeFree() : checkout(p)} disabled={!!busy} style={[styles.btn, styles.btnSolid]} testID={`plan-cta-${p.toLowerCase()}`}>
-                    <Text style={styles.btnSolidText}>{busy === p ? 'Opening\u2026' : p === 'FREE' ? 'Drop to Free' : 'Upgrade'}</Text>
+                    <Text style={styles.btnSolidText}>{busy === p ? 'Opening\u2026' : ctaLabelFor(p)}</Text>
                   </TouchableOpacity>
                 </View>
               )}
