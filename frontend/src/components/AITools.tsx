@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md, backgroundColor: Colors.brandSecondary, borderRadius: Radius.md,
     paddingVertical: 14, paddingHorizontal: Spacing.lg, alignSelf: 'stretch', alignItems: 'center',
   },
-  goldBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, letterSpacing: 0.2 },
+  goldBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: '#FFFFFF', letterSpacing: 0.2 },
   outlineBtn: {
     marginTop: 6, borderWidth: 1, borderColor: Colors.brandPrimary, borderRadius: Radius.md,
     paddingVertical: 12, paddingHorizontal: Spacing.lg, alignSelf: 'stretch', alignItems: 'center',

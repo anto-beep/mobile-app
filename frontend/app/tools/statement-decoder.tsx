@@ -369,5 +369,6 @@ const styles = StyleSheet.create({
   upsellTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.cream, textAlign: 'center', letterSpacing: -0.3 },
   upsellBody: { fontFamily: Fonts.body, fontSize: 14, color: 'rgba(250, 247, 242, 0.85)', marginTop: 6, marginBottom: Spacing.md, textAlign: 'center' },
   upsellBtn: { backgroundColor: Colors.brandSecondary, borderRadius: Radius.md, paddingVertical: 12, paddingHorizontal: Spacing.lg, alignSelf: 'stretch', alignItems: 'center' },
-  upsellBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
+  // WCAG: text on the gold brandSecondary fill must be white (brand spec).
+  upsellBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
 });

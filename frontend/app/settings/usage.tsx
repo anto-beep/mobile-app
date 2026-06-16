@@ -48,9 +48,10 @@ export default function Usage() {
   const items = stats.filter((s) => s.value > 0);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Your Wayly use" />
       <ScrollView contentContainerStyle={styles.scroll} testID="usage-scroll">
-        <Text style={styles.sectionLabel}>Your Wayly use</Text>
+        <Text style={styles.sectionLabel}>Activity</Text>
 
         {items.length === 0 ? (
           <View style={styles.empty}>
