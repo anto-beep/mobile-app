@@ -2,6 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BackHeader from '../../src/components/BackHeader';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
@@ -85,7 +86,7 @@ export default function Members() {
 
   if (!isFamilyPlan) {
     return (
-      <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.gateCard} testID="members-upgrade-gate">
           <Ionicons name="people-outline" size={32} color={Colors.brandSecondary} />
           <Text style={styles.gateTitle}>Family invites are on Family plan</Text>
@@ -99,7 +100,7 @@ export default function Members() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" testID="members-scroll">
           <Text style={styles.sectionLabel}>Members</Text>

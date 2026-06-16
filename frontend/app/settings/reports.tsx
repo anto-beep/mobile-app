@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BackHeader from '../../src/components/BackHeader';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -60,7 +61,8 @@ export default function Reports() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title=\"Summary Reports\" />
       <ScrollView contentContainerStyle={styles.scroll} testID="reports-scroll">
         <Text style={styles.overline}>SUMMARY REPORTS</Text>
         <Text style={styles.h1}>Your Wayly snapshot</Text>

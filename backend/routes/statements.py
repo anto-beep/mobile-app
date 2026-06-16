@@ -156,6 +156,45 @@ def submit_upload_job(
     return job_id
 
 
+# ─────────────────── free-tier quota (statement decoder) ─────────────────
+FREE_TIER_DECODE_WINDOW_S = 30 * 24 * 60 * 60  # rolling 30 days
+
+
+async def _check_free_tier_quota(user: dict) -> None:
+    """Free-plan users get ONE statement decode per rolling 30 days. Solo /
+    Family / Adviser plans bypass this check entirely. Raises 402 with the
+    upgrade payload + retry-at when the quota is exhausted.
+    """
+    plan = (user.get("plan") or "free").lower()
+    if plan and plan != "free":
+        return  # paid plans unlimited
+    import time
+    last = float(user.get("free_decode_last_at_ts") or 0)
+    now = time.time()
+    if last and (now - last) < FREE_TIER_DECODE_WINDOW_S:
+        retry_at = last + FREE_TIER_DECODE_WINDOW_S
+        days = max(1, int((retry_at - now) / 86400))
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "free_tier_exhausted",
+                "message": f"You've used your free decode for this 30-day window. Next decode in ~{days} day(s), or upgrade for unlimited.",
+                "retry_at_unix": int(retry_at),
+                "redirect": "/pricing",
+            },
+            headers={"Retry-After": str(int(retry_at - now))},
+        )
+
+
+async def _record_free_tier_use(user_id: str) -> None:
+    """Stamp the user's `free_decode_last_at_ts` to start the 30-day window."""
+    import time
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"free_decode_last_at_ts": time.time(), "free_decode_last_at": now_iso()}},
+    )
+
+
 @router.post("/statements/upload")
 async def upload_statement(
     file: UploadFile = File(...),
@@ -164,6 +203,7 @@ async def upload_statement(
     """Async upload — kicks off OCR + parse, returns {job_id} immediately."""
     h = await require_household(user_id)
     user = await get_user(user_id)
+    await _check_free_tier_quota(user)
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="Empty file")
@@ -188,6 +228,8 @@ async def upload_statement(
         raise HTTPException(status_code=400, detail=f"Could not read file: {e}")
     if not (text or "").strip():
         raise HTTPException(status_code=400, detail="Could not extract text. Try a clearer photo.")
+    if len(raw) > 0:
+        await _record_free_tier_use(user_id)
     job_id = submit_upload_job(
         text, file.filename or "statement", h["id"], user_id, user["name"], len(raw)
     )
@@ -207,6 +249,7 @@ async def upload_statement_text(
     """Same as /statements/upload but for pasted text — no OCR phase needed."""
     h = await require_household(user_id)
     user = await get_user(user_id)
+    await _check_free_tier_quota(user)
     text = (payload.text or "").strip()
     if len(text) < 10:
         raise HTTPException(status_code=400, detail="Paste a bit more — at least 10 characters.")
