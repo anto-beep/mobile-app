@@ -37,7 +37,6 @@ from models import (
     HouseholdCreate,
     LoginRequest,
     NotificationItem,
-    PushTokenRegister,
     SignupRequest,
     Statement,
     StatementLineItem,
@@ -296,17 +295,6 @@ async def auth_logout(user_id: str = Depends(get_current_user_id)):
     return {"ok": True}
 
 
-class PushTokenUnregister(BaseModel):
-    expo_push_token: str
-
-
-@api.delete("/notifications/register-push")
-async def unregister_push(body: PushTokenUnregister, user_id: str = Depends(get_current_user_id)):
-    """Phase 3 hardening: invalidate THIS device's push token without nuking
-    other devices owned by the same user. Called from the mobile client when
-    the user logs out, so notifications stop landing on the signed-out device."""
-    await db.push_tokens.delete_one({"user_id": user_id, "expo_push_token": body.expo_push_token})
-    return {"ok": True}
 
 
 @api.delete("/auth/account")
@@ -452,125 +440,6 @@ async def current_budget(user_id: str = Depends(get_current_user_id)):
     }
 
 
-# ─────────────────── notifications ───────────────────
-@api.get("/notifications")
-async def list_notifications(user_id: str = Depends(get_current_user_id)):
-    docs = (
-        await db.notifications.find({"user_id": user_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(50)
-        .to_list(50)
-    )
-    unread = await db.notifications.count_documents({"user_id": user_id, "read": False})
-    return {"items": docs, "unread": unread}
-
-
-class NotificationReadBody(BaseModel):
-    ids: List[str] = Field(default_factory=list)
-
-
-@api.post("/notifications/read")
-async def mark_read(body: NotificationReadBody, user_id: str = Depends(get_current_user_id)):
-    q: dict = {"user_id": user_id}
-    if body.ids:
-        q["id"] = {"$in": body.ids}
-    res = await db.notifications.update_many(q, {"$set": {"read": True, "read_at": now_iso()}})
-    return {"ok": True, "modified": res.modified_count}
-
-
-@api.post("/notifications/register-push")
-async def register_push(body: PushTokenRegister, user_id: str = Depends(get_current_user_id)):
-    await db.push_tokens.update_one(
-        {"user_id": user_id, "expo_push_token": body.expo_push_token},
-        {
-            "$set": {
-                "user_id": user_id,
-                "expo_push_token": body.expo_push_token,
-                "platform": body.platform,
-                "updated_at": now_iso(),
-            }
-        },
-        upsert=True,
-    )
-    return {"ok": True}
-
-
-# ─────────────────── notifications — dev/QA test push ───────────────────
-class _TestPushBody(BaseModel):
-    type: str = Field(default="statement_ready")
-    title: Optional[str] = None
-    body: Optional[str] = None
-    statement_id: Optional[str] = None
-    visit_id: Optional[str] = None
-    client_id: Optional[str] = None
-    deeplink: Optional[str] = None
-
-
-@api.post("/notifications/test")
-async def notifications_test(payload: _TestPushBody, user_id: str = Depends(get_current_user_id)):
-    """Dev/QA helper: fire a sample push + in-app notification to the caller so the
-    NotificationRouter on mobile can be exercised end-to-end. Returns the deeplink
-    we resolved + the persisted NotificationItem id."""
-    # Resolve deeplink (priority: explicit body.deeplink → type-driven fallback)
-    deeplink = payload.deeplink
-    statement_id = payload.statement_id
-    visit_id = payload.visit_id
-    client_id = payload.client_id
-
-    if not deeplink:
-        if payload.type in ("statement_ready", "anomaly_alert"):
-            if not statement_id:
-                # Try most recent statement for the user's household
-                h = await _get_household(user_id)
-                if h:
-                    s = await db.statements.find_one({"household_id": h["id"]}, {"id": 1, "_id": 0}, sort=[("uploaded_at", -1)])
-                    statement_id = s and s.get("id")
-            deeplink = f"/statements/{statement_id}" if statement_id else "/(tabs)/today"
-        elif payload.type == "visit_reminder":
-            deeplink = "/visits"
-        elif payload.type == "family_message":
-            deeplink = "/(tabs)/family"
-        elif payload.type == "wellbeing":
-            deeplink = "/(tabs)/notifications"
-        elif payload.type == "adviser_invite_linked":
-            deeplink = f"/adviser/clients/{client_id}" if client_id else "/adviser"
-        elif payload.type == "billing":
-            deeplink = "/settings/plan"
-        else:
-            deeplink = "/(tabs)/notifications"
-
-    title = payload.title or {
-        "statement_ready": "Statement decoded",
-        "anomaly_alert": "Heads up on your statement",
-        "visit_reminder": "Visit coming up",
-        "family_message": "New family message",
-        "wellbeing": "Wellbeing check-in",
-        "adviser_invite_linked": "Client linked",
-        "billing": "Billing update",
-        "system": "Notification",
-    }.get(payload.type, "Wayly notification")
-    body_text = payload.body or "Tap to open."
-
-    note = NotificationItem(
-        user_id=user_id,
-        title=title,
-        body=body_text,
-        category=payload.type,
-        severity="info",
-        related_statement_id=statement_id,
-        type=payload.type,
-        deeplink=deeplink,
-    )
-    await db.notifications.insert_one(note.model_dump())
-    data: Dict[str, Any] = {"type": payload.type, "deeplink": deeplink, "notification_id": note.id}
-    if statement_id:
-        data["statement_id"] = statement_id
-    if visit_id:
-        data["visit_id"] = visit_id
-    if client_id:
-        data["client_id"] = client_id
-    await _push_to_user(user_id, title, body_text, data)
-    return {"ok": True, "deeplink": deeplink, "notification_id": note.id, "data": data}
 
 
 # ─────────────────── seed demo data on startup ───────────────────
@@ -1368,6 +1237,7 @@ from routes.visits import router as visits_router  # noqa: E402
 from routes.adviser import router as adviser_router  # noqa: E402
 from routes.admin import router as admin_router, seed_tickets as _seed_admin_tickets  # noqa: E402
 from routes.reports import router as reports_router  # noqa: E402
+from routes.notifications import router as notifications_router  # noqa: E402
 
 app.include_router(statements_router)
 app.include_router(documents_router)
@@ -1375,6 +1245,7 @@ app.include_router(visits_router)
 app.include_router(adviser_router)
 app.include_router(admin_router)
 app.include_router(reports_router)
+app.include_router(notifications_router)
 
 
 @app.on_event("startup")
