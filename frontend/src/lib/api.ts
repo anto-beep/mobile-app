@@ -3,7 +3,50 @@ import { toast } from '../components/Toast';
 import { getAccessToken, refreshSession, clearTokens } from './tokens';
 import { getActiveParticipantId, isImpersonating } from './activeParticipant';
 
-const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
+// ─────────────────────────────────────────────────────────────────────────
+// Backend URL resolution.
+//
+// `/entrypoint.sh` rewrites `EXPO_PUBLIC_BACKEND_URL` to the pod's preview
+// URL (`*.preview.emergentagent.com`) on EVERY container boot. That preview
+// pod is the dev sandbox — it does NOT carry the production Wayly schema,
+// data, or iter 39-48 endpoints (`/api/public/aged-care-chat`,
+// `/api/public/contribution-estimator`, `/api/scenario/*`, etc.).
+//
+// This mobile app is the renderer for production Wayly, so we always need
+// to talk to `https://wayly.com.au`. To survive the entrypoint rewrite we
+// detect the preview-pod pattern at runtime and substitute the prod URL.
+//
+// Override order:
+//   1. `EXPO_PUBLIC_API_BASE_OVERRIDE`  — explicit escape hatch for staging
+//   2. `EXPO_PUBLIC_BACKEND_URL` if it doesn't look like a preview-pod URL
+//   3. Hard-coded production URL — final fallback
+//
+// To point at a different backend (staging, local), set
+// `EXPO_PUBLIC_API_BASE_OVERRIDE=https://your-host` in `frontend/.env`.
+// ─────────────────────────────────────────────────────────────────────────
+const PROD_BACKEND = 'https://wayly.com.au';
+const PREVIEW_HOST_PATTERN = /\.preview\.emergentagent\.com/i;
+
+function resolveBackend(): string {
+  const override = process.env.EXPO_PUBLIC_API_BASE_OVERRIDE;
+  if (override && override.trim()) return override.trim().replace(/\/$/, '');
+
+  const envVal = (process.env.EXPO_PUBLIC_BACKEND_URL || '').trim();
+  if (envVal && !PREVIEW_HOST_PATTERN.test(envVal)) {
+    return envVal.replace(/\/$/, '');
+  }
+
+  if (envVal && PREVIEW_HOST_PATTERN.test(envVal) && __DEV__) {
+    console.warn(
+      `[api] EXPO_PUBLIC_BACKEND_URL is a preview-pod URL (${envVal}). ` +
+        `Substituting production (${PROD_BACKEND}). Set EXPO_PUBLIC_API_BASE_OVERRIDE ` +
+        `if you really meant to hit a non-production backend.`,
+    );
+  }
+  return PROD_BACKEND;
+}
+
+const BASE = resolveBackend();
 
 // Re-exported for legacy callers (AuthContext, secureStorage clear flow).
 export const TOKEN_KEY = 'wayly:token';
