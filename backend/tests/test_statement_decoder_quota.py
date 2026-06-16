@@ -198,9 +198,11 @@ class TestFreeTierQuota:
         time.sleep(0.5)
 
         # Now attempt multipart upload — should 402 before file parsing.
+        # Use a fresh requests.post (NOT session) so the session's
+        # Content-Type: application/json header doesn't clobber the multipart boundary.
         files = {"file": ("dummy.txt", SAMPLE_STATEMENT_TEXT.encode("utf-8"), "text/plain")}
         headers_mp = {"Authorization": f"Bearer {auth['token']}"}  # let requests set boundary
-        r = session.post(
+        r = requests.post(
             f"{BASE_URL}/statements/upload",
             headers=headers_mp,
             files=files,

@@ -1,14 +1,31 @@
 // ThemedShell — applies accessibility settings (dark mode, high contrast, text scale) to the whole app.
-// Strategy:
-//   - Text scale: monkey-patch Text.render once so every Text in the app multiplies its fontSize.
-//   - Dark mode: overlay a translucent dark layer above content but below the AccessibilityWidget pill (zIndex 9999).
-//   - High contrast: CSS filter on web; subtle tint on native (proper per-screen theming would need useColors() wired everywhere).
-//   - Reduce motion: exposed via useAccessibility() so animated components can opt out (Toast already supports this).
+//
+// Strategy (rewritten — June 2026):
+//   • Text scale on NATIVE: monkey-patch Text.render once at module load so every
+//     Text in the app multiplies its fontSize by Text.__waylyScale. We set
+//     __waylyScale synchronously during ThemedShell's render so the very first
+//     render after a scale change already uses the new value (no 1-cycle lag).
+//     The `key=scale-${scale}` on the inner content wrapper then forces every
+//     Text to re-render and pick up the patched fontSize.
+//   • Text scale on WEB: react-native-web's Text doesn't expose a `render`
+//     static, so the monkey-patch silently no-ops there. Instead we set
+//     `documentElement.style.zoom` via useEffect — that scales the entire
+//     viewport including every RN-web Text without bouncing any state or
+//     remounting the tree, so navigation, form input, and active-pill state all
+//     stay intact.
+//   • Dark mode: overlay a translucent dark layer above content but below the
+//     AccessibilityWidget pill (zIndex 9999).
+//   • High contrast: CSS filter on web; subtle tint on native.
+//   • Reduce motion: exposed via useAccessibility() so animated components can
+//     opt out (Toast already supports this).
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Text, Platform } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 
-// Patch Text.render once at module load — multiplies fontSize by the current scale.
+// Patch Text.render once at module load — multiplies fontSize by the current
+// scale. Works on iOS/Android where Text has a render static; on react-native-
+// web Text.render isn't a function so we early-return (zoom on <html> handles
+// web instead).
 (function patchTextOnce() {
   const T: any = Text;
   if (T.__waylyRenderPatched) return;
@@ -34,35 +51,42 @@ import { useAccessibility } from '../context/AccessibilityContext';
 export function ThemedShell({ children }: { children: React.ReactNode }) {
   const a11y = useAccessibility();
 
-  // Sync scale into the Text patch SYNCHRONOUSLY during render so every child
-  // Text gets the right fontSize on its very first render after a scale change.
-  // Setting this in useEffect creates a 1-cycle lag where the first render
-  // after a scale change still uses the OLD scale — which is why the
-  // Appearance pills appeared not to affect text size.
-  (Text as any).__waylyScale = a11y.scale;
-  useEffect(() => {
+  // Native: sync scale synchronously so any Text rendered this cycle uses it.
+  if (Platform.OS !== 'web') {
     (Text as any).__waylyScale = a11y.scale;
+  }
+
+  // Web: apply CSS zoom to the document root so every RN-web Text scales
+  // proportionally without a remount. Skip when scale === 1.0 so we don't
+  // leave a stale `zoom` style on the element.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const root = (globalThis as any).document?.documentElement;
+      if (!root) return;
+      root.style.zoom = a11y.scale === 1.0 ? '' : String(a11y.scale);
+    } catch {
+      // no-op on non-DOM hosts
+    }
   }, [a11y.scale]);
 
   return (
     <View style={styles.root}>
       <View
-        style={[
-          styles.content,
-          // Web: use CSS zoom to scale text + layout proportionally.
-          // Native: rely on patched Text.render (best-effort).
-          Platform.OS === 'web' && a11y.scale !== 1.0
-            ? ({ zoom: a11y.scale } as any)
-            : null,
-        ]}
-        key={`scale-${a11y.scale}`}
+        style={styles.content}
+        // Native only: bump the key so every Text remounts and picks up the
+        // patched scale. On web we skip this — the CSS zoom on <html> covers
+        // scaling without remounting and (critically) without resetting
+        // navigation/form state from the Settings → Appearance screen.
+        key={Platform.OS === 'web' ? 'web-no-remount' : `scale-${a11y.scale}`}
       >
         {children}
       </View>
 
-      {/* Dark mode overlay: tints cream/light surfaces to dark navy without rewriting every StyleSheet.
-          pointerEvents="none" so it never blocks taps. zIndex 100 sits above content but below the
-          AccessibilityWidget pill (zIndex 9999) and any Modal (which is portaled higher). */}
+      {/* Dark mode overlay: tints cream/light surfaces to dark navy without
+          rewriting every StyleSheet. pointerEvents="none" so it never blocks
+          taps. zIndex 100 sits above content but below the AccessibilityWidget
+          pill (zIndex 9999) and any Modal (portaled higher). */}
       {a11y.darkMode && (
         <View
           pointerEvents="none"

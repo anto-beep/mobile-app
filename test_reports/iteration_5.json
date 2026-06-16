@@ -1,0 +1,42 @@
+{
+  "summary": "JUNE 2026 iteration 5 re-verification. Both P0 regressions from iter_4 are NOW FIXED and verified. BACKEND: /app/backend/tests/test_statement_decoder_quota.py → 6/6 PASS (was 4/6 in iter_4). The crucial TestFreeTierQuota::test_first_upload_succeeds_second_returns_402 case PASSES — second /api/statements/upload-text call on a free-plan user now correctly returns 402 + {detail:{error:'free_tier_exhausted', message:'You\\'ve used your free decode...', retry_at_unix:int, redirect:'/pricing'}} + Retry-After header. test_upload_endpoint_also_gated also PASSES, confirming the multipart /statements/upload path remains gated. FRONTEND: /settings/appearance text-size pills work on web preview. Empirical results (viewport 390x844, demo user logged in via cathy@example.com prod JWT, then nav to /settings/appearance): (1) Active-pill flip works — borderColor on tapped pill switches to rgb(14,77,82) (brand) and previously-active pill returns to rgba(14,77,82,0.12) within ~400ms of tap. Confirmed for XL→SM→MD cycle. (2) Visual scaling works — heading 'Text size' bounding-box height: baseline 17px → XL 22.09px (×1.30) → SM 15.30px (×0.90), exactly matching TEXT_SCALES table {sm:0.9, md:1.0, lg:1.15, xl:1.3}. Pill heights and content-row heights scale by the same factor. (3) Navigation preserved — location.pathname stays '/settings/appearance' through all pill taps; no bounce to /today or /login. (4) zoom cleared when Default selected — document.documentElement.style.zoom === '' after tapping md (Default). IMPLEMENTATION NOTE: when XL is active, zoom=1.3 is set on the inner ThemedShell content <View> (class 'css-view-g5y9jx r-flex-13awgt0'), NOT on document.documentElement as the comment claims — but the visual outcome is identical (descendants scale by 1.3) and the rest of the requirements are met. Either RN-Web's style applier moved the inline zoom from html to the content view, or there's a small drift between source comment and runtime behaviour. Non-blocking — fix functionally works exactly as specified by the review.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/statements/upload (multipart)", "issue": "Earlier test bug: requests.Session with global Content-Type: application/json header clobbered the multipart boundary, producing 422 instead of 402. Fixed by switching to bare requests.post for the multipart call. NOT a code bug — purely test infra."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Persistent 'Couldn\\'t reach Wayly' banner", "issue": "Carry-over from iter_3/iter_4 — frontend api.ts override forces production wayly.com.au backend, so background polls 401/404 leave the banner up. Not in scope for this iteration.", "affected_testIDs": []}
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "ThemedShell.tsx comment vs runtime drift", "issue": "Source-level comment says 'documentElement.style.zoom' but in the running web bundle the inline zoom lands on an inner View (class css-view-g5y9jx r-flex-13awgt0) instead of <html>. Visual outcome unchanged. Reference: /app/frontend/src/components/ThemedShell.tsx:65-67. Non-blocking — recommend either updating the comment to match, or pinning the zoom application to <html> via root.setAttribute('style', ...) so it can't be overridden by RN-Web's reconciler."},
+      {"component": "shadow* style props", "issue": "Carry-over deprecation warning on RN-Web 0.20+ — non-blocking."},
+      {"component": "Font asset 404", "issue": "Failed to load /assets/fonts/Inter-VariableFont.ttf (server 404) — text falls back to system font. Carry-over from iter_4, not in scope."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_statement_decoder_quota.py",
+    "/app/test_reports/pytest/iter5_quota.xml",
+    "/app/test_reports/iteration_5.json"
+  ],
+  "action_items": [
+    "[OPTIONAL P3] Reconcile ThemedShell.tsx comment vs runtime behaviour — the zoom CSS lands on an inner RN-Web View, not on <html>. Either tighten the implementation (document.documentElement.setAttribute('style', ...)) or update the comment so future maintainers aren't misled."
+  ],
+  "critical_code_review_comments": [
+    "routes/statements.py upload_statement_text() — _record_free_tier_use(user_id) is now called at line 260 just before submit_upload_job(). Both upload paths (multipart + text) record the quota stamp consistently. Good.",
+    "ThemedShell.tsx web branch using CSS zoom (in useEffect, no key-remount) successfully preserves nav/form state across scale changes. The keyed-remount strategy is still in place on native only via key={`scale-${scale}`}. Clean Platform-aware split."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_statement_decoder_quota.py (fixed multipart header bug — switched session.post → requests.post for the file upload to avoid Content-Type: application/json clobbering the multipart boundary)"
+  ],
+  "success_rate": {"backend": "6/6 pytest cases PASS (was 4/6 in iter_4). TestRoutesSanity: 3/3. TestPaidPlanUnlimited: 1/1. TestFreeTierQuota: 2/2 (the prior-iter failure now green).", "frontend": "4/4 functional assertions PASS on /settings/appearance text-size pills: (a) active-pill flip on first tap, (b) visual scale up/down within ~400ms, (c) nav state preserved, (d) zoom cleared at Default."},
+  "seed_data_creation": "None. Used local seeded demo@wayly.com.au for backend tests (Mongo flipped to plan='free' in a fixture, restored to 'family' in teardown). Frontend testing reused the iter_4 approach: injected prod JWT for cathy@example.com into localStorage['wayly:token'].",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iter_5 verified the two P0 fixes from iter_4. Both backend free-tier gate on upload-text AND the web-preview Appearance text-size pills are now working. No retest needed. The only remaining (non-blocking) carry-overs are the persistent 'Couldn\\'t reach Wayly' banner (api.ts forces prod backend from this pod) and the Inter font 404. If main agent wants belt-and-braces verification, run `python -m pytest /app/backend/tests/test_statement_decoder_quota.py -v` (~25s) and visually re-tap the pills at /settings/appearance.",
+  "rca_of_issue": "ITER_4 ROOT CAUSES were both single-line/single-strategy misses: (1) backend was missing `await _record_free_tier_use(user_id)` in upload_statement_text() — fixed by adding the call right before submit_upload_job() at routes/statements.py:260; (2) frontend was relying on Text.render monkey-patch which silently no-ops on react-native-web — fixed by adding a useEffect that sets style.zoom on the doc root and skipping the key-remount on web. Iter_5 verifies both fixes hold under real auth + UI taps."
+}

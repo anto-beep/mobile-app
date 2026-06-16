@@ -257,6 +257,7 @@ async def upload_statement_text(
         payload.filename
         or f"pasted-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.txt"
     ).strip()
+    await _record_free_tier_use(user_id)
     job_id = submit_upload_job(
         text, fname, h["id"], user_id, user["name"], len(text.encode("utf-8"))
     )
