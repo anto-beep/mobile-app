@@ -16,6 +16,7 @@ export type User = {
   is_admin?: boolean;
   subscription_status?: string | null;
   trial_ends_at?: string | null;
+  trial_used?: boolean;
 };
 
 type AuthState = {

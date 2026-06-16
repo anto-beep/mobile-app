@@ -1,0 +1,84 @@
+{
+  "summary": "Iteration 6 review. BACKEND (3/3 PASS): `trial_used: bool` is correctly added to the UserPublic model and propagated by `_user_public()`, `POST /api/auth/login`, `POST /api/auth/login/v2`, and `GET /api/auth/me`. Verified against the local backend with demo@wayly.com.au (plan=family, trial_used=false). New pytest module: /app/backend/tests/test_iter6_trial_used.py. FRONTEND: Static code review reveals THREE P0 misses against the stated iter6 fixes:  (1) AITools.tsx:293 — `goldBtnText.color` is still `Colors.brandPrimary` (navy #0E4D52), NOT white. The 'Start free 7-day trial' / 'See plans' button text on the gold `brandSecondary` (#A5512B) fill therefore still renders navy on clay — the exact bug the review claims to have fixed. Affects ToolGate (unauth, free-plan, sd-limit variants) and UpgradeGate modal CTA.  (2) tools/statement-decoder.tsx:372 — `upsellBtnText.color = Colors.brandPrimary` on a gold `upsellBtn` fill. Same WCAG / visual regression as (1).  (3) settings/usage.tsx — `BackHeader` is ONLY rendered inside the loading branch (line 35). The main content branch (line 51) returns `<SafeAreaView edges={['bottom']}>` with NO BackHeader and NO top safe-area edge. So once the GET /api/usage call resolves, the chevron-Back row vanishes and content slides up under the status bar — i.e. the exact bug item C says is fixed is still present. The trial-gating logic in AITools.tsx (canStartTrial helper) and today.tsx (paywall CTA gated on canStartTrial(user); fine-print conditional) is correct at code level.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AITools.tsx — goldBtnText style",
+        "issue": "color: Colors.brandPrimary (#0E4D52 navy) on `backgroundColor: Colors.brandSecondary` (#A5512B clay). Stated iter6 fix not applied. Should be `color: '#FFFFFF'` or `Colors.textInverse`. Reference: /app/frontend/src/components/AITools.tsx:293. Impacts: tool-gate-upgrade-btn (ToolGate unauth + free-plan + sd-limit variants) and upgrade-gate-cta (UpgradeGate modal).",
+        "testID": "tool-gate-upgrade-btn",
+        "priority": "HIGH"
+      },
+      {
+        "component": "statement-decoder.tsx — upsellBtnText style",
+        "issue": "color: Colors.brandPrimary (navy) on gold upsellBtn (backgroundColor: Colors.brandSecondary). Should be `Colors.textInverse` / '#FFFFFF'. Reference: /app/frontend/app/tools/statement-decoder.tsx:372.",
+        "testID": "(no testID on upsell button — recommend adding one)",
+        "priority": "HIGH"
+      },
+      {
+        "component": "settings/usage.tsx — BackHeader only in loading branch",
+        "issue": "Line 35 (loading state): SafeAreaView edges=['top','bottom'] with <BackHeader title='Your Wayly use' /> renders correctly. Line 51 (loaded state): SafeAreaView edges=['bottom'] only — NO BackHeader rendered AND no top safe-area inset. Once the /api/usage GET resolves, the back chevron disappears and the 'Your Wayly use' label hugs the status bar. This is exactly the bug item (C) says is fixed. Fix: add `<BackHeader title='Your Wayly use' />` directly after the `<SafeAreaView>` open in the main return, and switch edges to ['top','bottom']. Reference: /app/frontend/app/settings/usage.tsx:51.",
+        "testID": "back-header-btn",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Web-preview auth (carry-over from iter_3..5)",
+        "issue": "src/lib/api.ts hard-substitutes https://wayly.com.au for any preview-pod EXPO_PUBLIC_BACKEND_URL, so the web preview cannot exercise authenticated UI against the LOCAL backend that holds the demo user. Setting localStorage['wayly:token'] is rejected by prod (/me → 401) and AuthContext redirects to /login. Net effect: the only way to visually verify Settings → Usage, ToolGate variants, and the /today paywall on this pod is to bypass api.ts. The white-text + BackHeader bugs above are nevertheless confirmable from source.",
+        "affected_testIDs": ["back-header-btn", "tool-gate-upgrade-btn", "today-free-paywall-cta"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "/settings/usage (loaded state)",
+        "issues": [
+          "Top safe-area inset missing — `edges={['bottom']}` only. On notched devices the 'Your Wayly use' uppercase eyebrow sits directly behind the status bar.",
+          "No back navigation surfaced in loaded state — user is stranded on Usage with no way back to /settings via the UI (router gesture only)."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "Inter-VariableFont.ttf 404",
+        "issue": "Failed to load /assets/fonts/Inter-VariableFont.ttf — falls back to system font. Carry-over from iter_4/iter_5."
+      },
+      {
+        "component": "shadow* style props deprecation",
+        "issue": "RN-Web 0.20+ deprecation warning. Non-blocking, carry-over."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter6_trial_used.py",
+    "/app/test_reports/pytest/iter6_trial_used.xml",
+    "/app/test_reports/iteration_6.json"
+  ],
+  "action_items": [
+    "[P0] AITools.tsx:293 — change goldBtnText.color from Colors.brandPrimary to '#FFFFFF' (or Colors.textInverse). This is the stated iter6 fix that didn't land.",
+    "[P0] statement-decoder.tsx:372 — change upsellBtnText.color from Colors.brandPrimary to '#FFFFFF' / Colors.textInverse, same reason.",
+    "[P0] settings/usage.tsx:51 — render <BackHeader title='Your Wayly use' /> in the main loaded branch (not just the loading branch) and change SafeAreaView edges from ['bottom'] to ['top','bottom']. Also remove or demote the now-redundant `<Text style={styles.sectionLabel}>Your Wayly use</Text>` line since BackHeader already shows the title.",
+    "[P1] Add a testID to the gold upsell button in statement-decoder.tsx (e.g. 'statement-decoder-upsell-btn') for future regression coverage.",
+    "[P3] Consider audit of other brandSecondary CTAs to confirm white-text (Timeline.tsx callBtnEscalate, workflows/[key].tsx ctaEscalate, settings/danger.tsx btnDanger). Their text styles use brandPrimary in some places; same WCAG concern."
+  ],
+  "critical_code_review_comments": [
+    "Backend: UserPublic.trial_used with `default=False` is the right Pydantic shape; _user_public() pulls `bool(u.get('trial_used', False))` so legacy user docs without the field still serialise cleanly. login_v2 in routes/auth_extra.py duplicates the publishing logic instead of calling _user_public() — consider DRY-ing by delegating to UserPublic.model_dump() once the model is stable.",
+    "AITools.tsx canStartTrial(u) is correct: returns true for null user (unauth signup flow), false if trial_used, false if hasPaidAccess. Pairs cleanly with today.tsx paywall conditional.",
+    "settings/usage.tsx — the loading-vs-loaded JSX divergence is the textbook regression that lint/visual-snapshot would have caught. Recommend wrapping BackHeader once outside the loading/empty branches: render BackHeader at the top of the return tree, then conditionally swap the body. Same pattern used elsewhere in /app/frontend/app/settings/*."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter6_trial_used.py (new)"
+  ],
+  "success_rate": {
+    "backend": "3/3 pytest cases PASS (login, login/v2, /me all return trial_used:bool)",
+    "frontend": "0/3 stated iter6 fixes verified — all three (gold-btn white text in AITools, gold upsell white text in statement-decoder, BackHeader on usage) are NOT applied in the current code."
+  },
+  "seed_data_creation": "None. Backend tests used the local demo@wayly.com.au seeded user. Did NOT flip demo to plan='free' / trial_used=true as suggested in the review, because the api.ts prod-substitute prevents UI verification on this pod and the static code review already shows the gating logic is correct. If next agent has a local web build (api.ts patched to honour EXPO_PUBLIC_API_BASE_OVERRIDE for preview hosts), use: `db.users.update_one({email:'demo@wayly.com.au'}, {'$set':{plan:'free', trial_used:true, subscription_status:None, trial_ends_at:None}})` then verify /today + /tools/budget-calc, then restore `{plan:'family', trial_used:false}`.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After main agent fixes the three P0 frontend misses, retest needs: (a) screenshot /tools/budget-calc and /tools/statement-decoder, sample the goldBtn text color via getComputedStyle — expect rgb(255,255,255); (b) screenshot /settings/usage (loaded), confirm BackHeader chevron + 'Your Wayly use' title rendered with content offset below the status bar; (c) backend smoke can be rerun via `pytest /app/backend/tests/test_iter6_trial_used.py -v`. The api.ts production-substitute is still blocking authenticated UI verification on this pod — if the main agent wants a real end-to-end UI test of the gating, they should temporarily patch src/lib/api.ts to honour EXPO_PUBLIC_API_BASE_OVERRIDE even for preview hosts.",
+  "rca_of_issue": "Iter6 PRD claims three changes — (A) trial_used backend wiring, (B) white text on gold CTAs, (C) BackHeader on /settings/usage — but only (A) actually landed. (B) shows the goldBtn/upsellBtn background was updated to brandSecondary but the matching *Text styles were never flipped to white — `color: Colors.brandPrimary` was left in place, so the button reads as navy-on-clay (fails WCAG AA contrast ≈ 3.2:1). (C) shows the BackHeader was added to the loading branch only — the loaded branch (the path users actually see for ≥99% of the screen's lifetime) was missed. Root cause for both is a copy-paste regression where the developer updated one of N occurrences. Mitigation: add a Playwright visual snapshot for /settings/usage and a unit-level color assertion on goldBtnText in a styling test."
+}

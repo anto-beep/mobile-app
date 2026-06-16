@@ -95,6 +95,7 @@ def _user_public(u: dict) -> UserPublic:
         is_admin=bool(u.get("is_admin", False)),
         subscription_status=u.get("subscription_status"),
         trial_ends_at=u.get("trial_ends_at"),
+        trial_used=bool(u.get("trial_used", False)),
     )
 
 

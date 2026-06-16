@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import BackHeader from '../../src/components/BackHeader';
 
 const num = (v: any, fallback = 0): number => {
   const n = typeof v === 'number' ? v : parseFloat(v);
@@ -29,7 +30,12 @@ export default function Usage() {
   }, []);
 
   if (loading) {
-    return <SafeAreaView style={styles.safe}><View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View></SafeAreaView>;
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <BackHeader title="Your Wayly use" />
+        <View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View>
+      </SafeAreaView>
+    );
   }
 
   const stats = [
@@ -50,7 +56,7 @@ export default function Usage() {
           <View style={styles.empty}>
             <Ionicons name="stats-chart-outline" size={36} color={Colors.textMuted} />
             <Text style={styles.emptyTitle}>No activity yet</Text>
-            <Text style={styles.emptyBody}>Once you decode a statement or use a tool, you'll see your stats here.</Text>
+            <Text style={styles.emptyBody}>Once you decode a statement or use a tool, you&apos;ll see your stats here.</Text>
           </View>
         ) : (
           <View style={styles.grid}>

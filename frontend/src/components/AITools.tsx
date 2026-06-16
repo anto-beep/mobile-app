@@ -17,6 +17,16 @@ export const trialActive = (u: any) => {
 export const hasPaidAccess = (u: any) =>
   !!u && (PAID_PLANS.includes((u.plan || '').toLowerCase()) || trialActive(u));
 
+// True only when the user is eligible to start a *new* 7-day trial — i.e. they
+// haven't used one yet AND aren't currently on a paid plan. Unauthenticated
+// visitors (u == null) are also eligible (they sign up first).
+export const canStartTrial = (u: any) => {
+  if (!u) return true;
+  if (u.trial_used) return false;
+  if (hasPaidAccess(u)) return false;
+  return true;
+};
+
 const TOOL_DISCLAIMERS: Record<string, string> = {
   'statement-decoder': "Wayly's AI reads your statement and flags possible issues. It may misread figures or miss anomalies — always check against the original statement and your provider before disputing anything.",
   'budget-calculator': "These figures use the published Support at Home budget tables. They're a guide — the official quarterly amount on your statement is the source of truth.",
@@ -48,7 +58,10 @@ type ToolGateProps = {
 
 export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [now, setNow] = useState(Date.now());
+  const trialEligible = canStartTrial(user);
+  const trialLabel = 'Start free 7-day trial';
 
   useEffect(() => {
     if (variant !== 'sd-limit' || !retryAt) return;
@@ -64,18 +77,23 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
     return (
       <View style={[styles.gate, styles.gateLimit]} testID="tool-gate-sd-limit">
         <Ionicons name="time-outline" size={28} color={Colors.brandSecondary} />
-        <Text style={styles.gateTitle}>You've used your free decode today</Text>
-        <Text style={styles.gateBody}>Next free decode in <Text style={styles.bold}>{hours}h {mins}m</Text>. Start a 7-day trial to decode unlimited statements right now.</Text>
+        <Text style={styles.gateTitle}>You&apos;ve used your free decode today</Text>
+        <Text style={styles.gateBody}>
+          Next free decode in <Text style={styles.bold}>{hours}h {mins}m</Text>.
+          {trialEligible ? ' Start a 7-day trial to decode unlimited statements right now.' : ' Pick a plan to decode unlimited statements right now.'}
+        </Text>
         <TouchableOpacity
           style={styles.goldBtn}
           onPress={() => router.push('/settings/plan' as any)}
           testID="tool-gate-upgrade-btn"
         >
-          <Text style={styles.goldBtnText}>Start free 7-day trial</Text>
+          <Text style={styles.goldBtnText}>{trialEligible ? trialLabel : 'See plans'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} testID="tool-gate-signin-link">
-          <Text style={styles.linkText}>Already have an account? Sign in</Text>
-        </TouchableOpacity>
+        {!user && (
+          <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} testID="tool-gate-signin-link">
+            <Text style={styles.linkText}>Already have an account? Sign in</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -87,26 +105,32 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
           <Ionicons name="lock-closed-outline" size={22} color={Colors.brandSecondary} />
         </View>
         <Text style={styles.gateTitle}>Paid plan needed</Text>
-        <Text style={styles.gateBody}>This tool is for Solo and Family plans. Try Wayly free for 7 days — no card required.</Text>
+        <Text style={styles.gateBody}>
+          {trialEligible
+            ? 'This tool is for Solo and Family plans. Try Wayly free for 7 days — no card required.'
+            : 'This tool is for Solo and Family plans. Pick a plan to unlock it.'}
+        </Text>
         <TouchableOpacity
           style={styles.goldBtn}
           onPress={() => router.push('/settings/plan' as any)}
           testID="tool-gate-upgrade-btn"
         >
-          <Text style={styles.goldBtnText}>Start free 7-day trial</Text>
+          <Text style={styles.goldBtnText}>{trialEligible ? trialLabel : 'See plans'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.outlineBtn}
-          onPress={() => router.push('/settings/plan' as any)}
-          testID="tool-gate-see-plans"
-        >
-          <Text style={styles.outlineBtnText}>See plans</Text>
-        </TouchableOpacity>
+        {trialEligible && (
+          <TouchableOpacity
+            style={styles.outlineBtn}
+            onPress={() => router.push('/settings/plan' as any)}
+            testID="tool-gate-see-plans"
+          >
+            <Text style={styles.outlineBtnText}>See plans</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
 
-  // unauth
+  // unauth — visitor has no account, so trial is always available (canStartTrial(null)===true)
   return (
     <View style={styles.gate} testID="tool-gate-unauth">
       <View style={[styles.iconBlob, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
@@ -119,7 +143,7 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
         onPress={() => router.push('/(auth)/signup' as any)}
         testID="tool-gate-upgrade-btn"
       >
-        <Text style={styles.goldBtnText}>Start free 7-day trial</Text>
+        <Text style={styles.goldBtnText}>{trialLabel}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)} testID="tool-gate-signin-link">
         <Text style={styles.linkText}>Already have an account? Sign in</Text>

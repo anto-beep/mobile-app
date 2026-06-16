@@ -51,6 +51,7 @@ async def login_v2(body: _LoginBody):
             "is_admin": bool(user.get("is_admin", False)),
             "subscription_status": user.get("subscription_status"),
             "trial_ends_at": user.get("trial_ends_at"),
+            "trial_used": bool(user.get("trial_used", False)),
         },
     }
 

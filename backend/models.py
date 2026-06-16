@@ -38,6 +38,7 @@ class UserPublic(BaseModel):
     is_admin: bool = False
     subscription_status: Optional[str] = None
     trial_ends_at: Optional[str] = None
+    trial_used: bool = False
 
 
 class TokenResponse(BaseModel):

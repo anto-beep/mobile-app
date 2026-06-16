@@ -21,6 +21,7 @@ import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 import { WaylyHeader } from '../../src/components/WaylyHeader';
 import { TrialCountdownBanner } from '../../src/components/TrialCountdownBanner';
 import { RecentActivityPanel } from '../../src/components/RecentActivityPanel';
+import { canStartTrial } from '../../src/components/AITools';
 
 type StreamRow = {
   stream: string;
@@ -386,17 +387,21 @@ export default function Today() {
                 <Text style={styles.paywallTitle}>Free plan</Text>
                 <Text style={styles.paywallBody}>
                   Connected household tracking — stream-by-stream spend, anomaly detection, and the monthly insights view — is on Solo and Family.
-                  Start your 7-day free trial to unlock the rest of your dashboard.
+                  {canStartTrial(user)
+                    ? ' Start your 7-day free trial to unlock the rest of your dashboard.'
+                    : ' Pick a plan to unlock the rest of your dashboard.'}
                 </Text>
                 <TouchableOpacity
                   style={styles.paywallBtn}
                   onPress={() => router.push('/settings/plan' as any)}
                   testID="today-free-paywall-cta"
                 >
-                  <Text style={styles.paywallBtnText}>Start free trial</Text>
+                  <Text style={styles.paywallBtnText}>{canStartTrial(user) ? 'Start free trial' : 'See plans'}</Text>
                   <Ionicons name="arrow-forward" size={14} color={Colors.cream} />
                 </TouchableOpacity>
-                <Text style={styles.paywallFinePrint}>7 days free · cancel anytime · no card needed.</Text>
+                {canStartTrial(user) && (
+                  <Text style={styles.paywallFinePrint}>7 days free · cancel anytime · no card needed.</Text>
+                )}
               </View>
             ) : (
               <>
