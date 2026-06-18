@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -123,27 +124,29 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AccessibilityProvider>
-        <ToastProvider>
-          <NetworkProvider>
-            <AdminAuthProvider>
-              <AuthProvider>
-                <ParticipantsProvider>
-                  <ScenarioProvider>
-                    <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
-                    <OnboardingGate />
-                    <SchemaBanner />
-                    <PushDeepLinkListener />
-                    <ThemedShell>
-                      <RootStack />
-                    </ThemedShell>
-                  </ScenarioProvider>
-                </ParticipantsProvider>
-              </AuthProvider>
-            </AdminAuthProvider>
-          </NetworkProvider>
-        </ToastProvider>
-      </AccessibilityProvider>
+      <KeyboardProvider>
+        <AccessibilityProvider>
+          <ToastProvider>
+            <NetworkProvider>
+              <AdminAuthProvider>
+                <AuthProvider>
+                  <ParticipantsProvider>
+                    <ScenarioProvider>
+                      <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
+                      <OnboardingGate />
+                      <SchemaBanner />
+                      <PushDeepLinkListener />
+                      <ThemedShell>
+                        <RootStack />
+                      </ThemedShell>
+                    </ScenarioProvider>
+                  </ParticipantsProvider>
+                </AuthProvider>
+              </AdminAuthProvider>
+            </NetworkProvider>
+          </ToastProvider>
+        </AccessibilityProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }

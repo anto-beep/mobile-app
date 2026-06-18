@@ -5,12 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
   Image,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,11 +94,12 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.kb}
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.brand} testID="auth-brand">
             <Image
               source={require('../../assets/branding/wayly-mark.png')}
@@ -216,13 +214,6 @@ export default function Login() {
               </Link>
             </View>
 
-            <View style={styles.demoChip} testID="auth-demo-chip">
-              <Ionicons name="information-circle-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.demoText}>
-                Test on production: <Text style={styles.demoBold}>cathy@example.com / testpass123</Text>
-              </Text>
-            </View>
-
             <TouchableOpacity
               style={styles.staffLink}
               onPress={() => router.push('/admin-auth/login' as any)}
@@ -232,8 +223,7 @@ export default function Login() {
               <Text style={styles.staffLinkText}>Wayly staff sign-in</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

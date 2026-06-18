@@ -7,9 +7,14 @@ import { useScenario } from '../context/ScenarioContext';
 import { Colors, Fonts, Spacing, Type } from '../lib/theme';
 
 export function SchemaBanner() {
-  const { schema, schemaError, majorMismatch, refreshSchema } = useScenario();
+  const { schema, majorMismatch } = useScenario();
   const insets = useSafeAreaInsets();
-  if (!majorMismatch && !schemaError) return null;
+  // Only show the banner on a hard major-version mismatch. The historic
+  // "Couldn't reach Wayly / Retry" warning has been retired — the schema
+  // endpoint may legitimately 404 on production builds that haven't shipped
+  // the scenario engine yet, and surfacing that to every user looked alarming
+  // when nothing is actually wrong with their connection.
+  if (!majorMismatch) return null;
   const isMajor = majorMismatch;
   return (
     <View
