@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { api, extractErrorMessage } from '../../src/lib/api';
+import { toast } from '../../src/components/Toast';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 
 export default function Signup() {
@@ -49,6 +50,15 @@ export default function Signup() {
         }
       }
       router.replace('/(tabs)/today');
+      // One-time onboarding nudge so the user knows to check their inbox.
+      const targetEmail = email.trim();
+      if (targetEmail) {
+        // Delay slightly so the toast renders ABOVE the dashboard (not the
+        // signup screen mid-transition).
+        setTimeout(() => {
+          toast.info(`Welcome to Wayly. Check ${targetEmail} for your verification link.`, 6000);
+        }, 400);
+      }
     } catch (e: any) {
       setError(e?.message || 'Could not create your account');
     } finally {

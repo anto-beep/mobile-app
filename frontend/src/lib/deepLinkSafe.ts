@@ -26,6 +26,7 @@ const ALLOWED_PATH_RX: ReadonlyArray<RegExp> = [
   /^reset-password$/,
   /^signup$/,
   /^\(auth\)\/signup$/,
+  /^verify-email$/,
   /^(app\/)?statements\/[\w-]{1,128}$/, // UUID-ish only, no traversal
   /^billing\/(success|cancel)$/,
   /^admin-app(\/.*)?$/,
@@ -35,6 +36,7 @@ const ALLOWED_PATH_RX: ReadonlyArray<RegExp> = [
 export type ParsedDeepLink =
   | { kind: 'reset-password'; token: string }
   | { kind: 'signup'; params: Record<string, string> }
+  | { kind: 'verify-email'; token: string }
   | { kind: 'statement'; statementId: string }
   | { kind: 'billing-success' }
   | { kind: 'billing-cancel' }
@@ -83,6 +85,12 @@ export function safeParseDeepLink(rawUrl: string | null | undefined): ParsedDeep
     const token = qp.token || '';
     if (!/^[A-Za-z0-9_\-]{16,256}$/.test(token)) return null;
     return { kind: 'reset-password', token };
+  }
+  if (path === 'verify-email') {
+    const token = qp.token || '';
+    // Tokens are URL-safe base64 of a 32-byte secret + random padding.
+    if (!/^[A-Za-z0-9_\-]{16,512}$/.test(token)) return null;
+    return { kind: 'verify-email', token };
   }
   if (path === 'signup' || path === '(auth)/signup') {
     return { kind: 'signup', params: qp };

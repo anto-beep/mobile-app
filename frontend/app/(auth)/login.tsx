@@ -14,7 +14,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/context/AuthContext';
+import { useAuth, EmailVerificationRequiredError } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 
 export default function Login() {
@@ -70,6 +70,10 @@ export default function Login() {
       await login(email.trim(), password);
       router.replace('/(tabs)/today');
     } catch (e: any) {
+      if (e instanceof EmailVerificationRequiredError) {
+        router.replace({ pathname: '/(auth)/verify-required' as any, params: { email: e.email } });
+        return;
+      }
       setError(friendlyError(e));
     } finally {
       setSubmitting(false);

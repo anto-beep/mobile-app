@@ -20,6 +20,7 @@ import DashboardInsights from '../../src/components/DashboardInsights';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 import { WaylyHeader } from '../../src/components/WaylyHeader';
 import { TrialCountdownBanner } from '../../src/components/TrialCountdownBanner';
+import { VerificationBanner } from '../../src/components/VerificationBanner';
 import { RecentActivityPanel } from '../../src/components/RecentActivityPanel';
 import { canStartTrial } from '../../src/components/AITools';
 
@@ -261,6 +262,7 @@ export default function Today() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <WaylyHeader />
+      <VerificationBanner />
       <TrialCountdownBanner />
       <ScrollView
         contentContainerStyle={styles.scroll}

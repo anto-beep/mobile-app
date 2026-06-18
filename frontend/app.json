@@ -11,6 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "au.wayly.app",
+      "associatedDomains": [
+        "applinks:wayly.com.au",
+        "applinks:www.wayly.com.au",
+        "applinks:app.wayly.com.au"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "Snap a photo of your statement to upload it",
         "NSPhotoLibraryUsageDescription": "Pick a saved statement photo to upload",
@@ -103,6 +108,21 @@
       "edgeToEdgeEnabled": true,
       "package": "au.wayly.app",
       "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "wayly.com.au", "pathPrefix": "/verify-email" },
+            { "scheme": "https", "host": "wayly.com.au", "pathPrefix": "/reset-password" },
+            { "scheme": "https", "host": "www.wayly.com.au", "pathPrefix": "/verify-email" },
+            { "scheme": "https", "host": "www.wayly.com.au", "pathPrefix": "/reset-password" },
+            { "scheme": "https", "host": "app.wayly.com.au", "pathPrefix": "/verify-email" },
+            { "scheme": "https", "host": "app.wayly.com.au", "pathPrefix": "/reset-password" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS",

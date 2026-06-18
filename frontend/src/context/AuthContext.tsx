@@ -28,9 +28,31 @@ export type Subscription = {
   stub_mode?: boolean;
 };
 
+export type VerificationState = {
+  email: string;
+  email_verified: boolean;
+  email_verified_at?: string | null;
+  verification_deadline?: string | null;
+  days_remaining: number;
+  past_deadline: boolean;
+  grace_days?: number;
+};
+
+// Thrown by login() when the backend returns 403 with code "email_verification_required".
+// Caught by the login screen so it can route to the full-screen interstitial.
+export class EmailVerificationRequiredError extends Error {
+  email: string;
+  constructor(email: string, message?: string) {
+    super(message || 'Please verify your email before signing in.');
+    this.name = 'EmailVerificationRequiredError';
+    this.email = email;
+  }
+}
+
 type AuthState = {
   user: User | null;
   subscription: Subscription | null;
+  verification: VerificationState | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, name: string) => Promise<User>;
@@ -38,6 +60,7 @@ type AuthState = {
   finishGoogleSession: (sessionId: string) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  refreshVerification: () => Promise<VerificationState | null>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -81,20 +104,49 @@ function mergeUserWithSub(u: User, sub: Subscription | null): User {
   };
 }
 
+// Fetch the email-verification status for the currently-authenticated user.
+// Returns null when no token is present or the call fails (treat as "unknown").
+async function fetchVerification(): Promise<VerificationState | null> {
+  try {
+    const { data } = await api.get('/auth/verification-status');
+    if (!data || !data.email) return null;
+    return {
+      email: String(data.email),
+      email_verified: !!data.email_verified,
+      email_verified_at: data.email_verified_at ?? null,
+      verification_deadline: data.verification_deadline ?? null,
+      days_remaining: typeof data.days_remaining === 'number' ? data.days_remaining : 0,
+      past_deadline: !!data.past_deadline,
+      grace_days: typeof data.grace_days === 'number' ? data.grace_days : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [verification, setVerification] = useState<VerificationState | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshVerification = async () => {
+    const v = await fetchVerification();
+    setVerification(v);
+    return v;
+  };
 
   const refresh = async () => {
     try {
       const { data } = await api.get<User>('/auth/me');
-      const sub = await fetchSubscription();
+      const [sub, ver] = await Promise.all([fetchSubscription(), fetchVerification()]);
       setSubscription(sub);
+      setVerification(ver);
       setUser(mergeUserWithSub(data, sub));
     } catch {
       setUser(null);
       setSubscription(null);
+      setVerification(null);
     }
   };
 
@@ -110,26 +162,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const persistAndSet = async (token: string, refreshToken: string | undefined, u: User) => {
     await persistTokens(token, refreshToken);
-    const sub = await fetchSubscription();
+    const [sub, ver] = await Promise.all([fetchSubscription(), fetchVerification()]);
     setSubscription(sub);
+    setVerification(ver);
     setUser(mergeUserWithSub(u, sub));
   };
 
   const login = async (email: string, password: string) => {
+    // Detect the 403 verification-required signal BEFORE the generic friendly
+    // error path swallows it — we need the email so the interstitial can
+    // pre-fill the resend form.
+    const handleLoginError = (err: unknown): never => {
+      const ax = err as any;
+      const status: number | undefined = ax?.response?.status;
+      const detail = ax?.response?.data?.detail;
+      if (status === 403 && detail && typeof detail === 'object' && detail.code === 'email_verification_required') {
+        throw new EmailVerificationRequiredError(String(detail.email || email), String(detail.message || ''));
+      }
+      throw new Error(extractErrorMessage(err, 'Could not sign in'));
+    };
+
     try {
       // Phase A: prefer /v2 (returns refresh_token). Falls back to legacy /login if /v2 is unavailable.
       const { data } = await api.post('/auth/login/v2', { email, password });
       await persistAndSet(data.token, data.refresh_token, data.user);
       return data.user as User;
     } catch (err) {
-      // Fallback to legacy /login (no refresh token) so older backends still work.
       const status = (err as any)?.response?.status;
       if (status === 404 || status === 405) {
-        const { data } = await api.post('/auth/login', { email, password });
-        await persistAndSet(data.token, undefined, data.user);
-        return data.user as User;
+        try {
+          const { data } = await api.post('/auth/login', { email, password });
+          await persistAndSet(data.token, undefined, data.user);
+          return data.user as User;
+        } catch (err2) {
+          return handleLoginError(err2);
+        }
       }
-      throw new Error(extractErrorMessage(err, 'Could not sign in'));
+      return handleLoginError(err);
     }
   };
 
@@ -149,6 +218,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try { await clearAllUserData(); }
     catch { await clearTokens(); }
     setUser(null);
+    setSubscription(null);
+    setVerification(null);
   };
 
   const loginWithGoogle = async () => {
@@ -165,7 +236,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, subscription, loading, login, signup, loginWithGoogle, finishGoogleSession, logout, refresh }}>
+    <AuthContext.Provider value={{ user, subscription, verification, loading, login, signup, loginWithGoogle, finishGoogleSession, logout, refresh, refreshVerification }}>
       {children}
     </AuthContext.Provider>
   );
