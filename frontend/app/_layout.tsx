@@ -21,6 +21,7 @@ import { DeepLinkHandler } from '../src/components/DeepLinkHandler';
 import { NotificationRouter } from '../src/components/NotificationRouter';
 import { NetworkProvider } from '../src/components/NetworkProvider';
 import { BiometricGate } from '../src/components/BiometricGate';
+import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { Colors } from '../src/lib/theme';
 import { installLogRedactor } from '../src/lib/logRedactor';
 
@@ -123,7 +124,22 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider style={{ backgroundColor: Colors.brandPrimary }}>
+    <ThemeProvider>
+      <ThemedRoot />
+    </ThemeProvider>
+  );
+}
+
+// Internal component that consumes the theme to drive the StatusBar +
+// SafeAreaProvider background. Sits inside ThemeProvider so it can read.
+function ThemedRoot() {
+  const { effective } = useTheme();
+  const isDark = effective === 'dark';
+  // Light mode: cream bg behind status bar → dark icons so time is visible.
+  // Dark mode: dark bg behind status bar → light (white) icons.
+  const safeBg = isDark ? '#1A1A1F' : Colors.background;
+  return (
+    <SafeAreaProvider style={{ backgroundColor: safeBg }}>
       <KeyboardProvider>
         <AccessibilityProvider>
           <ToastProvider>
@@ -132,7 +148,7 @@ export default function RootLayout() {
                 <AuthProvider>
                   <ParticipantsProvider>
                     <ScenarioProvider>
-                      <StatusBar style="light" backgroundColor={Colors.brandPrimary} translucent={false} />
+                      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={safeBg} translucent={false} />
                       <OnboardingGate />
                       <SchemaBanner />
                       <PushDeepLinkListener />
