@@ -23,6 +23,7 @@ import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
+import { useParticipants } from '../../src/context/ParticipantsContext';
 
 type Visit = {
   id: string;
@@ -56,6 +57,7 @@ function fmtDuration(mins: number) {
 }
 
 export default function Visits() {
+  const { participantSig, active } = useParticipants();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,7 +76,10 @@ export default function Visits() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [load, participantSig, active?.id]));
+
+  // Refetch on participant switch while screen is mounted.
+  React.useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [participantSig, active?.id]);
 
   const sections = useMemo(() => {
     const today = new Date();

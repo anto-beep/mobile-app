@@ -24,6 +24,7 @@ import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
+import { useParticipants } from '../../src/context/ParticipantsContext';
 
 type Doc = {
   id: string;
@@ -74,6 +75,7 @@ export default function Documents() {
   // Phase 6: Document Vault carries care plans, financial docs, medical
   // documents — block screenshot / screen recording.
   useSensitiveScreen();
+  const { participantSig, active } = useParticipants();
   const [docs, setDocs] = useState<Doc[]>([]);
   const [vault, setVault] = useState<VaultResponse['limits'] | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
@@ -100,7 +102,10 @@ export default function Documents() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [load, participantSig, active?.id]));
+
+  // Refetch on participant switch while screen is mounted.
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [participantSig, active?.id]);
 
   const pickFile = useCallback(async () => {
     try {

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
 import { useAuth } from '../../src/context/AuthContext';
+import { useParticipants } from '../../src/context/ParticipantsContext';
 import UploadSheet from '../../src/components/UploadSheet';
 import { registerForPushNotifications } from '../../src/lib/push';
 import DashboardInsights from '../../src/components/DashboardInsights';
@@ -92,6 +93,7 @@ const num = (v: any, fallback = 0): number => {
 export default function Today() {
   const router = useRouter();
   const { user } = useAuth();
+  const { participantSig, active: activeParticipant } = useParticipants();
   const [data, setData] = useState<Derived | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -226,8 +228,17 @@ export default function Today() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [participantSig, activeParticipant?.id])
   );
+
+  // Also refetch when the active participant changes WHILE the screen is
+  // already mounted (the participant switcher lives in the header, so the
+  // user never leaves the dashboard when switching).
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participantSig, activeParticipant?.id]);
 
   // Adviser-plan routing — adviser users go to the adviser portal, not this dashboard.
   useEffect(() => {
@@ -273,7 +284,14 @@ export default function Today() {
           <View style={{ flex: 1 }}>
             <Text style={styles.overline}>Wellbeing summary</Text>
             <Text style={styles.greeting} testID="today-greeting">
-              {data?.participant_name ? `${data.participant_name}, this quarter` : `Hello, ${user?.name?.split(' ')[0] || ''}`}
+              {(() => {
+                // Prefer backend payload, then the active-participant name
+                // from ParticipantsContext so the greeting flips instantly on
+                // switch (before /budget/current finishes refetching).
+                const pname = data?.participant_name || activeParticipant?.first_name;
+                if (pname) return `${pname}, this quarter`;
+                return `Hello, ${user?.name?.split(' ')[0] || ''}`;
+              })()}
             </Text>
             {data && (data.quarter_label || data.classification_label || data.provider_name) && (
               <Text style={styles.subline}>

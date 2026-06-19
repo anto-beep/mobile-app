@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
 import UploadSheet from '../../src/components/UploadSheet';
+import { useParticipants } from '../../src/context/ParticipantsContext';
 
 type Statement = {
   id: string;
@@ -27,6 +28,7 @@ type Statement = {
 
 export default function StatementsList() {
   const router = useRouter();
+  const { participantSig, active } = useParticipants();
   const [statements, setStatements] = useState<Statement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,8 +49,15 @@ export default function StatementsList() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [participantSig, active?.id])
   );
+
+  // Refetch when active participant changes while this screen stays mounted.
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participantSig, active?.id]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

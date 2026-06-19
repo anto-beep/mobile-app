@@ -24,6 +24,7 @@ import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
 import { getActiveParticipantId } from '../src/lib/activeParticipant';
 import { getAccessToken } from '../src/lib/tokens';
+import { useParticipants } from '../src/context/ParticipantsContext';
 
 type ReportKey =
   | 'household_summary'
@@ -59,6 +60,7 @@ const TYPES: { key: ReportKey; label: string; subtitle: string; icon: keyof type
 
 export default function Reports() {
   const router = useRouter();
+  const { participantSig, active } = useParticipants();
   const [items, setItems] = useState<ReportRow[]>([]);
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,8 +85,16 @@ export default function Reports() {
     useCallback(() => {
       setLoading(true);
       load();
-    }, [load])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [load, participantSig, active?.id])
   );
+
+  // Also refetch when the active participant changes while this screen stays mounted.
+  React.useEffect(() => {
+    setLoading(true);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participantSig, active?.id]);
 
   const generate = async (key: ReportKey) => {
     setBusyKey(key);
