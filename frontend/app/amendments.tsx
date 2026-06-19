@@ -48,7 +48,7 @@ type ChangeRow = { service: string; change_type: string; why: string };
 
 export default function Amendments() {
   const { user } = useAuth();
-  const { active, all } = useParticipants();
+  const { active, participants } = useParticipants();
   const { data, refresh } = useApi<{ items: any[] }>('/amendments');
   const items = data?.items || [];
 
@@ -70,7 +70,7 @@ export default function Amendments() {
     () => [...items].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))),
     [items]
   );
-  const forParticipant = all.find((p: any) => p.id === forId);
+  const forParticipant = (participants || []).find((p: any) => p.id === forId);
   const forLabel = forParticipant
     ? `${forParticipant.first_name || ''} ${forParticipant.last_name || ''}`.trim() || 'Select…'
     : 'Select…';
@@ -142,7 +142,7 @@ export default function Amendments() {
               </TouchableOpacity>
               {forPickerOpen && (
                 <View style={styles.dropdown} testID="amendment-for-options">
-                  {all.map((p: any) => (
+                  {(participants || []).map((p: any) => (
                     <TouchableOpacity
                       key={p.id}
                       style={styles.dropdownItem}
