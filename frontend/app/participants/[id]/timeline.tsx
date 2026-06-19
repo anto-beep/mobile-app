@@ -8,9 +8,14 @@ import { useScenario } from '../../../src/context/ScenarioContext';
 import { TimelineCell, StatusBadge } from '../../../src/components/Timeline';
 import { EmptyState } from '../../../src/components/Screen';
 import { ListSkeleton } from '../../../src/components/Skeleton';
-import { Colors, Spacing, Type } from '../../../src/lib/theme';
+import { Spacing, Type } from '../../../src/lib/theme';
+import type { ColorPalette } from '../../../src/lib/theme';
+import { useColors } from '../../../src/hooks/useColors';
+import { useThemedStyles } from '../../../src/hooks/useThemedStyles';
 
 export default function ParticipantTimeline() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getTimeline } = useScenario();
   const [items, setItems] = useState<any[]>([]);
@@ -35,7 +40,7 @@ export default function ParticipantTimeline() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Timeline" />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.head}>
           <Text style={Type.h1 as any}>{firstName || 'Participant'}</Text>
           {!!lifecycle && <StatusBadge state={lifecycle} />}
@@ -47,7 +52,7 @@ export default function ParticipantTimeline() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-});
+}); }

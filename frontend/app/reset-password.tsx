@@ -13,7 +13,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 function passwordStrength(p: string): { score: number; rules: { ok: boolean; label: string }[] } {
   const rules = [
@@ -27,6 +30,8 @@ function passwordStrength(p: string): { score: number; rules: { ok: boolean; lab
 }
 
 export default function ResetPassword() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string }>();
   const [token, setToken] = useState('');
@@ -75,7 +80,7 @@ export default function ResetPassword() {
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24} showsVerticalScrollIndicator={false}>
           <View style={styles.brand}>
             <View style={styles.logo}>
-              <Ionicons name="shield-checkmark" size={18} color={Colors.cream} />
+              <Ionicons name="shield-checkmark" size={18} color={c.cream} />
             </View>
             <Text style={styles.brandText}>Wayly</Text>
           </View>
@@ -83,10 +88,10 @@ export default function ResetPassword() {
           <View style={styles.card}>
             {done ? (
               <>
-                <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={Colors.success} /></View>
+                <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={c.success} /></View>
                 <Text style={styles.h1}>Password updated</Text>
                 <Text style={styles.sub}>Taking you back to sign in…</Text>
-                <ActivityIndicator color={Colors.brandPrimary} style={{ marginTop: Spacing.lg }} />
+                <ActivityIndicator color={c.brandPrimary} style={{ marginTop: Spacing.lg }} />
               </>
             ) : (
               <>
@@ -103,12 +108,12 @@ export default function ResetPassword() {
                     autoCapitalize="none"
                     autoComplete="new-password"
                     placeholder="At least 8 characters"
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={c.textMuted}
                     style={styles.input}
                     testID="reset-password"
                   />
                   <TouchableOpacity style={styles.eye} onPress={() => setShowPassword((s) => !s)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={18} color={Colors.textMuted} />
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
                   </TouchableOpacity>
                 </View>
 
@@ -121,8 +126,8 @@ export default function ResetPassword() {
                 <View style={styles.rules}>
                   {strength.rules.map((r, i) => (
                     <View key={i} style={styles.ruleRow}>
-                      <Ionicons name={r.ok ? 'checkmark-circle' : 'ellipse-outline'} size={12} color={r.ok ? Colors.success : Colors.textMuted} />
-                      <Text style={[styles.ruleText, r.ok && { color: Colors.success }]}>{r.label}</Text>
+                      <Ionicons name={r.ok ? 'checkmark-circle' : 'ellipse-outline'} size={12} color={r.ok ? c.success : c.textMuted} />
+                      <Text style={[styles.ruleText, r.ok && { color: c.success }]}>{r.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -134,7 +139,7 @@ export default function ResetPassword() {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   placeholder="Re-enter password"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={c.textMuted}
                   style={styles.input}
                   testID="reset-confirm"
                 />
@@ -145,7 +150,7 @@ export default function ResetPassword() {
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 
                 <TouchableOpacity onPress={onSubmit} disabled={submitting || !allValid} style={[styles.btn, (submitting || !allValid) && { opacity: 0.55 }]} testID="reset-submit">
-                  {submitting ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Update password</Text>}
+                  {submitting ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Update password</Text>}
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => router.replace('/(auth)/login')} style={styles.ghostBtn} testID="reset-cancel">
@@ -159,32 +164,32 @@ export default function ResetPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { flexGrow: 1, padding: Spacing.lg, justifyContent: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, alignSelf: 'center' },
-  logo: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center' },
-  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 21 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.lg, marginBottom: 6 },
+  logo: { width: 36, height: 36, borderRadius: 18, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5 },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: c.borderSubtle },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.sm },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: Spacing.sm, lineHeight: 21 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.lg, marginBottom: 6 },
   inputRow: { position: 'relative' },
-  input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14, paddingRight: 46, borderWidth: 1, borderColor: Colors.border },
+  input: { fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary, backgroundColor: c.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14, paddingRight: 46, borderWidth: 1, borderColor: c.border },
   eye: { position: 'absolute', right: 12, top: 12, padding: 8 },
   meterRow: { flexDirection: 'row', gap: 4, marginTop: 8 },
-  meterBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: Colors.border },
-  meterPartial: { backgroundColor: Colors.brandSecondary },
-  meterStrong: { backgroundColor: Colors.success },
+  meterBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: c.border },
+  meterPartial: { backgroundColor: c.brandSecondary },
+  meterStrong: { backgroundColor: c.success },
   rules: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 100, backgroundColor: Colors.background },
-  ruleText: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted },
-  mismatch: { fontFamily: Fonts.body, fontSize: 12, color: Colors.severityWarning, marginTop: 6 },
-  error: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.severityAlert, marginTop: Spacing.md },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 16, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.cream },
+  ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 100, backgroundColor: c.background },
+  ruleText: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted },
+  mismatch: { fontFamily: Fonts.body, fontSize: 12, color: c.severityWarning, marginTop: 6 },
+  error: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.severityAlert, marginTop: Spacing.md },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 16, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.cream },
   ghostBtn: { marginTop: Spacing.sm, paddingVertical: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+  ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
   successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(27, 87, 51, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
-});
+}); }

@@ -36,7 +36,10 @@ import { useParticipants } from '../src/context/ParticipantsContext';
 import { toast } from '../src/components/Toast';
 import BackHeader from '../src/components/BackHeader';
 import { formatAUDate } from '../src/lib/format';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing  } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type WallPost = {
   id: string;
@@ -72,6 +75,8 @@ async function fileToBase64(uri: string): Promise<string | null> {
 }
 
 export default function FamilyWall() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { user } = useAuth();
   const { active, participantSig } = useParticipants();
   const scrollRef = useRef<any>(null);
@@ -301,10 +306,10 @@ export default function FamilyWall() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         bottomOffset={24}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="heart-outline" size={22} color={Colors.severityAlert} />
+          <Ionicons name="heart-outline" size={22} color={c.severityAlert} />
           <Text style={styles.hero}>Family Wall</Text>
         </View>
         <Text style={styles.subhero}>
@@ -318,7 +323,7 @@ export default function FamilyWall() {
             onChangeText={setText}
             multiline
             placeholder={`Share a moment, an update, or a memory with ${active?.first_name || 'them'}…`}
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             style={styles.input}
             editable={!submitting}
             testID="wall-input"
@@ -339,10 +344,10 @@ export default function FamilyWall() {
 
           {audioB64 ? (
             <View style={styles.audioPreview}>
-              <Ionicons name="musical-notes-outline" size={16} color={Colors.brandPrimary} />
+              <Ionicons name="musical-notes-outline" size={16} color={c.brandPrimary} />
               <Text style={styles.audioPreviewText}>Voice note · {fmtMs(audioDurationMs)}</Text>
               <TouchableOpacity onPress={onRemoveAudio} style={styles.audioRemove} testID="wall-remove-audio">
-                <Ionicons name="close" size={14} color={Colors.severityAlert} />
+                <Ionicons name="close" size={14} color={c.severityAlert} />
               </TouchableOpacity>
             </View>
           ) : null}
@@ -356,7 +361,7 @@ export default function FamilyWall() {
               accessibilityRole="button"
               accessibilityLabel="Attach a photo"
             >
-              <Ionicons name="image-outline" size={18} color={Colors.brandPrimary} />
+              <Ionicons name="image-outline" size={18} color={c.brandPrimary} />
               <Text style={styles.toolBtnText}>Photo</Text>
             </TouchableOpacity>
 
@@ -375,7 +380,7 @@ export default function FamilyWall() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="mic-outline" size={18} color={Colors.brandPrimary} />
+                  <Ionicons name="mic-outline" size={18} color={c.brandPrimary} />
                   <Text style={styles.toolBtnText}>Voice note</Text>
                 </>
               )}
@@ -396,12 +401,12 @@ export default function FamilyWall() {
                 </>
               ) : transcribing ? (
                 <>
-                  <ActivityIndicator size="small" color={Colors.brandPrimary} />
+                  <ActivityIndicator size="small" color={c.brandPrimary} />
                   <Text style={styles.toolBtnText}>Transcribing…</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="mic-circle-outline" size={18} color={Colors.brandPrimary} />
+                  <Ionicons name="mic-circle-outline" size={18} color={c.brandPrimary} />
                   <Text style={styles.toolBtnText}>Dictate</Text>
                 </>
               )}
@@ -430,10 +435,10 @@ export default function FamilyWall() {
 
         <Text style={styles.sectionH}>Recent activity</Text>
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 32 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} />
         ) : posts.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="chatbox-ellipses-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="chatbox-ellipses-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>Be the first to share a moment with {active?.first_name || 'them'}.</Text>
             <Text style={styles.emptyBody}>
               Anything you share above will land here for everyone in {active?.first_name || 'this participant'}&apos;s family circle.
@@ -507,7 +512,7 @@ function PostCard({ post, self }: { post: WallPost; self: boolean }) {
       )}
       {!!post.audio_b64 && (
         <TouchableOpacity style={styles.postAudio} onPress={togglePlay} testID={`wall-play-${post.id}`}>
-          <Ionicons name={playing ? 'pause' : 'play'} size={16} color={Colors.brandPrimary} />
+          <Ionicons name={playing ? 'pause' : 'play'} size={16} color={c.brandPrimary} />
           <Text style={styles.postAudioText}>Voice note · {fmtMs(post.audio_duration_ms)}</Text>
         </TouchableOpacity>
       )}
@@ -515,27 +520,27 @@ function PostCard({ post, self }: { post: WallPost; self: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
 
   composer: {
-    backgroundColor: Colors.cardBg,
-    borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg,
+    borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: Spacing.lg,
   },
   input: {
     minHeight: 80, textAlignVertical: 'top',
-    fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary,
+    fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary,
     backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: 10,
   },
   attachWrap: { marginTop: Spacing.sm, alignSelf: 'flex-start' },
-  attachThumb: { width: 96, height: 96, borderRadius: Radius.md, backgroundColor: Colors.background },
+  attachThumb: { width: 96, height: 96, borderRadius: Radius.md, backgroundColor: c.background },
   attachRemove: {
     position: 'absolute', top: -6, right: -6,
     width: 22, height: 22, borderRadius: 11,
@@ -546,41 +551,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 8,
     backgroundColor: 'rgba(14, 77, 82, 0.08)', borderRadius: Radius.md,
   },
-  audioPreviewText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, flex: 1 },
+  audioPreviewText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, flex: 1 },
   audioRemove: { padding: 4 },
 
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
   toolBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 10, paddingVertical: 8,
-    backgroundColor: Colors.background, borderRadius: 999,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.background, borderRadius: 999,
+    borderWidth: 1, borderColor: c.borderSubtle,
     minHeight: 36,
   },
   toolBtnRec: { backgroundColor: 'rgba(192, 57, 43, 0.10)', borderColor: 'rgba(192, 57, 43, 0.35)' },
-  toolBtnText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
+  toolBtnText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
   toolBtnTextRec: { color: '#C0392B' },
   recDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#C0392B' },
 
   postBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.brandPrimary, paddingHorizontal: 14, paddingVertical: 9,
+    backgroundColor: c.brandPrimary, paddingHorizontal: 14, paddingVertical: 9,
     borderRadius: Radius.md, minHeight: 36,
   },
   postBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: '#FFFFFF' },
 
-  sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginBottom: Spacing.sm },
+  sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginBottom: Spacing.sm },
   emptyCard: {
     padding: Spacing.lg, alignItems: 'center', gap: 8,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
   },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
 
   postCard: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: Spacing.sm,
   },
   postHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
@@ -589,15 +594,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(14, 77, 82, 0.12)',
   },
   avatarSelf: { backgroundColor: 'rgba(165, 81, 43, 0.18)' },
-  avatarText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  postAuthor: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  postMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
-  postBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
-  postImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: Radius.md, marginTop: 8, backgroundColor: Colors.background },
+  avatarText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  postAuthor: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  postMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 1 },
+  postBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, lineHeight: 20 },
+  postImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: Radius.md, marginTop: 8, backgroundColor: c.background },
   postAudio: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10,
     backgroundColor: 'rgba(14, 77, 82, 0.08)',
     paddingHorizontal: 12, paddingVertical: 10, borderRadius: Radius.md,
   },
-  postAudioText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1 },
-});
+  postAudioText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flex: 1 },
+}); }

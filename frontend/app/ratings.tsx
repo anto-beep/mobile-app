@@ -29,7 +29,10 @@ import { api, extractErrorMessage } from '../src/lib/api';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
 import { formatAUDate } from '../src/lib/format';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type Rating = {
   id: string;
@@ -43,6 +46,8 @@ type Rating = {
 const STAR_TINT = '#A5512B';
 
 export default function Ratings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { data, loading, refreshing, refresh } = useApi<{ items: Rating[] }>('/ratings');
   const items = data?.items || [];
 
@@ -99,7 +104,7 @@ export default function Ratings() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         bottomOffset={24}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Private provider ratings</Text>
         <Text style={styles.h1}>Your own honest opinions on providers</Text>
@@ -115,7 +120,7 @@ export default function Ratings() {
             value={providerName}
             onChangeText={setProviderName}
             placeholder="e.g. SilverCare Plus"
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             editable={!busy}
             testID="rating-provider"
           />
@@ -160,7 +165,7 @@ export default function Ratings() {
             value={comment}
             onChangeText={setComment}
             placeholder="Comment (what worked, what didn't)"
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             multiline
             editable={!busy}
             testID="rating-comment"
@@ -181,10 +186,10 @@ export default function Ratings() {
 
         {/* Past ratings */}
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 32 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} />
         ) : items.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="star-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="star-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No ratings yet</Text>
             <Text style={styles.emptyBody}>Add your honest 1–5 star rating for each provider you&apos;ve worked with.</Text>
           </View>
@@ -216,7 +221,7 @@ export default function Ratings() {
               </View>
             </View>
             <TouchableOpacity onPress={() => remove(r)} style={styles.deleteBtn} hitSlop={6} testID={`rating-delete-${r.id}`}>
-              <Ionicons name="trash-outline" size={16} color={Colors.severityAlert} />
+              <Ionicons name="trash-outline" size={16} color={c.severityAlert} />
             </TouchableOpacity>
           </View>
         ))}
@@ -227,67 +232,67 @@ export default function Ratings() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
 
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.4, marginTop: 4, lineHeight: 32 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 19 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.4, marginTop: 4, lineHeight: 32 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 19 },
 
   card: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: Spacing.lg, gap: Spacing.sm,
   },
-  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.6, color: Colors.textSecondary, textTransform: 'uppercase' },
+  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.6, color: c.textSecondary, textTransform: 'uppercase' },
   input: {
-    fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary,
+    fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary,
     backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: 1, borderColor: c.borderSubtle,
     paddingHorizontal: 12, paddingVertical: 11, minHeight: 44,
   },
   textArea: { minHeight: 90, textAlignVertical: 'top', paddingTop: 12 },
 
   starsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  starsLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
+  starsLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
   starsGroup: { flexDirection: 'row', gap: 4 },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
   checkbox: {
     width: 20, height: 20, borderRadius: 4,
-    borderWidth: 1.5, borderColor: Colors.borderSubtle,
+    borderWidth: 1.5, borderColor: c.borderSubtle,
     backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
   },
   checkboxChecked: { backgroundColor: '#4A6CF7', borderColor: '#4A6CF7' },
-  checkLabel: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+  checkLabel: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
 
   cta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md,
+    backgroundColor: c.brandPrimary, borderRadius: Radius.md,
     paddingVertical: 14, minHeight: 48, marginTop: 4,
   },
   ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
 
   emptyCard: {
     padding: Spacing.lg, alignItems: 'center', gap: 8,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
   },
-  emptyTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, marginTop: 6, letterSpacing: -0.3 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 19 },
+  emptyTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, marginTop: 6, letterSpacing: -0.3 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 19 },
 
   // Past rating row
   row: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: 8,
   },
   rowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  provider: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, flex: 1 },
+  provider: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, flex: 1 },
   starsCompact: { flexDirection: 'row', gap: 2 },
-  commentText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, marginTop: 4, lineHeight: 19 },
+  commentText: { fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, marginTop: 4, lineHeight: 19 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   recommendPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -296,6 +301,6 @@ const styles = StyleSheet.create({
   },
   notRecommendPill: { backgroundColor: 'rgba(165, 64, 48, 0.10)' },
   recommendText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: '#3A5F37' },
-  metaDate: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary },
+  metaDate: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary },
   deleteBtn: { padding: 6 },
-});
+}); }

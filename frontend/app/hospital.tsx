@@ -13,7 +13,10 @@ import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type Med = { name?: string; dose?: string };
 type Contact = { name?: string; phone?: string; relationship?: string };
@@ -27,6 +30,8 @@ type Handover = {
 };
 
 export default function Hospital() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { data, loading, refreshing, refresh } = useApi<Handover>('/hospital/handover');
 
   const [summary, setSummary] = useState('');
@@ -71,15 +76,15 @@ export default function Hospital() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         bottomOffset={24}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="medkit-outline" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="medkit-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Hospital handover</Text>
         </View>
         <Text style={styles.subhero}>What an ED triage nurse needs in 30 seconds. We&apos;ll save it so you can pull it up on the way to hospital.</Text>
 
-        {loading && !data ? <ActivityIndicator color={Colors.brandPrimary} /> : (
+        {loading && !data ? <ActivityIndicator color={c.brandPrimary} /> : (
           <>
             <View style={styles.card}>
               <Text style={styles.cardH}>Summary</Text>
@@ -89,7 +94,7 @@ export default function Hospital() {
                 value={summary}
                 onChangeText={setSummary}
                 placeholder="e.g. 78yo, lives independently, mild cognitive impairment, mobility limited after May fall."
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 testID="hospital-summary"
               />
             </View>
@@ -98,17 +103,17 @@ export default function Hospital() {
               <Text style={styles.cardH}>Medications</Text>
               {meds.map((m, i) => (
                 <View key={i} style={styles.medRow}>
-                  <TextInput style={[styles.input, { flex: 2 }]} value={m.name || ''} onChangeText={(t) => setMed(i, { name: t })} placeholder="Medication name" placeholderTextColor={Colors.textMuted} testID={`med-name-${i}`} />
-                  <TextInput style={[styles.input, { flex: 1 }]} value={m.dose || ''} onChangeText={(t) => setMed(i, { dose: t })} placeholder="Dose" placeholderTextColor={Colors.textMuted} testID={`med-dose-${i}`} />
+                  <TextInput style={[styles.input, { flex: 2 }]} value={m.name || ''} onChangeText={(t) => setMed(i, { name: t })} placeholder="Medication name" placeholderTextColor={c.textMuted} testID={`med-name-${i}`} />
+                  <TextInput style={[styles.input, { flex: 1 }]} value={m.dose || ''} onChangeText={(t) => setMed(i, { dose: t })} placeholder="Dose" placeholderTextColor={c.textMuted} testID={`med-dose-${i}`} />
                   {meds.length > 1 && (
                     <TouchableOpacity onPress={() => rmMed(i)} style={styles.iconBtn}>
-                      <Ionicons name="trash-outline" size={16} color={Colors.severityAlert} />
+                      <Ionicons name="trash-outline" size={16} color={c.severityAlert} />
                     </TouchableOpacity>
                   )}
                 </View>
               ))}
               <TouchableOpacity onPress={addMed} style={styles.addLine}>
-                <Ionicons name="add" size={14} color={Colors.brandPrimary} />
+                <Ionicons name="add" size={14} color={c.brandPrimary} />
                 <Text style={styles.addLineText}>Add medication</Text>
               </TouchableOpacity>
             </View>
@@ -120,16 +125,16 @@ export default function Hospital() {
                 value={allergies}
                 onChangeText={setAllergies}
                 placeholder="Penicillin, latex, peanuts… (comma-separated)"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 testID="hospital-allergies"
               />
             </View>
 
             <View style={styles.card}>
               <Text style={styles.cardH}>Emergency contact</Text>
-              <TextInput style={styles.input} value={contact.name || ''} onChangeText={(t) => setContact((c) => ({ ...c, name: t }))} placeholder="Name" placeholderTextColor={Colors.textMuted} testID="hospital-contact-name" />
-              <TextInput style={[styles.input, { marginTop: 8 }]} value={contact.phone || ''} onChangeText={(t) => setContact((c) => ({ ...c, phone: t }))} placeholder="Phone" placeholderTextColor={Colors.textMuted} keyboardType="phone-pad" testID="hospital-contact-phone" />
-              <TextInput style={[styles.input, { marginTop: 8 }]} value={contact.relationship || ''} onChangeText={(t) => setContact((c) => ({ ...c, relationship: t }))} placeholder="Relationship (daughter, son, neighbour…)" placeholderTextColor={Colors.textMuted} testID="hospital-contact-rel" />
+              <TextInput style={styles.input} value={contact.name || ''} onChangeText={(t) => setContact((c) => ({ ...c, name: t }))} placeholder="Name" placeholderTextColor={c.textMuted} testID="hospital-contact-name" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} value={contact.phone || ''} onChangeText={(t) => setContact((c) => ({ ...c, phone: t }))} placeholder="Phone" placeholderTextColor={c.textMuted} keyboardType="phone-pad" testID="hospital-contact-phone" />
+              <TextInput style={[styles.input, { marginTop: 8 }]} value={contact.relationship || ''} onChangeText={(t) => setContact((c) => ({ ...c, relationship: t }))} placeholder="Relationship (daughter, son, neighbour…)" placeholderTextColor={c.textMuted} testID="hospital-contact-rel" />
             </View>
 
             <TouchableOpacity style={[styles.cta, saving && { opacity: 0.6 }]} onPress={save} disabled={saving} testID="hospital-save">
@@ -149,20 +154,20 @@ export default function Hospital() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
-  cardH: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.brandPrimary, marginBottom: Spacing.sm },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, backgroundColor: '#FFFFFF', borderRadius: Radius.sm, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: Colors.borderSubtle, minHeight: 42 },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
+  cardH: { fontFamily: Fonts.heading, fontSize: 16, color: c.brandPrimary, marginBottom: Spacing.sm },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, backgroundColor: '#FFFFFF', borderRadius: Radius.sm, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 42 },
   medRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   addLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, alignSelf: 'flex-start', paddingVertical: 6 },
-  addLineText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50, marginTop: Spacing.sm },
+  addLineText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50, marginTop: Spacing.sm },
   ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
-  lastSaved: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 8 },
-});
+  lastSaved: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: 8 },
+}); }

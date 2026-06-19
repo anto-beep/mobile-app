@@ -23,7 +23,10 @@ import { useParticipants } from '../src/context/ParticipantsContext';
 import { toast } from '../src/components/Toast';
 import BackHeader from '../src/components/BackHeader';
 import { formatAUDate } from '../src/lib/format';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 const CHANGE_TYPES = [
   'Increase frequency / hours',
@@ -47,6 +50,8 @@ const STATUS_META: Record<string, { bg: string; fg: string; label: string }> = {
 type ChangeRow = { service: string; change_type: string; why: string };
 
 export default function Amendments() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { user } = useAuth();
   const { active, participants } = useParticipants();
   const { data, refresh } = useApi<{ items: any[] }>('/amendments');
@@ -122,7 +127,7 @@ export default function Amendments() {
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24}>
         {/* Hero */}
         <View style={styles.heroRow}>
-          <Ionicons name="create-outline" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="create-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Care Plan Amendments</Text>
         </View>
         <Text style={styles.subhero}>
@@ -138,7 +143,7 @@ export default function Amendments() {
               <Text style={styles.lbl}>For</Text>
               <TouchableOpacity style={styles.select} onPress={() => setForPickerOpen((v) => !v)} testID="amendment-for-select">
                 <Text style={styles.selectText} numberOfLines={1}>{forLabel}</Text>
-                <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+                <Ionicons name="chevron-down" size={16} color={c.textMuted} />
               </TouchableOpacity>
               {forPickerOpen && (
                 <View style={styles.dropdown} testID="amendment-for-options">
@@ -156,11 +161,11 @@ export default function Amendments() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.lbl}>Your name</Text>
-              <TextInput style={styles.input} value={yourName} onChangeText={setYourName} placeholder="Cathy" placeholderTextColor={Colors.textMuted} testID="amendment-your-name" />
+              <TextInput style={styles.input} value={yourName} onChangeText={setYourName} placeholder="Cathy" placeholderTextColor={c.textMuted} testID="amendment-your-name" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.lbl}>Your role</Text>
-              <TextInput style={styles.input} value={yourRole} onChangeText={setYourRole} placeholder="primary caregiver" placeholderTextColor={Colors.textMuted} testID="amendment-your-role" />
+              <TextInput style={styles.input} value={yourRole} onChangeText={setYourRole} placeholder="primary caregiver" placeholderTextColor={c.textMuted} testID="amendment-your-role" />
             </View>
           </View>
 
@@ -175,7 +180,7 @@ export default function Amendments() {
                     value={c.service}
                     onChangeText={(t) => setChange(idx, { service: t })}
                     placeholder="e.g. Domestic cleaning"
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={c.textMuted}
                     testID={`amendment-service-${idx}`}
                   />
                 </View>
@@ -187,7 +192,7 @@ export default function Amendments() {
                     testID={`amendment-change-type-${idx}`}
                   >
                     <Text style={styles.selectText} numberOfLines={1}>{c.change_type}</Text>
-                    <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+                    <Ionicons name="chevron-down" size={16} color={c.textMuted} />
                   </TouchableOpacity>
                   {typePickerOpenIdx === idx && (
                     <View style={styles.dropdown}>
@@ -209,7 +214,7 @@ export default function Amendments() {
                 {/* Dictate button is a no-op placeholder on mobile for now —
                     web uses MediaRecorder + Whisper. Keep visible for parity. */}
                 <TouchableOpacity style={styles.dictateBtn} onPress={() => toast.info('Dictation is coming to mobile soon. Type your reason for now.')} testID={`amendment-dictate-${idx}`}>
-                  <Ionicons name="mic-outline" size={13} color={Colors.brandPrimary} />
+                  <Ionicons name="mic-outline" size={13} color={c.brandPrimary} />
                   <Text style={styles.dictateBtnText}>Dictate</Text>
                 </TouchableOpacity>
               </View>
@@ -220,12 +225,12 @@ export default function Amendments() {
                 multiline
                 numberOfLines={4}
                 placeholder="e.g. After her fall in May, she cannot manage the heavy cleaning safely on her own."
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 testID={`amendment-why-${idx}`}
               />
               {changes.length > 1 && (
                 <TouchableOpacity style={styles.removeChangeBtn} onPress={() => removeChange(idx)} testID={`amendment-remove-${idx}`}>
-                  <Ionicons name="trash-outline" size={14} color={Colors.severityAlert} />
+                  <Ionicons name="trash-outline" size={14} color={c.severityAlert} />
                   <Text style={styles.removeChangeText}>Remove change</Text>
                 </TouchableOpacity>
               )}
@@ -233,7 +238,7 @@ export default function Amendments() {
           ))}
 
           <TouchableOpacity style={styles.addChangeBtn} onPress={addChange} testID="amendment-add-change">
-            <Ionicons name="add" size={16} color={Colors.brandPrimary} />
+            <Ionicons name="add" size={16} color={c.brandPrimary} />
             <Text style={styles.addChangeText}>Add another change</Text>
           </TouchableOpacity>
 
@@ -276,43 +281,43 @@ export default function Amendments() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
 
   card: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: Spacing.lg,
   },
-  cardH1: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginBottom: Spacing.md },
+  cardH1: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginBottom: Spacing.md },
 
   row3: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },
   row2: { flexDirection: 'row', gap: 8 },
-  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textSecondary, marginBottom: 5, letterSpacing: 0.2 },
+  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textSecondary, marginBottom: 5, letterSpacing: 0.2 },
   input: {
     backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, color: Colors.textPrimary,
+    borderWidth: 1, borderColor: c.borderSubtle,
+    paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, color: c.textPrimary,
     fontFamily: Fonts.body, minHeight: 40,
   },
   textarea: { minHeight: 88, paddingTop: 10, textAlignVertical: 'top' },
   select: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: 1, borderColor: c.borderSubtle,
     paddingHorizontal: 10, paddingVertical: 10, minHeight: 40,
   },
-  selectText: { flex: 1, fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary },
+  selectText: { flex: 1, fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary },
   dropdown: {
     marginTop: 4, backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden',
+    borderWidth: 1, borderColor: c.borderSubtle, overflow: 'hidden',
   },
-  dropdownItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  dropdownItemText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary },
+  dropdownItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.borderSubtle },
+  dropdownItemText: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary },
 
   changeCard: {
     backgroundColor: 'rgba(165, 81, 43, 0.06)',
@@ -323,35 +328,35 @@ const styles = StyleSheet.create({
   dictateBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: '#FFFFFF', borderRadius: 999,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: 1, borderColor: c.borderSubtle,
     paddingHorizontal: 10, paddingVertical: 4,
   },
-  dictateBtnText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary },
+  dictateBtnText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
   removeChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' },
-  removeChangeText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.severityAlert },
+  removeChangeText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.severityAlert },
 
   addChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingVertical: 8 },
-  addChangeText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+  addChangeText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
 
-  cardDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: Spacing.md },
+  cardDivider: { height: 1, backgroundColor: c.borderSubtle, marginVertical: Spacing.md },
   generateBtn: {
-    alignSelf: 'flex-end', backgroundColor: Colors.brandPrimary,
+    alignSelf: 'flex-end', backgroundColor: c.brandPrimary,
     paddingHorizontal: 18, paddingVertical: 11, borderRadius: Radius.md, minHeight: 42, minWidth: 130,
     alignItems: 'center', justifyContent: 'center',
   },
   generateBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF', letterSpacing: 0.2 },
 
-  sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginBottom: Spacing.sm },
-  emptyCard: { padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle },
-  emptyText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginBottom: Spacing.sm },
+  emptyCard: { padding: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle },
+  emptyText: { fontFamily: Fonts.body, fontSize: 13, color: c.textMuted, textAlign: 'center' },
   pastCard: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: Spacing.sm,
     flexDirection: 'row', alignItems: 'center', gap: 10,
   },
-  pastTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  pastMeta: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 3 },
+  pastTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  pastMeta: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 3 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
   statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.6 },
-});
+}); }

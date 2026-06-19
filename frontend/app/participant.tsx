@@ -14,6 +14,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../src/lib/api';
 import { Colors, Fonts, formatAUD, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type Today = {
   participant_name: string;
@@ -31,6 +34,8 @@ const MOOD_BTNS: { mood: 'good' | 'okay' | 'not_great'; label: string; sub: stri
 ];
 
 export default function Participant() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [today, setToday] = useState<Today | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +74,7 @@ export default function Participant() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back} testID="participant-back">
-          <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+          <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
@@ -85,7 +90,7 @@ export default function Participant() {
 
         {loading ? (
           <View style={styles.loadingFill}>
-            <ActivityIndicator color={Colors.brandPrimary} />
+            <ActivityIndicator color={c.brandPrimary} />
           </View>
         ) : (
           <>
@@ -123,7 +128,7 @@ export default function Participant() {
                       key={m.mood}
                       style={[
                         styles.moodBtn,
-                        { borderColor: isPicked ? m.color : Colors.borderSubtle },
+                        { borderColor: isPicked ? m.color : c.borderSubtle },
                         isPicked && { backgroundColor: `${m.color}10` },
                       ]}
                       onPress={() => tap(m.mood)}
@@ -145,7 +150,7 @@ export default function Participant() {
 
               {submittedMood && (
                 <View style={styles.thanks} testID="wellbeing-thanks">
-                  <Ionicons name="heart-outline" size={16} color={Colors.severityInfo} />
+                  <Ionicons name="heart-outline" size={16} color={c.severityInfo} />
                   <Text style={styles.thanksText}>
                     Thanks for letting us know.
                     {submittedMood === 'not_great'
@@ -162,45 +167,45 @@ export default function Participant() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, marginTop: 4, letterSpacing: -0.5 },
-  greeting: { fontFamily: Fonts.body, fontSize: 18, color: Colors.textSecondary, marginTop: Spacing.sm, marginBottom: Spacing.lg },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, marginTop: 4, letterSpacing: -0.5 },
+  greeting: { fontFamily: Fonts.body, fontSize: 18, color: c.textSecondary, marginTop: Spacing.sm, marginBottom: Spacing.lg },
   loadingFill: { padding: Spacing.xl, alignItems: 'center' },
   appointmentCard: {
     backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.lg,
     padding: Spacing.md + 4, marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)',
   },
-  appointmentOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
-  appointmentTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary },
-  appointmentMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+  appointmentOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
+  appointmentTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary },
+  appointmentMeta: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   budgetCard: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4,
-    marginBottom: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4,
+    marginBottom: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle,
   },
-  budgetOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: Colors.textSecondary, marginBottom: 4 },
-  budgetAmount: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.brandPrimary, letterSpacing: -1 },
-  budgetSentence: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 4, lineHeight: 20 },
+  budgetOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.textSecondary, marginBottom: 4 },
+  budgetAmount: { fontFamily: Fonts.heading, fontSize: 32, color: c.brandPrimary, letterSpacing: -1 },
+  budgetSentence: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 4, lineHeight: 20 },
   checkinSection: { marginTop: Spacing.md },
-  sectionTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  sectionSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, marginBottom: Spacing.lg },
+  sectionTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.3 },
+  sectionSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4, marginBottom: Spacing.lg },
   moodGrid: { gap: Spacing.sm },
   moodBtn: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
     alignItems: 'center', gap: 8, borderWidth: 2, minHeight: 130, justifyContent: 'center',
     position: 'relative',
   },
   moodLabel: { fontFamily: Fonts.heading, fontSize: 22, letterSpacing: -0.3 },
-  moodSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
+  moodSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center' },
   checkmark: { position: 'absolute', top: 12, right: 12 },
   thanks: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(139, 155, 130, 0.1)', padding: Spacing.md, borderRadius: Radius.md,
     marginTop: Spacing.md,
   },
-  thanksText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1, lineHeight: 18 },
-});
+  thanksText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flex: 1, lineHeight: 18 },
+}); }

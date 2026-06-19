@@ -9,13 +9,18 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, DecoderProgress, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 type Tab = 'snap' | 'upload' | 'paste';
 
 export default function StatementDecoder() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('snap');
@@ -123,7 +128,7 @@ export default function StatementDecoder() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} testID="statement-decoder-scroll" keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Statement Decoder</Text>
         <Text style={styles.h1}>What does this statement actually say?</Text>
         <Text style={styles.sub}>Snap a photo, upload a file, or paste text — we'll read it and flag anything off.</Text>
@@ -148,7 +153,7 @@ export default function StatementDecoder() {
                   <Ionicons
                     name={t === 'snap' ? 'camera-outline' : t === 'upload' ? 'document-attach-outline' : 'create-outline'}
                     size={16}
-                    color={tab === t ? Colors.cream : Colors.brandPrimary}
+                    color={tab === t ? c.cream : c.brandPrimary}
                   />
                   <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
                     {t === 'snap' ? 'Snap' : t === 'upload' ? 'Upload' : 'Paste text'}
@@ -164,19 +169,19 @@ export default function StatementDecoder() {
                 <TextInput
                   value={text} onChangeText={setText}
                   placeholder="Paste the statement text here…"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={c.textMuted}
                   multiline numberOfLines={10}
                   style={[styles.input, { minHeight: 180, textAlignVertical: 'top' }]}
                   testID="decoder-paste-input"
                 />
                 <TouchableOpacity onPress={() => submit()} disabled={submitting} style={[styles.btn, submitting && { opacity: 0.6 }]} testID="decode-submit-btn">
-                  {submitting ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Decode it</Text>}
+                  {submitting ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Decode it</Text>}
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.card}>
                 <TouchableOpacity onPress={tab === 'snap' ? snap : pickFile} disabled={submitting} style={styles.bigBtn} testID={`decoder-${tab}-btn`}>
-                  <Ionicons name={tab === 'snap' ? 'camera' : 'cloud-upload'} size={32} color={Colors.cream} />
+                  <Ionicons name={tab === 'snap' ? 'camera' : 'cloud-upload'} size={32} color={c.cream} />
                   <Text style={styles.bigBtnText}>{tab === 'snap' ? 'Take a photo' : 'Choose file'}</Text>
                   <Text style={styles.bigBtnSub}>
                     {tab === 'snap' ? 'Frame the statement; we handle the rest' : 'PDF, image, CSV, or text'}
@@ -267,7 +272,7 @@ export default function StatementDecoder() {
                       {informationalNotes.map((n: any, i: number) => (
                         <View key={i} style={styles.note} testID={`decoder-note-${i}`}>
                           <View style={styles.noteHead}>
-                            <Ionicons name="information-circle-outline" size={16} color={Colors.severityInfo} />
+                            <Ionicons name="information-circle-outline" size={16} color={c.severityInfo} />
                             <Text style={styles.noteTitle}>{n.title || 'Statement note'}</Text>
                           </View>
                           {n.detail ? <Text style={styles.noteBody}>{n.detail}</Text> : null}
@@ -310,46 +315,46 @@ export default function StatementDecoder() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
-  tabs: { flexDirection: 'row', backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: 4, marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
+  tabs: { flexDirection: 'row', backgroundColor: c.cardBg, borderRadius: Radius.md, padding: 4, marginBottom: Spacing.md, borderWidth: 1, borderColor: c.borderSubtle },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: Radius.sm },
-  tabActive: { backgroundColor: Colors.brandPrimary },
-  tabText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  tabTextActive: { color: Colors.cream },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
-  btn: { marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  bigBtn: { backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: Spacing.xl, alignItems: 'center', gap: 8 },
-  bigBtnText: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.cream },
+  tabActive: { backgroundColor: c.brandPrimary },
+  tabText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  tabTextActive: { color: c.cream },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, backgroundColor: c.background, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: c.border },
+  btn: { marginTop: Spacing.md, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  bigBtn: { backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: Spacing.xl, alignItems: 'center', gap: 8 },
+  bigBtnText: { fontFamily: Fonts.heading, fontSize: 18, color: c.cream },
   bigBtnSub: { fontFamily: Fonts.body, fontSize: 12, color: 'rgba(250, 247, 242, 0.8)' },
   results: { marginTop: Spacing.lg },
-  resultsOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.streams.Clinical, marginBottom: Spacing.sm },
-  summaryCard: { backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary },
-  summaryLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
-  summaryText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, lineHeight: 21 },
-  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: Colors.brandPrimary, marginTop: Spacing.md, marginBottom: Spacing.sm },
-  sectionSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.sm, lineHeight: 17 },
-  anomaly: { backgroundColor: Colors.cardBg, padding: Spacing.md, borderRadius: Radius.md, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: Colors.severityInfo },
-  anomalyAlert: { borderLeftColor: Colors.severityAlert, backgroundColor: 'rgba(192, 57, 43, 0.05)' },
-  anomalyWarning: { borderLeftColor: Colors.severityWarning, backgroundColor: 'rgba(183, 121, 31, 0.05)' },
+  resultsOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.streams.Clinical, marginBottom: Spacing.sm },
+  summaryCard: { backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary },
+  summaryLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
+  summaryText: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, lineHeight: 21 },
+  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: c.brandPrimary, marginTop: Spacing.md, marginBottom: Spacing.sm },
+  sectionSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.sm, lineHeight: 17 },
+  anomaly: { backgroundColor: c.cardBg, padding: Spacing.md, borderRadius: Radius.md, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: c.severityInfo },
+  anomalyAlert: { borderLeftColor: c.severityAlert, backgroundColor: 'rgba(192, 57, 43, 0.05)' },
+  anomalyWarning: { borderLeftColor: c.severityWarning, backgroundColor: 'rgba(183, 121, 31, 0.05)' },
   anomalyHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   sevBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(122, 155, 126, 0.18)' },
   sevBadgeAlert: { backgroundColor: 'rgba(192, 57, 43, 0.18)' },
   sevBadgeWarning: { backgroundColor: 'rgba(183, 121, 31, 0.22)' },
-  sevBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.8, color: Colors.severityInfo },
-  sevBadgeTextAlert: { color: Colors.severityAlert },
-  sevBadgeTextWarning: { color: Colors.severityWarning },
-  anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, flex: 1 },
-  anomalyBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 },
-  anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandSecondary, marginTop: 6 },
+  sevBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.8, color: c.severityInfo },
+  sevBadgeTextAlert: { color: c.severityAlert },
+  sevBadgeTextWarning: { color: c.severityWarning },
+  anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, flex: 1 },
+  anomalyBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4, lineHeight: 18 },
+  anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandSecondary, marginTop: 6 },
   note: {
     backgroundColor: 'rgba(122, 155, 126, 0.06)',
     borderRadius: Radius.md,
@@ -359,16 +364,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(122, 155, 126, 0.22)',
   },
   noteHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  noteTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, flex: 1 },
-  noteBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
-  noteAction: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandSecondary, marginTop: 4 },
-  lineItem: { flexDirection: 'row', justifyContent: 'space-between', padding: Spacing.sm, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, marginBottom: 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  lineService: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textPrimary, flex: 1 },
-  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  upsell: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center' },
-  upsellTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.cream, textAlign: 'center', letterSpacing: -0.3 },
+  noteTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, flex: 1 },
+  noteBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, lineHeight: 17 },
+  noteAction: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandSecondary, marginTop: 4 },
+  lineItem: { flexDirection: 'row', justifyContent: 'space-between', padding: Spacing.sm, backgroundColor: c.cardBg, borderRadius: Radius.sm, marginBottom: 4, borderWidth: 1, borderColor: c.borderSubtle },
+  lineService: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textPrimary, flex: 1 },
+  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  upsell: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center' },
+  upsellTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.cream, textAlign: 'center', letterSpacing: -0.3 },
   upsellBody: { fontFamily: Fonts.body, fontSize: 14, color: 'rgba(250, 247, 242, 0.85)', marginTop: 6, marginBottom: Spacing.md, textAlign: 'center' },
-  upsellBtn: { backgroundColor: Colors.brandSecondary, borderRadius: Radius.md, paddingVertical: 12, paddingHorizontal: Spacing.lg, alignSelf: 'stretch', alignItems: 'center' },
+  upsellBtn: { backgroundColor: c.brandSecondary, borderRadius: Radius.md, paddingVertical: 12, paddingHorizontal: Spacing.lg, alignSelf: 'stretch', alignItems: 'center' },
   // WCAG: text on the gold brandSecondary fill must be white (brand spec).
   upsellBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
-});
+}); }

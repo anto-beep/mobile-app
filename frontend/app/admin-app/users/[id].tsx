@@ -5,7 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { adminApi, useAdminAuth } from '../../../src/context/AdminAuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../../src/lib/theme';
+import type { ColorPalette } from '../../../src/lib/theme';
+import { useColors } from '../../../src/hooks/useColors';
+import { useThemedStyles } from '../../../src/hooks/useThemedStyles';
 import { toast } from '../../../src/components/Toast';
 
 type Profile = {
@@ -15,6 +18,8 @@ type Profile = {
 };
 
 export default function AdminUserProfile() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { admin } = useAdminAuth();
@@ -37,7 +42,7 @@ export default function AdminUserProfile() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   if (loading) {
-    return <SafeAreaView style={styles.safe}><View style={styles.fill}><ActivityIndicator color={Colors.brandPrimary} /></View></SafeAreaView>;
+    return <SafeAreaView style={styles.safe}><View style={styles.fill}><ActivityIndicator color={c.brandPrimary} /></View></SafeAreaView>;
   }
   if (!p?.user) {
     return <SafeAreaView style={styles.safe}><View style={styles.fill}><Text style={styles.empty}>User not found.</Text></View></SafeAreaView>;
@@ -114,7 +119,7 @@ export default function AdminUserProfile() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} testID="admin-user-profile">
           <TouchableOpacity onPress={() => router.back()} style={styles.back} testID="profile-back">
-            <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
 
@@ -130,7 +135,7 @@ export default function AdminUserProfile() {
             </View>
             <View style={styles.quickActions}>
               <TouchableOpacity onPress={() => Linking.openURL(`mailto:${u.email}`).catch(() => {})} style={styles.quickAction}>
-                <Ionicons name="mail" size={14} color={Colors.brandPrimary} />
+                <Ionicons name="mail" size={14} color={c.brandPrimary} />
                 <Text style={styles.quickActionText}>Email</Text>
               </TouchableOpacity>
             </View>
@@ -185,13 +190,13 @@ export default function AdminUserProfile() {
             <TextInput
               value={noteText} onChangeText={setNoteText}
               placeholder="Add an internal note (not visible to the user)…"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={styles.noteInput}
               multiline
               testID="note-input"
             />
             <TouchableOpacity style={[styles.noteSendBtn, (!noteText.trim() || busy === 'note') && { opacity: 0.5 }]} onPress={saveNote} disabled={!noteText.trim() || busy === 'note'} testID="note-send">
-              {busy === 'note' ? <ActivityIndicator color={Colors.cream} size="small" /> : <Ionicons name="send" size={14} color={Colors.cream} />}
+              {busy === 'note' ? <ActivityIndicator color={c.cream} size="small" /> : <Ionicons name="send" size={14} color={c.cream} />}
             </TouchableOpacity>
           </View>
 
@@ -235,7 +240,7 @@ function Stat({ label, value, fullWidth }: { label: string; value: string; fullW
 }
 
 function ActionRow({ icon, label, hint, onPress, loading, tone, last, testID }: { icon: any; label: string; hint?: string; onPress: () => void; loading?: boolean; tone?: 'warning' | 'danger'; last?: boolean; testID?: string }) {
-  const color = tone === 'danger' ? Colors.danger : tone === 'warning' ? Colors.severityAlert : Colors.brandPrimary;
+  const color = tone === 'danger' ? c.danger : tone === 'warning' ? c.severityAlert : c.brandPrimary;
   const iconBg = tone === 'danger' ? 'rgba(192, 57, 43, 0.12)' : tone === 'warning' ? 'rgba(183, 121, 31, 0.15)' : 'rgba(14, 77, 82, 0.08)';
   return (
     <TouchableOpacity style={[styles.actionRow, !last && styles.actionRowBorder]} onPress={onPress} disabled={loading} testID={testID}>
@@ -244,7 +249,7 @@ function ActionRow({ icon, label, hint, onPress, loading, tone, last, testID }: 
         <Text style={[styles.actionLabel, { color }]}>{label}</Text>
         {hint ? <Text style={styles.actionHint}>{hint}</Text> : null}
       </View>
-      {loading ? <ActivityIndicator color={Colors.brandPrimary} size="small" /> : <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />}
+      {loading ? <ActivityIndicator color={c.brandPrimary} size="small" /> : <Ionicons name="chevron-forward" size={14} color={c.textMuted} />}
     </TouchableOpacity>
   );
 }
@@ -258,57 +263,57 @@ function KvRow({ k, v, last }: { k: string; v: string; last?: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   fill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl, gap: 4 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  headerCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md, gap: Spacing.sm },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  headerCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md, gap: Spacing.sm },
   headerTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  email: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  adminPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: Colors.brandSecondary },
-  adminPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.5 },
-  suspendedPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: Colors.danger },
-  suspendedPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.cream, letterSpacing: 0.5 },
+  name: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.3 },
+  email: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 2 },
+  adminPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: c.brandSecondary },
+  adminPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.brandPrimary, letterSpacing: 0.5 },
+  suspendedPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: c.danger },
+  suspendedPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.cream, letterSpacing: 0.5 },
   quickActions: { flexDirection: 'row', gap: 6 },
   quickAction: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.08)' },
-  quickActionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
+  quickActionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md },
-  statCell: { flexBasis: '48%', flexGrow: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
-  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted },
-  statValue: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4, textTransform: 'capitalize' },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.md, marginBottom: 6 },
-  actionsCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.md },
+  statCell: { flexBasis: '48%', flexGrow: 1, backgroundColor: c.cardBg, borderRadius: Radius.md, padding: 12, borderWidth: 1, borderColor: c.borderSubtle },
+  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted },
+  statValue: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4, textTransform: 'capitalize' },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.md, marginBottom: 6 },
+  actionsCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, paddingHorizontal: Spacing.md },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  actionRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
+  actionRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
   actionIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   actionLabel: { fontFamily: Fonts.bodySemi, fontSize: 14 },
-  actionHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle },
+  actionHint: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 2 },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle },
   kvRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.sm, paddingVertical: 10 },
-  kvRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
-  kvKey: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textSecondary },
-  kvVal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  noteItem: { padding: Spacing.sm, gap: 4, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
-  noteBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.brandPrimary, lineHeight: 18 },
-  noteMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted },
+  kvRowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
+  kvKey: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textSecondary },
+  kvVal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  noteItem: { padding: Spacing.sm, gap: 4, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
+  noteBody: { fontFamily: Fonts.body, fontSize: 13, color: c.brandPrimary, lineHeight: 18 },
+  noteMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted },
   noteComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: Spacing.sm },
-  noteInput: { flex: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, padding: 12, fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, minHeight: 44, maxHeight: 120 },
-  noteSendBtn: { width: 44, height: 44, borderRadius: Radius.md, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center' },
-  empty: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textMuted },
-  emptyInline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textMuted, textAlign: 'center', padding: Spacing.md },
+  noteInput: { flex: 1, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, padding: 12, fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, minHeight: 44, maxHeight: 120 },
+  noteSendBtn: { width: 44, height: 44, borderRadius: Radius.md, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center' },
+  empty: { fontFamily: Fonts.body, fontSize: 14, color: c.textMuted },
+  emptyInline: { fontFamily: Fonts.body, fontSize: 13, color: c.textMuted, textAlign: 'center', padding: Spacing.md },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.6)' },
-  modalCard: { position: 'absolute', left: 24, right: 24, top: '28%', backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, gap: 8 },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, textAlign: 'center', letterSpacing: -0.3 },
-  modalBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 19 },
-  daysChip: { flex: 1, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background, alignItems: 'center' },
-  daysChipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  daysChipText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
-  daysChipTextActive: { color: Colors.cream },
-  modalInput: { backgroundColor: Colors.background, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, padding: 12, fontFamily: Fonts.body, fontSize: 15, color: Colors.textPrimary, textAlign: 'center' },
-  modalBtn: { marginTop: 8, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  modalBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  cancelLink: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary },
-});
+  modalCard: { position: 'absolute', left: 24, right: 24, top: '28%', backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, gap: 8 },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, textAlign: 'center', letterSpacing: -0.3 },
+  modalBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 19 },
+  daysChip: { flex: 1, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.background, alignItems: 'center' },
+  daysChipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  daysChipText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary },
+  daysChipTextActive: { color: c.cream },
+  modalInput: { backgroundColor: c.background, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, padding: 12, fontFamily: Fonts.body, fontSize: 15, color: c.textPrimary, textAlign: 'center' },
+  modalBtn: { marginTop: 8, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
+  modalBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  cancelLink: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary },
+}); }

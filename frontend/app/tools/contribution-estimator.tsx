@@ -8,7 +8,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 type Cohort = 'full' | 'part' | 'cshc' | 'self';
@@ -20,6 +23,8 @@ const COHORTS: { key: Cohort; label: string; ratesEditable: boolean }[] = [
 ];
 
 export default function ContributionEstimator() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [cohort, setCohort] = useState<Cohort>('full');
@@ -37,7 +42,7 @@ export default function ContributionEstimator() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
           <Text style={styles.h1}>What will I pay?</Text>
           <AIAccuracyBanner tool="contribution-estimator" />
@@ -79,7 +84,7 @@ export default function ContributionEstimator() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
           <Text style={styles.h1}>What will I pay?</Text>
           <Text style={styles.sub}>Quarter and annual contribution estimates by cohort.</Text>
@@ -104,7 +109,7 @@ export default function ContributionEstimator() {
           </View>
 
           <Text style={styles.label}>Planned annual spend ($)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={annualSpend} onChangeText={setAnnualSpend} placeholder="e.g. 24000" placeholderTextColor={Colors.textMuted} testID="contrib-spend" />
+          <TextInput style={styles.input} keyboardType="numeric" value={annualSpend} onChangeText={setAnnualSpend} placeholder="e.g. 24000" placeholderTextColor={c.textMuted} testID="contrib-spend" />
 
           {cohortMeta.ratesEditable && (
             <View testID="ce-rate-inputs">
@@ -113,18 +118,18 @@ export default function ContributionEstimator() {
               <View style={styles.rateRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rateLabel}>Independence %</Text>
-                  <TextInput style={styles.input} keyboardType="numeric" value={indepRate} onChangeText={setIndepRate} placeholder="e.g. 12" placeholderTextColor={Colors.textMuted} testID="ce-independence-rate" />
+                  <TextInput style={styles.input} keyboardType="numeric" value={indepRate} onChangeText={setIndepRate} placeholder="e.g. 12" placeholderTextColor={c.textMuted} testID="ce-independence-rate" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rateLabel}>Everyday %</Text>
-                  <TextInput style={styles.input} keyboardType="numeric" value={edRate} onChangeText={setEdRate} placeholder="e.g. 20" placeholderTextColor={Colors.textMuted} testID="ce-everyday-rate" />
+                  <TextInput style={styles.input} keyboardType="numeric" value={edRate} onChangeText={setEdRate} placeholder="e.g. 20" placeholderTextColor={c.textMuted} testID="ce-everyday-rate" />
                 </View>
               </View>
             </View>
           )}
 
           <TouchableOpacity onPress={submit} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="contrib-submit">
-            {loading ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Estimate it</Text>}
+            {loading ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Estimate it</Text>}
           </TouchableOpacity>
 
           {err && <Text style={styles.error} testID="ce-error">{err}</Text>}
@@ -138,7 +143,7 @@ export default function ContributionEstimator() {
                     {formatAUD(result.annual_contribution_low || 0)}–{formatAUD(result.annual_contribution_high || 0)}/yr
                   </Text>
                   <View style={styles.caveat} testID="ce-caveat">
-                    <Ionicons name="information-circle-outline" size={14} color={Colors.brandSecondary} />
+                    <Ionicons name="information-circle-outline" size={14} color={c.brandSecondary} />
                     <Text style={styles.caveatText}>{result.caveat || 'Your actual rate is set by Services Australia. Enter the rates from your contribution letter above for an exact figure.'}</Text>
                   </View>
                 </>
@@ -172,37 +177,37 @@ export default function ContributionEstimator() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.md },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 8 },
-  hint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginBottom: 6 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.md },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.md, marginBottom: 8 },
+  hint: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginBottom: 6 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
-  chipSmall: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.cardBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border },
+  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg, alignItems: 'center' },
+  chipSmall: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg, alignItems: 'center' },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  input: { fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary, backgroundColor: c.cardBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
   rateRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  rateLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, marginBottom: 4 },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  error: { marginTop: Spacing.md, padding: 10, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.severityAlert, fontFamily: Fonts.body, fontSize: 12, color: Colors.severityAlert, lineHeight: 17 },
-  result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
-  resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
-  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.8 },
-  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  caveat: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, marginTop: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary },
-  caveatText: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, lineHeight: 17 },
-  streamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  streamName: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.textSecondary },
-  streamPct: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 1 },
-  streamAmt: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  note: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: Spacing.md, fontStyle: 'italic', lineHeight: 17 },
-});
+  rateLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginBottom: 4 },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  error: { marginTop: Spacing.md, padding: 10, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.severityAlert, fontFamily: Fonts.body, fontSize: 12, color: c.severityAlert, lineHeight: 17 },
+  result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
+  resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
+  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.8 },
+  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  caveat: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, marginTop: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary },
+  caveatText: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
+  streamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.borderSubtle },
+  streamName: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.textSecondary },
+  streamPct: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 1 },
+  streamAmt: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  note: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: Spacing.md, fontStyle: 'italic', lineHeight: 17 },
+}); }

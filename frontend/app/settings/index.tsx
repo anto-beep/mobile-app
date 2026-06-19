@@ -4,7 +4,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAuth } from '../../src/context/AuthContext';
 import BackHeader from '../../src/components/BackHeader';
 
@@ -43,6 +46,8 @@ const GROUPS: Array<{ title: string; items: Item[] }> = [
 const ADVISER_ITEM: Item = { key: 'adviser', title: 'Adviser portal', sub: 'Manage your client roster', icon: 'briefcase-outline', href: '/adviser', advisersOnly: true };
 
 export default function Settings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const isAdviser = user?.role === 'participant'; // role==='participant' in current schema means adviser; harmless if false
@@ -63,13 +68,13 @@ export default function Settings() {
                   testID={it.testID}
                 >
                   <View style={styles.iconWrap}>
-                    <Ionicons name={it.icon} size={18} color={Colors.brandPrimary} />
+                    <Ionicons name={it.icon} size={18} color={c.brandPrimary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title}>{it.title}</Text>
                     <Text style={styles.sub}>{it.sub}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -81,13 +86,13 @@ export default function Settings() {
             <View style={styles.list}>
               <TouchableOpacity style={[styles.row, styles.rowLast]} onPress={() => router.push(ADVISER_ITEM.href as any)}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name={ADVISER_ITEM.icon} size={18} color={Colors.brandPrimary} />
+                  <Ionicons name={ADVISER_ITEM.icon} size={18} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title}>{ADVISER_ITEM.title}</Text>
                   <Text style={styles.sub}>{ADVISER_ITEM.sub}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
             </View>
           </View>
@@ -97,14 +102,14 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   group: { marginTop: 18 },
-  groupTitle: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
-  list: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  groupTitle: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
+  list: { backgroundColor: c.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
   rowLast: { borderBottomWidth: 0 },
   iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(14,77,82,0.07)', alignItems: 'center', justifyContent: 'center' },
-  title: { ...Type.bodySemi, color: Colors.textPrimary },
-  sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 3, lineHeight: 17 },
-});
+  title: { ...Type.bodySemi, color: c.textPrimary },
+  sub: { ...Type.caption, color: c.textSecondary, marginTop: 3, lineHeight: 17 },
+}); }

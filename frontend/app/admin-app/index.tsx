@@ -7,7 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { adminApi, useAdminAuth, AdminRole } from '../../src/context/AdminAuthContext';
-import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 
 const ROLE_LABEL: Record<AdminRole, string> = {
@@ -22,6 +25,8 @@ type DataReq = { id: string; user_email: string; user_name?: string; type: strin
 type Service = { name: string; status: 'healthy' | 'down' | string };
 
 export default function AdminInbox() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { admin, logout, touch } = useAdminAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -68,7 +73,7 @@ export default function AdminInbox() {
   if (!admin) return null;
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}><View style={styles.fill}><ActivityIndicator color={Colors.brandPrimary} size="large" /></View></SafeAreaView>
+      <SafeAreaView style={styles.safe} edges={['top']}><View style={styles.fill}><ActivityIndicator color={c.brandPrimary} size="large" /></View></SafeAreaView>
     );
   }
 
@@ -76,7 +81,7 @@ export default function AdminInbox() {
     <SafeAreaView style={styles.safe} edges={['top']} onTouchStart={touch}>
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
         testID="admin-inbox-scroll"
       >
         <View style={styles.headerRow}>
@@ -85,14 +90,14 @@ export default function AdminInbox() {
             <Text style={styles.h1}>Inbox</Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/admin-app/users' as any)} style={styles.avatar} testID="admin-users-quick">
-            <Ionicons name="search" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="search" size={20} color={c.brandPrimary} />
           </TouchableOpacity>
         </View>
 
         {/* Maintenance banner */}
         {maintenance.enabled ? (
           <View style={[styles.banner, styles.bannerDanger]}>
-            <Ionicons name="warning" size={18} color={Colors.danger} />
+            <Ionicons name="warning" size={18} color={c.danger} />
             <View style={{ flex: 1 }}>
               <Text style={styles.bannerTitle}>Maintenance mode is ON</Text>
               <Text style={styles.bannerBody}>{maintenance.message || 'Wayly is hidden from the public right now.'}</Text>
@@ -103,7 +108,7 @@ export default function AdminInbox() {
         {/* Health alerts banner */}
         {(downServices.length > 0 || llmErrors > 10) ? (
           <View style={[styles.banner, styles.bannerWarn]}>
-            <Ionicons name="pulse" size={18} color={Colors.brandSecondary} />
+            <Ionicons name="pulse" size={18} color={c.brandSecondary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.bannerTitle}>System alert</Text>
               <Text style={styles.bannerBody}>
@@ -135,17 +140,17 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {p1Tickets.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+              <Ionicons name="checkmark-circle" size={16} color={c.success} />
               <Text style={styles.emptyText}>No open P1 tickets — nice.</Text>
             </View>
           ) : p1Tickets.map((t) => (
             <TouchableOpacity key={t.id} style={styles.row} onPress={() => router.push(`/admin-app/tickets/${t.id}` as any)} testID={`ticket-${t.id}`}>
-              <View style={[styles.dot, { backgroundColor: Colors.danger }]} />
+              <View style={[styles.dot, { backgroundColor: c.danger }]} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{t.subject}</Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>{t.user_name || t.user_email}{t.last_message_preview ? ` · ${t.last_message_preview}` : ''}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+              <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
@@ -155,12 +160,12 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {failedPayments.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+              <Ionicons name="checkmark-circle" size={16} color={c.success} />
               <Text style={styles.emptyText}>No failed payments in the last 24 hours.</Text>
             </View>
           ) : failedPayments.map((p, i) => (
             <View key={p.id || i} style={styles.row}>
-              <View style={[styles.dot, { backgroundColor: Colors.brandSecondary }]} />
+              <View style={[styles.dot, { backgroundColor: c.brandSecondary }]} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{p.user_email}</Text>
                 <Text style={styles.rowMeta}>{formatAUD(p.amount || 0)} · {p.plan?.toUpperCase() || '—'}</Text>
@@ -174,7 +179,7 @@ export default function AdminInbox() {
         <View style={styles.card}>
           {dataRequests.length === 0 ? (
             <View style={styles.emptyRow}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+              <Ionicons name="checkmark-circle" size={16} color={c.success} />
               <Text style={styles.emptyText}>No open data requests.</Text>
             </View>
           ) : dataRequests.map((r) => {
@@ -182,12 +187,12 @@ export default function AdminInbox() {
             const daysLeft = Math.max(0, Math.floor((due.getTime() - Date.now()) / 86400000));
             return (
               <View key={r.id} style={styles.row}>
-                <View style={[styles.dot, { backgroundColor: Colors.brandSecondary }]} />
+                <View style={[styles.dot, { backgroundColor: c.brandSecondary }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle}>{r.user_name || r.user_email} · {r.type}</Text>
                   <Text style={styles.rowMeta}>{daysLeft} day{daysLeft === 1 ? '' : 's'} left (Privacy Act)</Text>
                 </View>
-                <View style={[styles.pill, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}><Text style={[styles.pillText, { color: Colors.brandSecondary }]}>{r.status}</Text></View>
+                <View style={[styles.pill, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}><Text style={[styles.pillText, { color: c.brandSecondary }]}>{r.status}</Text></View>
               </View>
             );
           })}
@@ -198,7 +203,7 @@ export default function AdminInbox() {
           <Text style={styles.sectionLabel}>System health</Text>
           <TouchableOpacity onPress={() => router.push('/admin-app/health' as any)} style={styles.linkBtn} testID="open-health">
             <Text style={styles.linkText}>Details</Text>
-            <Ionicons name="chevron-forward" size={12} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-forward" size={12} color={c.brandPrimary} />
           </TouchableOpacity>
         </View>
         <View style={styles.healthGrid}>
@@ -208,12 +213,12 @@ export default function AdminInbox() {
               <TouchableOpacity
                 key={s.name}
                 onPress={() => router.push('/admin-app/health' as any)}
-                style={[styles.healthCell, !ok && { borderColor: Colors.danger }]}
+                style={[styles.healthCell, !ok && { borderColor: c.danger }]}
                 testID={`health-card-${s.name.toLowerCase()}`}
               >
-                <Ionicons name={ok ? 'checkmark-circle' : 'alert-circle'} size={16} color={ok ? Colors.success : Colors.danger} />
+                <Ionicons name={ok ? 'checkmark-circle' : 'alert-circle'} size={16} color={ok ? c.success : c.danger} />
                 <Text style={styles.healthName}>{s.name}</Text>
-                <Text style={[styles.healthStatus, { color: ok ? Colors.success : Colors.danger }]}>{s.status}</Text>
+                <Text style={[styles.healthStatus, { color: ok ? c.success : c.danger }]}>{s.status}</Text>
               </TouchableOpacity>
             );
           })}
@@ -232,7 +237,7 @@ export default function AdminInbox() {
           testID="open-maintenance-cta"
         >
           <View style={[styles.maintIcon, maintenance.enabled && { backgroundColor: 'rgba(192, 57, 43, 0.15)' }]}>
-            <Ionicons name={maintenance.enabled ? 'warning' : 'build'} size={16} color={maintenance.enabled ? Colors.danger : Colors.brandPrimary} />
+            <Ionicons name={maintenance.enabled ? 'warning' : 'build'} size={16} color={maintenance.enabled ? c.danger : c.brandPrimary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.maintTitle}>{maintenance.enabled ? 'Wayly is offline — maintenance ON' : 'Maintenance mode'}</Text>
@@ -240,7 +245,7 @@ export default function AdminInbox() {
               {admin.admin_role === 'super_admin' ? 'Tap to toggle (biometric required)' : 'super_admin only'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
         </TouchableOpacity>
 
         {/* Sign out */}
@@ -249,7 +254,7 @@ export default function AdminInbox() {
           onPress={async () => { await logout(); router.replace('/admin-auth/login' as any); }}
           testID="admin-logout"
         >
-          <Ionicons name="log-out-outline" size={16} color={Colors.brandPrimary} />
+          <Ionicons name="log-out-outline" size={16} color={c.brandPrimary} />
           <Text style={styles.logoutText}>Sign out</Text>
         </TouchableOpacity>
 
@@ -259,44 +264,44 @@ export default function AdminInbox() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   fill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl, gap: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 30, color: c.brandPrimary, letterSpacing: -0.5 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
-  bannerDanger: { backgroundColor: 'rgba(192, 57, 43, 0.1)', borderLeftColor: Colors.danger },
-  bannerWarn: { backgroundColor: 'rgba(183, 121, 31, 0.1)', borderLeftColor: Colors.brandSecondary },
-  bannerTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  bannerBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  bannerDanger: { backgroundColor: 'rgba(192, 57, 43, 0.1)', borderLeftColor: c.danger },
+  bannerWarn: { backgroundColor: 'rgba(183, 121, 31, 0.1)', borderLeftColor: c.brandSecondary },
+  bannerTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  bannerBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2, lineHeight: 16 },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md, marginTop: Spacing.sm },
-  statBox: { flex: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center' },
-  statValue: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted, marginTop: 2 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 6, marginTop: Spacing.md },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.sm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
+  statBox: { flex: 1, backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle, alignItems: 'center' },
+  statValue: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.5 },
+  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted, marginTop: 2 },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginBottom: 6, marginTop: Spacing.md },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, paddingHorizontal: Spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
   pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   pillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.3, textTransform: 'uppercase' },
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16, paddingHorizontal: Spacing.sm },
-  emptyText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
+  emptyText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
   healthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  healthCell: { flexBasis: '47%', flexGrow: 1, padding: 12, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 4 },
-  healthName: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, marginTop: 2 },
+  healthCell: { flexBasis: '47%', flexGrow: 1, padding: 12, backgroundColor: c.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: c.borderSubtle, gap: 4 },
+  healthName: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, marginTop: 2 },
   healthStatus: { fontFamily: Fonts.bodyMed, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, marginTop: Spacing.md },
   linkBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4, paddingHorizontal: 4, minHeight: 28 },
-  linkText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  maintRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle },
+  linkText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  maintRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle },
   maintIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.08)' },
-  maintTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  maintMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.lg },
-  logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-});
+  maintTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  maintMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: Radius.md, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, marginTop: Spacing.lg },
+  logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+}); }

@@ -4,11 +4,16 @@ import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import BackHeader from '../../src/components/BackHeader';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAccessibility, TextScale } from '../../src/context/AccessibilityContext';
 import { useTheme, type ThemeChoice } from '../../src/context/ThemeContext';
 
 export default function AppearanceSettings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { textScale, setTextScale, reduceMotion, toggleReduceMotion } = useAccessibility();
   const { choice, effective, setChoice } = useTheme();
   const sizes: Array<{ key: TextScale; label: string }> = [
@@ -50,7 +55,7 @@ export default function AppearanceSettings() {
                 style={[styles.themePill, choice === t.key && styles.themePillActive]}
                 testID={`theme-${t.key}`}
               >
-                <Ionicons name={t.icon} size={14} color={choice === t.key ? '#FFFFFF' : Colors.brandPrimary} />
+                <Ionicons name={t.icon} size={14} color={choice === t.key ? '#FFFFFF' : c.brandPrimary} />
                 <Text style={[styles.themePillText, choice === t.key && styles.themePillTextActive]}>{t.label}</Text>
               </TouchableOpacity>
             ))}
@@ -73,7 +78,7 @@ export default function AppearanceSettings() {
               <Text style={styles.label2}>Reduce motion</Text>
               <Text style={styles.sub}>Soften transitions and disable subtle animations.</Text>
             </View>
-            <Switch value={reduceMotion} onValueChange={toggleReduceMotion} trackColor={{ true: Colors.brandPrimary, false: Colors.border }} />
+            <Switch value={reduceMotion} onValueChange={toggleReduceMotion} trackColor={{ true: c.brandPrimary, false: c.border }} />
           </View>
         </View>
       </ScrollView>
@@ -81,29 +86,28 @@ export default function AppearanceSettings() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, gap: 10 },
-  label: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8 },
-  label2: { ...Type.bodySemi, color: Colors.textPrimary },
-  sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 3, lineHeight: 17 },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.border, padding: Spacing.md, gap: 10 },
+  label: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8 },
+  label2: { ...Type.bodySemi, color: c.textPrimary },
+  sub: { ...Type.caption, color: c.textSecondary, marginTop: 3, lineHeight: 17 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 9999, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.cardBg },
-  pillActive: { borderColor: Colors.brandPrimary, backgroundColor: 'rgba(14,77,82,0.08)' },
-  pillText: { ...Type.body, color: Colors.textSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-  pillTextActive: { color: Colors.brandPrimary },
+  pill: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 9999, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.cardBg },
+  pillActive: { borderColor: c.brandPrimary, backgroundColor: 'rgba(14,77,82,0.08)' },
+  pillText: { ...Type.body, color: c.textSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  pillTextActive: { color: c.brandPrimary },
   toggleRow: { flexDirection: 'row', alignItems: 'center' },
-  themePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9999, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.cardBg, minHeight: 36 },
-  themePillActive: { borderColor: Colors.brandPrimary, backgroundColor: Colors.brandPrimary },
-  themePillText: { ...Type.body, color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 13 },
+  themePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9999, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.cardBg, minHeight: 36 },
+  themePillActive: { borderColor: c.brandPrimary, backgroundColor: c.brandPrimary },
+  themePillText: { ...Type.body, color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 13 },
   themePillTextActive: { color: '#FFFFFF' },
-  subBold: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
+  subBold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
   preview: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
   previewTile: { width: 64, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, gap: 2 },
   previewLight: { backgroundColor: '#FBF8F3', borderColor: 'rgba(14,77,82,0.12)' },
   previewDark: { backgroundColor: '#1A1815', borderColor: 'rgba(240,235,224,0.14)' },
   previewLbl: { fontFamily: Fonts.heading, fontSize: 18 },
   previewDot: { width: 10, height: 3, borderRadius: 2 },
-  previewMeta: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
-  sub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
-});
+  previewMeta: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
+}); }

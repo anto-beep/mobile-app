@@ -20,7 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../src/lib/useApi';
 import BackHeader from '../src/components/BackHeader';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type AuditEvent = {
   id: string;
@@ -67,6 +70,8 @@ function fmtDayBucket(iso: string): string {
 }
 
 export default function Audit() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { data, loading, refreshing, refresh } = useApi<{ items: AuditEvent[] }>('/audit');
   const items = data?.items || [];
   const [q, setQ] = useState('');
@@ -97,10 +102,10 @@ export default function Audit() {
       <BackHeader title="Audit log" />
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="shield-checkmark-outline" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="shield-checkmark-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Audit log</Text>
         </View>
         <Text style={styles.subhero}>
@@ -109,12 +114,12 @@ export default function Audit() {
 
         {/* Search */}
         <View style={styles.searchWrap}>
-          <Ionicons name="search-outline" size={14} color={Colors.textMuted} />
+          <Ionicons name="search-outline" size={14} color={c.textMuted} />
           <TextInput
             value={q}
             onChangeText={setQ}
             placeholder="Filter by action, detail or email…"
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             style={styles.searchInput}
             autoCorrect={false}
             autoCapitalize="none"
@@ -122,16 +127,16 @@ export default function Audit() {
           />
           {q.length > 0 ? (
             <TouchableOpacity onPress={() => setQ('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+              <Ionicons name="close-circle" size={16} color={c.textMuted} />
             </TouchableOpacity>
           ) : null}
         </View>
 
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 32 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} />
         ) : filtered.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="shield-checkmark-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="shield-checkmark-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>{q ? 'No matches' : 'Clean slate'}</Text>
             <Text style={styles.emptyBody}>
               {q
@@ -173,40 +178,40 @@ export default function Audit() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.md },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.md },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     paddingHorizontal: 10, paddingVertical: 6, marginBottom: Spacing.lg,
   },
-  searchInput: { flex: 1, fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, paddingVertical: 6 },
+  searchInput: { flex: 1, fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, paddingVertical: 6 },
 
-  bucket: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
+  bucket: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     padding: Spacing.md, marginBottom: 6,
   },
   iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  rowDetail: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, marginTop: 2 },
-  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 3 },
+  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  rowDetail: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, marginTop: 2 },
+  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 3 },
   kindPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   kindPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.4 },
 
   emptyCard: {
     padding: Spacing.lg, alignItems: 'center', gap: 8,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: Spacing.md,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle, marginTop: Spacing.md,
   },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
-});
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+}); }

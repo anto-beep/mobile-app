@@ -4,7 +4,10 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 
 const num = (v: any, fallback = 0): number => {
@@ -13,6 +16,8 @@ const num = (v: any, fallback = 0): number => {
 };
 
 export default function Usage() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,16 +38,16 @@ export default function Usage() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <BackHeader title="Your Wayly use" />
-        <View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View>
+        <View style={styles.loadingFill}><ActivityIndicator color={c.brandPrimary} /></View>
       </SafeAreaView>
     );
   }
 
   const stats = [
-    { label: 'Statements decoded', value: num(data?.statements_decoded || data?.statements_count), icon: 'document-text-outline' as const, color: Colors.brandPrimary },
-    { label: 'AI tools used this month', value: num(data?.tools_used_this_month || data?.tool_calls_month), icon: 'construct-outline' as const, color: Colors.brandSecondary },
-    { label: 'Chat messages', value: num(data?.chat_messages || data?.help_chat_count), icon: 'chatbubbles-outline' as const, color: Colors.streams.Independence },
-    { label: 'Anomalies caught', value: num(data?.anomalies_count || data?.anomalies_total), icon: 'alert-circle-outline' as const, color: Colors.severityAlert },
+    { label: 'Statements decoded', value: num(data?.statements_decoded || data?.statements_count), icon: 'document-text-outline' as const, color: c.brandPrimary },
+    { label: 'AI tools used this month', value: num(data?.tools_used_this_month || data?.tool_calls_month), icon: 'construct-outline' as const, color: c.brandSecondary },
+    { label: 'Chat messages', value: num(data?.chat_messages || data?.help_chat_count), icon: 'chatbubbles-outline' as const, color: c.streams.Independence },
+    { label: 'Anomalies caught', value: num(data?.anomalies_count || data?.anomalies_total), icon: 'alert-circle-outline' as const, color: c.severityAlert },
   ];
 
   const items = stats.filter((s) => s.value > 0);
@@ -55,7 +60,7 @@ export default function Usage() {
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="stats-chart-outline" size={36} color={Colors.textMuted} />
+            <Ionicons name="stats-chart-outline" size={36} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No activity yet</Text>
             <Text style={styles.emptyBody}>Once you decode a statement or use a tool, you&apos;ll see your stats here.</Text>
           </View>
@@ -87,21 +92,21 @@ export default function Usage() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.md },
-  empty: { padding: Spacing.xl, alignItems: 'center', gap: 8, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
-  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 17, color: Colors.brandPrimary, marginTop: 8 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.md },
+  empty: { padding: Spacing.xl, alignItems: 'center', gap: 8, backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle },
+  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 17, color: c.brandPrimary, marginTop: 8 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-  statCard: { width: '47%', flexGrow: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 8 },
+  statCard: { width: '47%', flexGrow: 1, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle, gap: 8 },
   iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  value: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textSecondary },
+  value: { fontFamily: Fonts.heading, fontSize: 30, color: c.brandPrimary, letterSpacing: -0.5 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textSecondary },
   planBadge: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(14, 77, 82, 0.04)', borderRadius: Radius.md, alignItems: 'center' },
-  planBadgeText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary },
-  bold: { fontFamily: Fonts.bodySemi, color: Colors.brandSecondary, letterSpacing: 0.5 },
-  footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
-});
+  planBadgeText: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary },
+  bold: { fontFamily: Fonts.bodySemi, color: c.brandSecondary, letterSpacing: 0.5 },
+  footnote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
+}); }

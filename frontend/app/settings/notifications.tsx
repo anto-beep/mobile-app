@@ -4,7 +4,10 @@ import { View, Text, ScrollView, StyleSheet, Switch, ActivityIndicator, Alert } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 
 type Prefs = {
@@ -35,6 +38,8 @@ const ROWS: { key: keyof Prefs; label: string; sub: string; section: 'push' | 'e
 ];
 
 export default function NotificationsPrefs() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,7 +76,7 @@ export default function NotificationsPrefs() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <BackHeader title="Push & in-app" />
-        <View style={styles.loadingFill}><ActivityIndicator color={Colors.brandPrimary} /></View>
+        <View style={styles.loadingFill}><ActivityIndicator color={c.brandPrimary} /></View>
       </SafeAreaView>
     );
   }
@@ -110,7 +115,7 @@ export default function NotificationsPrefs() {
         </View>
 
         <View style={styles.note}>
-          <Ionicons name="information-circle-outline" size={14} color={Colors.textMuted} />
+          <Ionicons name="information-circle-outline" size={14} color={c.textMuted} />
           <Text style={styles.noteText}>
             Push notifications need a real device + permission. The first time you log in we'll ask if Wayly can send them.
           </Text>
@@ -120,16 +125,16 @@ export default function NotificationsPrefs() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.md },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.sm },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, paddingHorizontal: Spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.md },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  rowLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  rowSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: c.borderSubtle },
+  rowLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  rowSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: Spacing.md, marginTop: Spacing.sm },
-  noteText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, flex: 1, lineHeight: 16 },
-});
+  noteText: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, flex: 1, lineHeight: 16 },
+}); }

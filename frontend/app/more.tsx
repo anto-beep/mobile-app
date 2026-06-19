@@ -8,7 +8,10 @@ import { TabScrollBus } from '../src/lib/tabScrollBus';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
 import { useParticipants } from '../src/context/ParticipantsContext';
-import { Colors, Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import { Fonts, Radius, Spacing, Type  } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { WaylyHeader } from '../src/components/WaylyHeader';
 import { TrialCountdownBanner } from '../src/components/TrialCountdownBanner';
 
@@ -23,6 +26,8 @@ type Item = {
 type Group = { title: string; items: Item[] };
 
 export default function More() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scrollRef = useRef<ScrollView>(null);
   React.useEffect(() => {
     return TabScrollBus.subscribe('more', () => {
@@ -94,18 +99,18 @@ export default function More() {
                   accessibilityRole="link"
                 >
                   <View style={styles.iconWrap}>
-                    <Ionicons name={it.icon} size={20} color={Colors.brandPrimary} />
+                    <Ionicons name={it.icon} size={20} color={c.brandPrimary} />
                   </View>
                   <Text style={styles.rowLabel}>{it.label}</Text>
                   {!!it.badge && <View style={styles.badge}><Text style={styles.badgeText}>{it.badge}</Text></View>}
-                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         ))}
         <TouchableOpacity style={styles.signout} onPress={async () => { await logout(); router.replace('/login' as any); }}>
-          <Ionicons name="log-out-outline" size={18} color={Colors.brandSecondary} />
+          <Ionicons name="log-out-outline" size={18} color={c.brandSecondary} />
           <Text style={styles.signoutText}>Sign out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -113,19 +118,19 @@ export default function More() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: 6, gap: 4 },
-  meta: { ...Type.caption, color: Colors.textSecondary },
+  meta: { ...Type.caption, color: c.textSecondary },
   group: { marginTop: 18 },
-  groupTitle: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
-  list: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  groupTitle: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
+  list: { backgroundColor: c.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
   rowLast: { borderBottomWidth: 0 },
   iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(14,77,82,0.07)', alignItems: 'center', justifyContent: 'center' },
-  rowLabel: { flex: 1, ...Type.bodySemi, color: Colors.textPrimary },
+  rowLabel: { flex: 1, ...Type.bodySemi, color: c.textPrimary },
   badge: { backgroundColor: 'rgba(14,77,82,0.08)', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 11, fontWeight: '700' },
+  badgeText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 11, fontWeight: '700' },
   signout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 26, paddingVertical: 14 },
-  signoutText: { color: Colors.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-});
+  signoutText: { color: c.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+}); }

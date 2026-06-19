@@ -12,7 +12,10 @@ import { api, extractErrorMessage } from '../src/lib/api';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
 import { formatAUDate } from '../src/lib/format';
-import { Colors, Fonts, Radius, Spacing, formatAUD2 } from '../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD2 } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type Item = {
   id: string;
@@ -39,6 +42,8 @@ const CATEGORIES = [
 const STATUSES = ['OPEN', 'QUOTED', 'APPROVED', 'INSTALLED', 'DENIED'] as const;
 
 export default function AtHm() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { data, loading, refreshing, refresh } = useApi<{ items: Item[] }>('/at-hm');
   const items = data?.items || [];
 
@@ -75,18 +80,18 @@ export default function AtHm() {
       )} />
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="construct-outline" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="construct-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>AT & home mods</Text>
         </View>
         <Text style={styles.subhero}>Track wheelchair fittings, bathroom rails, kitchen mods — anything needing a quote, approval or install date.</Text>
 
-        {loading ? <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 32 }} /> :
+        {loading ? <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} /> :
           items.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Ionicons name="construct-outline" size={28} color={Colors.textMuted} />
+              <Ionicons name="construct-outline" size={28} color={c.textMuted} />
               <Text style={styles.emptyTitle}>No items yet</Text>
               <Text style={styles.emptyBody}>Tap &ldquo;Add&rdquo; to log a wheelchair fitting, grab-rail, or any other modification you&apos;re tracking.</Text>
             </View>
@@ -95,7 +100,7 @@ export default function AtHm() {
             return (
               <View key={it.id} style={styles.row} testID={`at-hm-${it.id}`}>
                 <View style={[styles.bullet, { backgroundColor: 'rgba(14,77,82,0.10)' }]}>
-                  <Ionicons name={it.category === 'HOME_MOD' ? 'home-outline' : 'accessibility-outline'} size={16} color={Colors.brandPrimary} />
+                  <Ionicons name={it.category === 'HOME_MOD' ? 'home-outline' : 'accessibility-outline'} size={16} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title} numberOfLines={1}>{it.title || 'Item'}</Text>
@@ -127,13 +132,13 @@ export default function AtHm() {
             <Text style={styles.modalTitle}>Add item</Text>
 
             <Text style={styles.lbl}>Title</Text>
-            <TextInput style={styles.input} value={form.title || ''} onChangeText={(t) => setForm((f) => ({ ...f, title: t }))} placeholder="e.g. Bathroom grab-rails" placeholderTextColor={Colors.textMuted} testID="at-hm-title" />
+            <TextInput style={styles.input} value={form.title || ''} onChangeText={(t) => setForm((f) => ({ ...f, title: t }))} placeholder="e.g. Bathroom grab-rails" placeholderTextColor={c.textMuted} testID="at-hm-title" />
 
             <Text style={styles.lbl}>Category</Text>
             <View style={styles.chipRow}>
               {CATEGORIES.map((c) => (
                 <TouchableOpacity key={c.value} style={[styles.chip, form.category === c.value && styles.chipActive]} onPress={() => setForm((f) => ({ ...f, category: c.value }))}>
-                  <Ionicons name={c.icon} size={12} color={form.category === c.value ? '#FFFFFF' : Colors.brandPrimary} />
+                  <Ionicons name={c.icon} size={12} color={form.category === c.value ? '#FFFFFF' : c.brandPrimary} />
                   <Text style={[styles.chipText, form.category === c.value && styles.chipTextActive]}>{c.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -149,10 +154,10 @@ export default function AtHm() {
             </ScrollView>
 
             <Text style={styles.lbl}>Quote amount (AUD, optional)</Text>
-            <TextInput style={styles.input} value={form.quote_amount ? String(form.quote_amount) : ''} onChangeText={(t) => setForm((f) => ({ ...f, quote_amount: parseFloat(t) || undefined }))} placeholder="e.g. 450" placeholderTextColor={Colors.textMuted} keyboardType="decimal-pad" testID="at-hm-quote" />
+            <TextInput style={styles.input} value={form.quote_amount ? String(form.quote_amount) : ''} onChangeText={(t) => setForm((f) => ({ ...f, quote_amount: parseFloat(t) || undefined }))} placeholder="e.g. 450" placeholderTextColor={c.textMuted} keyboardType="decimal-pad" testID="at-hm-quote" />
 
             <Text style={styles.lbl}>Notes (optional)</Text>
-            <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={form.notes || ''} onChangeText={(t) => setForm((f) => ({ ...f, notes: t }))} multiline placeholder="Anything to remember?" placeholderTextColor={Colors.textMuted} testID="at-hm-notes" />
+            <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={form.notes || ''} onChangeText={(t) => setForm((f) => ({ ...f, notes: t }))} multiline placeholder="Anything to remember?" placeholderTextColor={c.textMuted} testID="at-hm-notes" />
 
             <TouchableOpacity onPress={save} disabled={busy} style={[styles.cta, busy && { opacity: 0.6 }]} testID="at-hm-save">
               {busy ? <ActivityIndicator color="#FFFFFF" /> : (<>
@@ -169,38 +174,38 @@ export default function AtHm() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: Colors.brandPrimary, minHeight: 32 },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: c.brandPrimary, minHeight: 32 },
   addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: '#FFFFFF' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 6 },
   bullet: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  note: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, marginTop: 2 },
-  meta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 3 },
+  title: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  note: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, marginTop: 2 },
+  meta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 3 },
   pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   pillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.4 },
-  emptyCard: { padding: Spacing.lg, alignItems: 'center', gap: 8, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
+  emptyCard: { padding: Spacing.lg, alignItems: 'center', gap: 8, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
   // modal
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '90%' },
-  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, marginBottom: Spacing.sm },
-  lbl: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, marginTop: 10, marginBottom: 4 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '90%' },
+  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginBottom: Spacing.sm },
+  lbl: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, marginTop: 10, marginBottom: 4 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.borderSubtle },
   chipRow: { gap: 6, paddingVertical: 4, flexDirection: 'row' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle, minHeight: 30 },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: c.background, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 30 },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
   chipTextActive: { color: '#FFFFFF' },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
   ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
   cancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
-  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
-});
+  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
+}); }

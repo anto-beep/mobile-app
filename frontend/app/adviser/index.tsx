@@ -20,6 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAuth } from '../../src/context/AuthContext';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
@@ -53,6 +56,8 @@ function statusTone(s: string) {
 }
 
 export default function AdviserHome() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -154,7 +159,7 @@ export default function AdviserHome() {
         <BackHeader title="Adviser portal" />
         <View style={styles.lockedWrap}>
           <View style={styles.lockedIcon}>
-            <Ionicons name="briefcase-outline" size={32} color={Colors.brandPrimary} />
+            <Ionicons name="briefcase-outline" size={32} color={c.brandPrimary} />
           </View>
           <Text style={styles.lockedH1}>Adviser plan required</Text>
           <Text style={styles.lockedBody}>
@@ -162,7 +167,7 @@ export default function AdviserHome() {
           </Text>
           <TouchableOpacity style={styles.lockedCta} onPress={() => router.push('/settings/plan' as any)} testID="adviser-upgrade-cta">
             <Text style={styles.lockedCtaText}>See plans</Text>
-            <Ionicons name="arrow-forward" size={14} color={Colors.cream} />
+            <Ionicons name="arrow-forward" size={14} color={c.cream} />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -175,7 +180,7 @@ export default function AdviserHome() {
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
       >
         {/* Header */}
         <View style={styles.headerRow}>
@@ -185,7 +190,7 @@ export default function AdviserHome() {
             <Text style={styles.sub}>{summary ? `${summary.seats_remaining} seat${summary.seats_remaining === 1 ? '' : 's'} remaining of ${summary.max_clients}` : 'Roster loading…'}</Text>
           </View>
           <TouchableOpacity onPress={() => setModalOpen(true)} disabled={!!summary && summary.seats_remaining <= 0} style={[styles.addBtn, (!summary || summary.seats_remaining <= 0) && { opacity: 0.5 }]} testID="adviser-add-client">
-            <Ionicons name="add" size={18} color={Colors.cream} />
+            <Ionicons name="add" size={18} color={c.cream} />
             <Text style={styles.addBtnText}>Add client</Text>
           </TouchableOpacity>
         </View>
@@ -194,8 +199,8 @@ export default function AdviserHome() {
         {summary ? (
           <View style={styles.tileGrid}>
             <View style={styles.tile}><Text style={styles.tileValue}>{summary.clients_total}</Text><Text style={styles.tileLabel}>Total clients</Text></View>
-            <View style={styles.tile}><Text style={[styles.tileValue, { color: Colors.success }]}>{summary.clients_active}</Text><Text style={styles.tileLabel}>Linked</Text></View>
-            <View style={styles.tile}><Text style={[styles.tileValue, { color: Colors.brandSecondary }]}>{summary.clients_invited}</Text><Text style={styles.tileLabel}>Invited</Text></View>
+            <View style={styles.tile}><Text style={[styles.tileValue, { color: c.success }]}>{summary.clients_active}</Text><Text style={styles.tileLabel}>Linked</Text></View>
+            <View style={styles.tile}><Text style={[styles.tileValue, { color: c.brandSecondary }]}>{summary.clients_invited}</Text><Text style={styles.tileLabel}>Invited</Text></View>
             <View style={styles.tile}><Text style={styles.tileValue}>{summary.seats_remaining}</Text><Text style={styles.tileLabel}>Seats left</Text></View>
           </View>
         ) : null}
@@ -203,10 +208,10 @@ export default function AdviserHome() {
         {/* Roster */}
         <Text style={styles.sectionLabel}>Your clients</Text>
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 40 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 40 }} />
         ) : clients.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="people-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="people-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No clients yet</Text>
             <Text style={styles.emptyBody}>Add your first client to send them a secure invite and start reviewing their statements together.</Text>
           </View>
@@ -232,17 +237,17 @@ export default function AdviserHome() {
                 <View style={styles.clientActions}>
                   {c.status === 'invited' ? (
                     <TouchableOpacity style={styles.miniBtn} onPress={() => resendInvite(c.id)} testID={`adviser-resend-${c.id}`}>
-                      <Ionicons name="mail-outline" size={12} color={Colors.brandPrimary} />
+                      <Ionicons name="mail-outline" size={12} color={c.brandPrimary} />
                       <Text style={styles.miniBtnText}>Resend invite</Text>
                     </TouchableOpacity>
                   ) : null}
                   <TouchableOpacity style={styles.miniBtn} onPress={() => router.push(`/adviser/clients/${c.id}` as any)} testID={`adviser-view-${c.id}`}>
-                    <Ionicons name="open-outline" size={12} color={Colors.brandPrimary} />
+                    <Ionicons name="open-outline" size={12} color={c.brandPrimary} />
                     <Text style={styles.miniBtnText}>Open</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.miniBtn, styles.miniBtnGhost]} onPress={() => removeClient(c)} testID={`adviser-remove-${c.id}`}>
-                    <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                    <Text style={[styles.miniBtnText, { color: Colors.danger }]}>Remove</Text>
+                    <Ionicons name="trash-outline" size={12} color={c.danger} />
+                    <Text style={[styles.miniBtnText, { color: c.danger }]}>Remove</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -264,18 +269,18 @@ export default function AdviserHome() {
             <Text style={styles.modalSub}>We’ll send them a secure sign-up link. They’ll appear in your roster as “invited” until they accept.</Text>
 
             <Text style={styles.label}>Client name</Text>
-            <TextInput value={nName} onChangeText={setNName} placeholder="Margaret Williams" placeholderTextColor={Colors.textMuted} style={styles.input} testID="adviser-new-name" />
+            <TextInput value={nName} onChangeText={setNName} placeholder="Margaret Williams" placeholderTextColor={c.textMuted} style={styles.input} testID="adviser-new-name" />
 
             <Text style={styles.label}>Client email</Text>
-            <TextInput value={nEmail} onChangeText={setNEmail} placeholder="margaret@example.com" placeholderTextColor={Colors.textMuted} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} style={styles.input} testID="adviser-new-email" />
+            <TextInput value={nEmail} onChangeText={setNEmail} placeholder="margaret@example.com" placeholderTextColor={c.textMuted} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} style={styles.input} testID="adviser-new-email" />
 
             <Text style={styles.label}>Notes (private to you)</Text>
-            <TextInput value={nNotes} onChangeText={setNNotes} placeholder="e.g. Reviewing Q2 statements" placeholderTextColor={Colors.textMuted} multiline numberOfLines={3} style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} testID="adviser-new-notes" />
+            <TextInput value={nNotes} onChangeText={setNNotes} placeholder="e.g. Reviewing Q2 statements" placeholderTextColor={c.textMuted} multiline numberOfLines={3} style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} testID="adviser-new-notes" />
 
             <TouchableOpacity onPress={submitNewClient} disabled={adding} style={[styles.modalCta, adding && { opacity: 0.6 }]} testID="adviser-new-submit">
-              {adding ? <ActivityIndicator color={Colors.cream} /> : (
+              {adding ? <ActivityIndicator color={c.cream} /> : (
                 <>
-                  <Ionicons name="send-outline" size={14} color={Colors.cream} />
+                  <Ionicons name="send-outline" size={14} color={c.cream} />
                   <Text style={styles.modalCtaText}>Send invite</Text>
                 </>
               )}
@@ -290,53 +295,53 @@ export default function AdviserHome() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingTop: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginBottom: Spacing.lg },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 40 },
-  addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.cream },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 100, backgroundColor: c.brandPrimary, minHeight: 40 },
+  addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.cream },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.lg },
-  tile: { flexBasis: '47%', flexGrow: 1, padding: 12, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle },
-  tileValue: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary },
-  tileLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, color: Colors.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 8 },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
-  clientCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: 8 },
+  tile: { flexBasis: '47%', flexGrow: 1, padding: 12, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle },
+  tileValue: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary },
+  tileLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, color: c.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.sm },
+  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 8 },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+  clientCard: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 8 },
   clientHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  clientName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  clientEmail: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  clientNotes: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 4, fontStyle: 'italic' },
+  clientName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  clientEmail: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  clientNotes: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 4, fontStyle: 'italic' },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.4, textTransform: 'uppercase' },
   clientActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   miniBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)', minHeight: 28 },
   miniBtnGhost: { backgroundColor: 'rgba(192, 57, 43, 0.06)' },
-  miniBtnText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary },
-  footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.lg, textAlign: 'center', lineHeight: 16 },
+  miniBtnText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.brandPrimary },
+  footnote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: Spacing.lg, textAlign: 'center', lineHeight: 16 },
   // Locked state
   lockedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.lg },
   lockedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.06)', marginBottom: Spacing.md },
-  lockedH1: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, marginBottom: 8 },
-  lockedBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: Spacing.lg },
-  lockedCta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 44 },
-  lockedCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  lockedH1: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, marginBottom: 8 },
+  lockedBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: Spacing.lg },
+  lockedCta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: c.brandPrimary, minHeight: 44 },
+  lockedCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
   // Modal
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalCard: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  modalSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, marginBottom: Spacing.md, lineHeight: 19 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, marginTop: 10, marginBottom: 4 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
-  modalCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
-  modalCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  modalCard: { backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
+  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.3 },
+  modalSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4, marginBottom: Spacing.md, lineHeight: 19 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, marginTop: 10, marginBottom: 4 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.borderSubtle },
+  modalCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  modalCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
   modalCancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
-  modalCancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
-});
+  modalCancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
+}); }

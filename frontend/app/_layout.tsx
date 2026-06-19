@@ -22,6 +22,9 @@ import { NetworkProvider } from '../src/components/NetworkProvider';
 import { BiometricGate } from '../src/components/BiometricGate';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { Colors } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { installLogRedactor } from '../src/lib/logRedactor';
 
 // Phase 10 hardening: install console redactor BEFORE any other code runs.
@@ -50,7 +53,7 @@ function RootStack() {
 
   if (loading) {
     return (
-      <View style={styles.loading}>
+      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={Colors.brandPrimary} size="large" />
       </View>
     );
@@ -76,6 +79,8 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   // Bundled Wayly brand fonts — Feb 2026 refresh.
   // IMPORTANT: We don't block app render on font loading. If a variable TTF
   // fails to register on a given device (rare but does happen on older Expo Go
@@ -166,11 +171,11 @@ function ThemedRoot() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}); }

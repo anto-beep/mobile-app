@@ -6,7 +6,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 const QUESTIONS = [
@@ -33,6 +36,8 @@ const SCALE: { value: number; label: string }[] = [
 ];
 
 export default function ClassificationCheck() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [answers, setAnswers] = useState<number[]>(Array(12).fill(0));
@@ -44,7 +49,7 @@ export default function ClassificationCheck() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Classification check</Text>
           <Text style={styles.h1}>Quick self-check</Text>
           <AIAccuracyBanner tool="classification-self-check" />
@@ -77,14 +82,14 @@ export default function ClassificationCheck() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Classification check</Text>
         <Text style={styles.h1}>Quick self-check</Text>
         <Text style={styles.sub}>Twelve questions, two minutes — gives a likely Support at Home level.</Text>
         <AIAccuracyBanner tool="classification-self-check" />
 
         <View style={styles.note}>
-          <Ionicons name="information-circle-outline" size={16} color={Colors.severityInfo} />
+          <Ionicons name="information-circle-outline" size={16} color={c.severityInfo} />
           <Text style={styles.noteText}>Informational only. The actual classification is set by My Aged Care's IAT.</Text>
         </View>
 
@@ -140,7 +145,7 @@ export default function ClassificationCheck() {
             <Text style={styles.resultLine}>Score: <Text style={styles.bold}>{result.score} of {result.score_max}</Text></Text>
             {result.suggest_reassessment && (
               <View style={styles.suggest}>
-                <Ionicons name="alert-circle-outline" size={16} color={Colors.severityWarning} />
+                <Ionicons name="alert-circle-outline" size={16} color={c.severityWarning} />
                 <Text style={styles.suggestText}>
                   Worth requesting a reassessment — your current level looks out of step with these answers.
                 </Text>
@@ -154,41 +159,41 @@ export default function ClassificationCheck() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6 },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginVertical: Spacing.md, padding: Spacing.sm, backgroundColor: 'rgba(139, 155, 130, 0.1)', borderRadius: Radius.sm },
-  noteText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, flex: 1, lineHeight: 17 },
-  qBlock: { backgroundColor: Colors.cardBg, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle },
-  qText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, marginBottom: Spacing.sm },
+  noteText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, flex: 1, lineHeight: 17 },
+  qBlock: { backgroundColor: c.cardBg, padding: Spacing.md, borderRadius: Radius.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle },
+  qText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, marginBottom: Spacing.sm },
   scale: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
-  dot: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', flex: 1 },
-  dotActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  dotText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  dotTextActive: { color: Colors.cream },
+  dot: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center', flex: 1 },
+  dotActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  dotText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  dotTextActive: { color: c.cream },
   scaleLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  scaleLabel: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.lg, marginBottom: 8 },
+  scaleLabel: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.lg, marginBottom: 8 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
-  resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.brandSecondary, marginBottom: 4 },
-  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  divider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: Spacing.md },
-  resultLine: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
-  bold: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
+  chip: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg, alignItems: 'center' },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
+  resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
+  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5 },
+  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  divider: { height: 1, backgroundColor: c.borderSubtle, marginVertical: Spacing.md },
+  resultLine: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, lineHeight: 20 },
+  bold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
   suggest: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.1)', borderRadius: Radius.sm, marginTop: Spacing.sm },
-  suggestText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1, lineHeight: 18 },
-  caveat: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.sm, fontStyle: 'italic', lineHeight: 16 },
-});
+  suggestText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flex: 1, lineHeight: 18 },
+  caveat: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: Spacing.sm, fontStyle: 'italic', lineHeight: 16 },
+}); }

@@ -4,7 +4,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Fonts, Spacing } from '../lib/theme';
+import { Fonts, Spacing  } from '../lib/theme';
+import type { ColorPalette } from '../lib/theme';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 
 type Props = {
   title?: string;
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export default function BackHeader({ title, label = 'Back', onBack, rightAccessory }: Props) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const handleBack = () => {
     if (onBack) return onBack();
@@ -44,7 +47,7 @@ export default function BackHeader({ title, label = 'Back', onBack, rightAccesso
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -52,7 +55,7 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === 'ios' ? 10 : 10,
     minHeight: 52,
     gap: 6,
-    backgroundColor: Colors.brandPrimary, // teal banner on every sub-screen
+    backgroundColor: c.brandPrimary, // teal banner on every sub-screen
   },
   backBtn: {
     flexDirection: 'row',
@@ -77,4 +80,4 @@ const styles = StyleSheet.create({
   right: {
     minWidth: 0,
   },
-});
+}); }

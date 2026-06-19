@@ -20,6 +20,9 @@ import * as Sharing from 'expo-sharing';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { api, extractErrorMessage } from '../src/lib/api';
 import { Colors, Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
 import { getActiveParticipantId } from '../src/lib/activeParticipant';
@@ -59,6 +62,8 @@ const TYPES: { key: ReportKey; label: string; subtitle: string; icon: keyof type
 ];
 
 export default function Reports() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { participantSig, active } = useParticipants();
   const [items, setItems] = useState<ReportRow[]>([]);
@@ -191,7 +196,7 @@ export default function Reports() {
       <Text style={[styles.sectionLabel, { marginTop: Spacing.lg }]}>Your reports</Text>
       {items.length === 0 && !loading ? (
         <View style={styles.empty}>
-          <Ionicons name="bar-chart-outline" size={28} color={Colors.textMuted} />
+          <Ionicons name="bar-chart-outline" size={28} color={c.textMuted} />
           <Text style={styles.emptyTitle}>No reports yet</Text>
           <Text style={styles.emptyBody}>Tap any tile above. Generated reports are saved here for this participant only.</Text>
         </View>
@@ -209,8 +214,8 @@ export default function Reports() {
           style={styles.rowMain}
           testID={`report-open-${item.id}`}
         >
-          <View style={[styles.rowIcon, { backgroundColor: (meta?.tint || Colors.brandPrimary) + '14' }]}>
-            <Ionicons name={meta?.icon || 'document-outline'} size={18} color={meta?.tint || Colors.brandPrimary} />
+          <View style={[styles.rowIcon, { backgroundColor: (meta?.tint || c.brandPrimary) + '14' }]}>
+            <Ionicons name={meta?.icon || 'document-outline'} size={18} color={meta?.tint || c.brandPrimary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.rowTitle}>{item.title}</Text>
@@ -218,10 +223,10 @@ export default function Reports() {
               {item.period_label} · {new Date(item.generated_at).toLocaleDateString()} · {sizeKb} KB
             </Text>
           </View>
-          <Ionicons name="open-outline" size={18} color={Colors.brandPrimary} />
+          <Ionicons name="open-outline" size={18} color={c.brandPrimary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => deleteReport(item)} style={styles.rowDelete} testID={`report-delete-${item.id}`}>
-          <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
+          <Ionicons name="trash-outline" size={18} color={c.textMuted} />
         </TouchableOpacity>
       </View>
     );
@@ -243,14 +248,14 @@ export default function Reports() {
               setRefreshing(true);
               load();
             }}
-            tintColor={Colors.brandPrimary}
+            tintColor={c.brandPrimary}
           />
         }
         testID="reports-list"
       />
       {participantId ? (
         <View style={styles.footer}>
-          <Ionicons name="lock-closed-outline" size={11} color={Colors.textMuted} />
+          <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
           <Text style={styles.footerText}>
             Reports are isolated per participant — switching participants shows a different library.
           </Text>
@@ -260,41 +265,41 @@ export default function Reports() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.xl + 24 },
-  sectionLabel: { ...Type.overline, color: Colors.textMuted, marginTop: Spacing.sm, marginBottom: Spacing.sm },
+  sectionLabel: { ...Type.overline, color: c.textMuted, marginTop: Spacing.sm, marginBottom: Spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: {
     flexGrow: 1,
     flexBasis: '47%',
-    backgroundColor: Colors.cardBg,
+    backgroundColor: c.cardBg,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
     gap: 6,
   },
   tileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  tileLabel: { ...Type.bodySemi, color: Colors.textPrimary, fontSize: 14 },
-  tileSub: { ...Type.caption, color: Colors.textSecondary, fontSize: 11, lineHeight: 14 },
+  tileLabel: { ...Type.bodySemi, color: c.textPrimary, fontSize: 14 },
+  tileSub: { ...Type.caption, color: c.textSecondary, fontSize: 11, lineHeight: 14 },
   empty: { alignItems: 'center', paddingVertical: Spacing.xl, gap: 6 },
-  emptyTitle: { ...Type.bodySemi, color: Colors.textPrimary, marginTop: 4 },
-  emptyBody: { ...Type.caption, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
+  emptyTitle: { ...Type.bodySemi, color: c.textPrimary, marginTop: 4 },
+  emptyBody: { ...Type.caption, color: c.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: Colors.cardBg,
+    backgroundColor: c.cardBg,
     borderRadius: Radius.md,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: c.border,
   },
   rowMain: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, padding: Spacing.md },
   rowIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { ...Type.bodySemi, color: Colors.textPrimary, fontSize: 14 },
-  rowSub: { ...Type.caption, color: Colors.textSecondary, fontSize: 11, marginTop: 2 },
-  rowDelete: { paddingHorizontal: Spacing.md, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: Colors.border },
+  rowTitle: { ...Type.bodySemi, color: c.textPrimary, fontSize: 14 },
+  rowSub: { ...Type.caption, color: c.textSecondary, fontSize: 11, marginTop: 2 },
+  rowDelete: { paddingHorizontal: Spacing.md, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: c.border },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -302,5 +307,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingBottom: 6,
   },
-  footerText: { ...Type.caption, color: Colors.textMuted, fontSize: 10, flex: 1 },
-});
+  footerText: { ...Type.caption, color: c.textMuted, fontSize: 10, flex: 1 },
+}); }

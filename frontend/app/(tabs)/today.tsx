@@ -12,8 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
-import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAuth } from '../../src/context/AuthContext';
 import { useParticipants } from '../../src/context/ParticipantsContext';
 import UploadSheet from '../../src/components/UploadSheet';
@@ -92,6 +94,8 @@ const num = (v: any, fallback = 0): number => {
 };
 
 export default function Today() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scrollRef = React.useRef<ScrollView>(null);
   React.useEffect(() => {
     const { TabScrollBus } = require('../../src/lib/tabScrollBus');
@@ -277,23 +281,23 @@ export default function Today() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
         <View style={styles.loadingFill}>
-          <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          <ActivityIndicator size="large" color={c.brandPrimary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
       <WaylyHeader />
       <VerificationBanner />
       <TrialCountdownBanner />
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brandPrimary} />}
         testID="today-scroll"
       >
         <View style={styles.header}>
@@ -326,7 +330,7 @@ export default function Today() {
             onPress={() => router.push('/(tabs)/notifications' as any)}
             style={styles.bell}
           >
-            <Ionicons name="notifications-outline" size={22} color={Colors.brandPrimary} />
+            <Ionicons name="notifications-outline" size={22} color={c.brandPrimary} />
             {unread > 0 && <View style={styles.bellDot} />}
           </TouchableOpacity>
         </View>
@@ -371,7 +375,7 @@ export default function Today() {
             <View style={styles.statGrid}>
               <View style={styles.statCard} testID="today-stat-quarter">
                 <View style={styles.statHeader}>
-                  <Ionicons name="wallet-outline" size={14} color={Colors.textMuted} />
+                  <Ionicons name="wallet-outline" size={14} color={c.textMuted} />
                   <Text style={styles.statOverline}>This quarter</Text>
                 </View>
                 <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{formatAUD(data.spent_this_quarter)}</Text>
@@ -384,10 +388,10 @@ export default function Today() {
                 testID="today-alert-chip"
               >
                 <View style={styles.statHeader}>
-                  <Ionicons name="alert-circle-outline" size={14} color={data.alert_count > 0 ? Colors.severityAlert : Colors.textMuted} />
+                  <Ionicons name="alert-circle-outline" size={14} color={data.alert_count > 0 ? c.severityAlert : c.textMuted} />
                   <Text style={styles.statOverline}>Alerts</Text>
                 </View>
-                <Text style={[styles.statValue, data.alert_count > 0 && { color: Colors.severityAlert }]}>{data.alert_count}</Text>
+                <Text style={[styles.statValue, data.alert_count > 0 && { color: c.severityAlert }]}>{data.alert_count}</Text>
                 <Text style={styles.statHint}>{data.alert_count === 0 ? 'Nothing unusual' : 'Things to review'}</Text>
               </TouchableOpacity>
 
@@ -397,7 +401,7 @@ export default function Today() {
                 testID="today-stat-statements"
               >
                 <View style={styles.statHeader}>
-                  <Ionicons name="document-text-outline" size={14} color={Colors.textMuted} />
+                  <Ionicons name="document-text-outline" size={14} color={c.textMuted} />
                   <Text style={styles.statOverline}>Statements</Text>
                 </View>
                 <Text style={styles.statValue}>{data.statement_count}</Text>
@@ -408,7 +412,7 @@ export default function Today() {
 
               <View style={styles.statCard} testID="today-lifetime-cap-bar">
                 <View style={styles.statHeader}>
-                  <Ionicons name="trending-up-outline" size={14} color={Colors.textMuted} />
+                  <Ionicons name="trending-up-outline" size={14} color={c.textMuted} />
                   <Text style={styles.statOverline}>Lifetime cap</Text>
                 </View>
                 <Text style={styles.statValue}>{data.lifetime_pct.toFixed(1)}%</Text>
@@ -419,7 +423,7 @@ export default function Today() {
             {user?.plan === 'free' ? (
               <View style={styles.paywallCard} testID="today-free-paywall">
                 <View style={styles.paywallIcon}>
-                  <Ionicons name="lock-closed" size={22} color={Colors.brandPrimary} />
+                  <Ionicons name="lock-closed" size={22} color={c.brandPrimary} />
                 </View>
                 <Text style={styles.paywallTitle}>Free plan</Text>
                 <Text style={styles.paywallBody}>
@@ -434,7 +438,7 @@ export default function Today() {
                   testID="today-free-paywall-cta"
                 >
                   <Text style={styles.paywallBtnText}>{canStartTrial(user) ? 'Start free trial' : 'See plans'}</Text>
-                  <Ionicons name="arrow-forward" size={14} color={Colors.cream} />
+                  <Ionicons name="arrow-forward" size={14} color={c.cream} />
                 </TouchableOpacity>
                 {canStartTrial(user) && (
                   <Text style={styles.paywallFinePrint}>7 days free · cancel anytime · no card needed.</Text>
@@ -452,7 +456,7 @@ export default function Today() {
                             <View
                               style={[
                                 styles.streamDot,
-                                { backgroundColor: Colors.streams[s.stream] || Colors.textMuted },
+                                { backgroundColor: c.streams[s.stream] || c.textMuted },
                               ]}
                             />
                             <Text style={styles.streamName}>{s.stream}</Text>
@@ -469,9 +473,9 @@ export default function Today() {
                               {
                                 width: `${Math.min(100, s.pct)}%`,
                                 backgroundColor:
-                                  s.pct >= 90 ? Colors.severityAlert
-                                  : s.pct >= 70 ? Colors.severityWarning
-                                  : Colors.severityInfo,
+                                  s.pct >= 90 ? c.severityAlert
+                                  : s.pct >= 70 ? c.severityWarning
+                                  : c.severityInfo,
                               },
                             ]}
                           />
@@ -501,7 +505,7 @@ export default function Today() {
               >
                 <View style={styles.latestHead}>
                   <Text style={styles.overline}>Latest statement</Text>
-                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
                 </View>
                 <Text style={styles.latestTitle}>{data.latest_statement.period_label || 'Statement'}</Text>
                 {data.latest_statement.summary ? (
@@ -515,7 +519,7 @@ export default function Today() {
                   </Text>
                   {data.latest_statement.anomaly_count > 0 && (
                     <View style={styles.anomalyBadge}>
-                      <Ionicons name="alert-circle" size={12} color={Colors.severityAlert} />
+                      <Ionicons name="alert-circle" size={12} color={c.severityAlert} />
                       <Text style={styles.anomalyBadgeText}>
                         {data.latest_statement.anomaly_count} alert
                         {data.latest_statement.anomaly_count > 1 ? 's' : ''}
@@ -528,7 +532,7 @@ export default function Today() {
 
             {!data.latest_statement && (
               <View style={styles.emptyStmt} testID="today-empty-statements">
-                <Ionicons name="document-text-outline" size={28} color={Colors.textMuted} />
+                <Ionicons name="document-text-outline" size={28} color={c.textMuted} />
                 <Text style={styles.emptyStmtTitle}>No statements yet</Text>
                 <Text style={styles.emptyStmtBody}>
                   Tap the camera button below to snap your first statement.
@@ -543,7 +547,7 @@ export default function Today() {
         {pathways.length > 0 && (
           <View style={styles.pathwayTile} testID="dashboard-pathways">
             <View style={styles.pathwayHead}>
-              <Ionicons name="compass-outline" size={16} color={Colors.brandPrimary} />
+              <Ionicons name="compass-outline" size={16} color={c.brandPrimary} />
               <Text style={styles.pathwayTitle}>Pathways the participant may qualify for</Text>
             </View>
             {pathways.map((p: any) => (
@@ -571,7 +575,7 @@ export default function Today() {
         onPress={() => setUploadOpen(true)}
         testID="upload-fab"
       >
-        <Ionicons name="camera" size={26} color={Colors.cream} />
+        <Ionicons name="camera" size={26} color={c.cream} />
       </TouchableOpacity>
 
       <UploadSheet visible={uploadOpen} onClose={() => setUploadOpen(false)} />
@@ -579,75 +583,75 @@ export default function Today() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   header: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: Spacing.lg },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 4 },
-  greeting: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  subline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.cardBg, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.md, borderWidth: 1, borderColor: Colors.border },
-  bellDot: { position: 'absolute', top: 8, right: 9, width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.severityAlert, borderWidth: 2, borderColor: Colors.cardBg },
-  heroCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.xl, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md, shadowColor: Colors.brandPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  heroOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textSecondary, marginBottom: Spacing.sm },
-  heroAmount: { fontFamily: Fonts.heading, fontSize: 44, color: Colors.brandPrimary, letterSpacing: -1 },
-  heroSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  heroSubBold: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: 4 },
+  greeting: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  subline: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: c.cardBg, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.md, borderWidth: 1, borderColor: c.border },
+  bellDot: { position: 'absolute', top: 8, right: 9, width: 10, height: 10, borderRadius: 5, backgroundColor: c.severityAlert, borderWidth: 2, borderColor: c.cardBg },
+  heroCard: { backgroundColor: c.cardBg, borderRadius: Radius.xl, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md, shadowColor: c.brandPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  heroOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textSecondary, marginBottom: Spacing.sm },
+  heroAmount: { fontFamily: Fonts.heading, fontSize: 44, color: c.brandPrimary, letterSpacing: -1 },
+  heroSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  heroSubBold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
   progressTrack: { marginTop: Spacing.md, height: 6, backgroundColor: 'rgba(14, 77, 82, 0.08)', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.brandSecondary },
-  progressLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  progressFill: { height: '100%', backgroundColor: c.brandSecondary },
+  progressLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginTop: 6 },
   statRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.lg },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.lg },
-  statCard: { flexBasis: '47%', flexGrow: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle },
+  statCard: { flexBasis: '47%', flexGrow: 1, backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: c.borderSubtle },
   statCardAlert: { borderColor: 'rgba(192, 57, 43, 0.3)', backgroundColor: 'rgba(192, 57, 43, 0.04)' },
   statHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Colors.textMuted },
-  statValue: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, marginTop: 6 },
-  statHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  paywallCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)', alignItems: 'center', marginBottom: Spacing.md },
+  statOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted },
+  statValue: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginTop: 6 },
+  statHint: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  paywallCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)', alignItems: 'center', marginBottom: Spacing.md },
   paywallIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.06)', marginBottom: Spacing.md },
-  paywallTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  paywallBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 8, lineHeight: 21, textAlign: 'center' },
-  paywallBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, paddingHorizontal: Spacing.lg, paddingVertical: 12, borderRadius: 100, minHeight: 44 },
-  paywallBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  paywallFinePrint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 10 },
-  streamRemaining: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  paywallTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5 },
+  paywallBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 8, lineHeight: 21, textAlign: 'center' },
+  paywallBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: c.brandPrimary, paddingHorizontal: Spacing.lg, paddingVertical: 12, borderRadius: 100, minHeight: 44 },
+  paywallBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  paywallFinePrint: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 10 },
+  streamRemaining: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 6 },
   section: { marginBottom: Spacing.lg },
-  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: Colors.brandPrimary, marginBottom: Spacing.md },
-  streamRow: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle },
+  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: c.brandPrimary, marginBottom: Spacing.md },
+  streamRow: { backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle },
   streamHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   streamLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   streamDot: { width: 10, height: 10, borderRadius: 5 },
-  streamName: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  streamAmt: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary },
-  streamMuted: { color: Colors.textSecondary, fontFamily: Fonts.body },
+  streamName: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  streamAmt: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary },
+  streamMuted: { color: c.textSecondary, fontFamily: Fonts.body },
   streamTrack: { height: 4, backgroundColor: 'rgba(14, 77, 82, 0.06)', borderRadius: 2, overflow: 'hidden' },
   streamFill: { height: '100%' },
-  latestCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle },
+  latestCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle },
   latestHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  latestTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary, marginTop: 4 },
-  latestSummary: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 8, lineHeight: 20 },
+  latestTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary, marginTop: 4 },
+  latestSummary: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 8, lineHeight: 20 },
   latestMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
-  latestMetaText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted },
+  latestMetaText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted },
   anomalyBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(192, 57, 43, 0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
-  anomalyBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.severityAlert },
-  emptyCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md },
-  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, lineHeight: 20 },
-  emptyBtn: { marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, paddingVertical: 12, borderRadius: Radius.md, alignItems: 'center' },
-  emptyBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  emptyStmt: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.borderSubtle, gap: 6 },
-  emptyStmtTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  emptyStmtBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
-  fab: { position: 'absolute', right: Spacing.lg, bottom: Spacing.lg, width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.brandPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
-  pathwayTile: { marginTop: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 10 },
+  anomalyBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert },
+  emptyCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md },
+  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, lineHeight: 20 },
+  emptyBtn: { marginTop: Spacing.md, backgroundColor: c.brandPrimary, paddingVertical: 12, borderRadius: Radius.md, alignItems: 'center' },
+  emptyBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  emptyStmt: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center', borderWidth: 1, borderColor: c.borderSubtle, gap: 6 },
+  emptyStmtTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  emptyStmtBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center' },
+  fab: { position: 'absolute', right: Spacing.lg, bottom: Spacing.lg, width: 60, height: 60, borderRadius: 30, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: c.brandPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+  pathwayTile: { marginTop: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 10 },
   pathwayHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pathwayTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  pathwayRow: { padding: 10, backgroundColor: Colors.background, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 4 },
-  pathwayName: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.textPrimary },
-  pathwaySection: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, letterSpacing: 0.3 },
-  pathwayReason: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 17, marginTop: 2 },
+  pathwayTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  pathwayRow: { padding: 10, backgroundColor: c.background, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 4 },
+  pathwayName: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.textPrimary },
+  pathwaySection: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, letterSpacing: 0.3 },
+  pathwayReason: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, lineHeight: 17, marginTop: 2 },
   pathwayCta: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: 'rgba(14, 77, 82, 0.08)', marginTop: 4 },
-  pathwayCtaText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
-});
+  pathwayCtaText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary },
+}); }

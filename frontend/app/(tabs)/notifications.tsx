@@ -13,6 +13,9 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 
 type NotifItem = {
@@ -34,6 +37,8 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function Notifications() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [items, setItems] = useState<NotifItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +74,7 @@ export default function Notifications() {
               setRefreshing(true);
               load();
             }}
-            tintColor={Colors.brandPrimary}
+            tintColor={c.brandPrimary}
           />
         }
         testID="notifications-list"
@@ -90,7 +95,7 @@ export default function Notifications() {
             }}
             testID="notif-test-statement"
           >
-            <Ionicons name="document-text-outline" size={12} color={Colors.brandPrimary} />
+            <Ionicons name="document-text-outline" size={12} color={c.brandPrimary} />
             <Text style={styles.testChipText}>Test: statement</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -104,7 +109,7 @@ export default function Notifications() {
             }}
             testID="notif-test-visit"
           >
-            <Ionicons name="calendar-outline" size={12} color={Colors.brandPrimary} />
+            <Ionicons name="calendar-outline" size={12} color={c.brandPrimary} />
             <Text style={styles.testChipText}>Test: visit</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -118,18 +123,18 @@ export default function Notifications() {
             }}
             testID="notif-test-family"
           >
-            <Ionicons name="people-outline" size={12} color={Colors.brandPrimary} />
+            <Ionicons name="people-outline" size={12} color={c.brandPrimary} />
             <Text style={styles.testChipText}>Test: family</Text>
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.loadingFill}>
-            <ActivityIndicator size="large" color={Colors.brandPrimary} />
+            <ActivityIndicator size="large" color={c.brandPrimary} />
           </View>
         ) : items.length === 0 ? (
           <View style={styles.empty} testID="notifications-empty">
-            <Ionicons name="checkmark-circle-outline" size={40} color={Colors.severityInfo} />
+            <Ionicons name="checkmark-circle-outline" size={40} color={c.severityInfo} />
             <Text style={styles.emptyTitle}>All caught up</Text>
             <Text style={styles.emptyBody}>
               Nothing unusual at the moment. We'll send you a notification if anything needs a look.
@@ -142,7 +147,7 @@ export default function Notifications() {
               style={[
                 styles.card,
                 {
-                  borderLeftColor: SEVERITY_COLOR[n.severity] || Colors.severityInfo,
+                  borderLeftColor: SEVERITY_COLOR[n.severity] || c.severityInfo,
                   borderLeftWidth: 4,
                 },
               ]}
@@ -212,35 +217,35 @@ export default function Notifications() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   overline: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-    color: Colors.textMuted, marginBottom: 4,
+    color: c.textMuted, marginBottom: 4,
   },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, marginBottom: Spacing.lg, letterSpacing: -0.5 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, marginBottom: Spacing.lg, letterSpacing: -0.5 },
   loadingFill: { padding: Spacing.xl, alignItems: 'center' },
   empty: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.xl,
-    alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.xl,
+    alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
   },
-  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
   card: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md,
-    marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md,
+    marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, flex: 1 },
-  cardBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, lineHeight: 19 },
-  cardTime: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, marginTop: 8 },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, flex: 1 },
+  cardBody: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, lineHeight: 19 },
+  cardTime: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginTop: 8 },
   testRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: Spacing.md },
   testChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingVertical: 6, paddingHorizontal: 10, borderRadius: 100,
-    backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle,
     minHeight: 30,
   },
-  testChipText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary },
-});
+  testChipText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
+}); }

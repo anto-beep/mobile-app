@@ -18,13 +18,18 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAuth } from '../../src/context/AuthContext';
 
 const CLASSIFICATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 const SETTINGS_BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Profile() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { user, logout, refresh } = useAuth();
   const router = useRouter();
   const [household, setHousehold] = useState<any>(null);
@@ -102,14 +107,14 @@ export default function Profile() {
                 <Text style={styles.cardTitle}>{household.participant_name}</Text>
                 <Text style={styles.cardMeta}>Level {household.classification} · {household.provider_name}</Text>
                 <TouchableOpacity testID="profile-edit-household" style={styles.edit} onPress={() => setEditing(true)}>
-                  <Ionicons name="pencil-outline" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="pencil-outline" size={14} color={c.brandPrimary} />
                   <Text style={styles.editText}>Edit</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
                 <Text style={styles.label}>Parent's first name</Text>
-                <TextInput testID="profile-participant-input" value={participantName} onChangeText={setParticipantName} placeholder="Margaret" placeholderTextColor={Colors.textMuted} style={styles.input} />
+                <TextInput testID="profile-participant-input" value={participantName} onChangeText={setParticipantName} placeholder="Margaret" placeholderTextColor={c.textMuted} style={styles.input} />
 
                 <Text style={[styles.label, { marginTop: Spacing.md }]}>Classification level</Text>
                 <View style={styles.classRow}>
@@ -121,7 +126,7 @@ export default function Profile() {
                 </View>
 
                 <Text style={[styles.label, { marginTop: Spacing.md }]}>Provider</Text>
-                <TextInput testID="profile-provider-input" value={providerName} onChangeText={setProviderName} placeholder="HomeCare Plus" placeholderTextColor={Colors.textMuted} style={styles.input} />
+                <TextInput testID="profile-provider-input" value={providerName} onChangeText={setProviderName} placeholder="HomeCare Plus" placeholderTextColor={c.textMuted} style={styles.input} />
 
                 <TouchableOpacity testID="profile-save-household" onPress={save} disabled={saving} style={[styles.saveBtn, saving && { opacity: 0.6 }]}>
                   <Text style={styles.saveBtnText}>{saving ? 'Saving…' : household ? 'Save changes' : 'Set up dashboard'}</Text>
@@ -140,74 +145,74 @@ export default function Profile() {
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/participant' as any)} testID="profile-participant-view">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}>
-              <Ionicons name="heart-outline" size={20} color={Colors.brandSecondary} />
+              <Ionicons name="heart-outline" size={20} color={c.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Participant view</Text>
               <Text style={styles.linkSub}>Wellbeing check-in for your parent</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/tools' as any)} testID="profile-ai-tools">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
-              <Ionicons name="construct-outline" size={20} color={Colors.brandPrimary} />
+              <Ionicons name="construct-outline" size={20} color={c.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>AI tools</Text>
               <Text style={styles.linkSub}>Budget calc · Price checker · Classification check · Reassessment letter</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/(tabs)/notifications' as any)} testID="profile-notifications">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(192, 57, 43, 0.1)' }]}>
-              <Ionicons name="notifications-outline" size={20} color={Colors.severityAlert} />
+              <Ionicons name="notifications-outline" size={20} color={c.severityAlert} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Notifications</Text>
               <Text style={styles.linkSub}>Recent alerts and updates</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => setShareOpen(true)} testID="profile-share-dashboard">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(139, 155, 130, 0.15)' }]}>
-              <Ionicons name="share-outline" size={20} color={Colors.severityInfo} />
+              <Ionicons name="share-outline" size={20} color={c.severityInfo} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Share dashboard</Text>
               <Text style={styles.linkSub}>Email a snapshot to family</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <Text style={styles.sectionLabel}>Account</Text>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings' as any)} testID="profile-settings-web">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
-              <Ionicons name="settings-outline" size={20} color={Colors.brandPrimary} />
+              <Ionicons name="settings-outline" size={20} color={c.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Settings</Text>
               <Text style={styles.linkSub}>Profile, members, security, notifications, usage</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkRow} onPress={() => router.push('/settings/plan' as any)} testID="profile-billing-web">
             <View style={[styles.linkIcon, { backgroundColor: 'rgba(183, 121, 31, 0.15)' }]}>
-              <Ionicons name="card-outline" size={20} color={Colors.brandSecondary} />
+              <Ionicons name="card-outline" size={20} color={c.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Plan & billing</Text>
               <Text style={styles.linkSub}>{(user?.plan || 'free').toUpperCase()} plan · upgrade or cancel</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onLogout} style={styles.logout} testID="profile-logout">
-            <Ionicons name="log-out-outline" size={18} color={Colors.severityAlert} />
+            <Ionicons name="log-out-outline" size={18} color={c.severityAlert} />
             <Text style={styles.logoutText}>Sign out</Text>
           </TouchableOpacity>
 
@@ -260,7 +265,7 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
           value={emails}
           onChangeText={setEmails}
           placeholder="brother@example.com, sister@example.com"
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={c.textMuted}
           autoCapitalize="none"
           keyboardType="email-address"
           multiline
@@ -273,13 +278,13 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
           value={note}
           onChangeText={setNote}
           placeholder="Mum's tracking well this quarter — thought you'd want a look."
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={c.textMuted}
           multiline
           testID="share-note-input"
         />
 
         <TouchableOpacity onPress={send} disabled={sending} style={[styles.saveBtn, sending && { opacity: 0.6 }]} testID="share-send">
-          {sending ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.saveBtnText}>Send snapshot</Text>}
+          {sending ? <ActivityIndicator color={c.cream} /> : <Text style={styles.saveBtnText}>Send snapshot</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={onClose} style={{ marginTop: Spacing.sm, alignItems: 'center', padding: 10 }}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -289,40 +294,40 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 80 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 4 },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  email: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 4, marginBottom: Spacing.lg },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.lg },
-  cardOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 6 },
-  cardTitle: { fontFamily: Fonts.headingMed, fontSize: 22, color: Colors.brandPrimary },
-  cardMeta: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: 4 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  email: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 4, marginBottom: Spacing.lg },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.lg },
+  cardOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted, marginBottom: 6 },
+  cardTitle: { fontFamily: Fonts.headingMed, fontSize: 22, color: c.brandPrimary },
+  cardMeta: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 4 },
   edit: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.md },
-  editText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, textDecorationLine: 'underline' },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginBottom: 6 },
-  input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border },
+  editText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, textDecorationLine: 'underline' },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginBottom: 6 },
+  input: { fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
   classRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  classChip: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background, alignItems: 'center' },
-  classChipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  classChipText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  classChipTextActive: { color: Colors.cream },
-  saveBtn: { marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
-  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.md, marginBottom: Spacing.sm },
-  linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, marginBottom: 8, borderWidth: 1, borderColor: Colors.borderSubtle },
+  classChip: { minWidth: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.background, alignItems: 'center' },
+  classChipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  classChipText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  classChipTextActive: { color: c.cream },
+  saveBtn: { marginTop: Spacing.md, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
+  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, textAlign: 'center' },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.md, marginBottom: Spacing.sm },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.md, marginBottom: 8, borderWidth: 1, borderColor: c.borderSubtle },
   linkIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  linkTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  linkSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  logout: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center', paddingVertical: 14, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: Spacing.md, marginBottom: Spacing.lg },
-  logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.severityAlert },
-  footer: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center' },
+  linkTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  linkSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  logout: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center', paddingVertical: 14, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, marginTop: Spacing.md, marginBottom: Spacing.lg },
+  logoutText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.severityAlert },
+  footer: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, textAlign: 'center' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
-  sheet: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: Spacing.xl },
-  handle: { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  modalSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, marginBottom: Spacing.md },
-});
+  sheet: { backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: Spacing.xl },
+  handle: { width: 40, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.3 },
+  modalSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4, marginBottom: Spacing.md },
+}); }

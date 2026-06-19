@@ -8,7 +8,10 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Fonts, formatAUD, formatAUD2, formatShort, Radius, shortPeriod, Spacing } from '../lib/theme';
+import { Fonts, formatAUD, formatAUD2, formatShort, Radius, shortPeriod, Spacing } from '../lib/theme';
+import type { ColorPalette } from '../lib/theme';
+import { useColors } from '../hooks/useColors';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 
 type LineItem = { description?: string; total?: number; copayment?: number };
 type Anomaly = {
@@ -338,6 +341,8 @@ type Props = {
 };
 
 export default function DashboardInsights({ statements, lifetime_cap, lifetime_contributions, lifetime_pct, is_grandfathered }: Props) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View>
       <MonthlySpendChart statements={statements} />
@@ -353,21 +358,21 @@ export default function DashboardInsights({ statements, lifetime_cap, lifetime_c
   );
 }
 
-const styles = StyleSheet.create({
-  insightCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  insightCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.md, gap: 12 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 4 },
-  cardTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: Colors.brandPrimary },
-  headerMeta: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
-  headerStat: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, marginTop: 2 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: 4 },
+  cardTitle: { fontFamily: Fonts.headingMed, fontSize: 16, color: c.brandPrimary },
+  headerMeta: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  headerStat: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, marginTop: 2 },
   // Chart
   chartArea: { flexDirection: 'row', alignItems: 'flex-end', height: 140, gap: 8, paddingTop: 6 },
   barCol: { flex: 1, alignItems: 'center', height: '100%' },
   barTrack: { flex: 1, width: '100%', justifyContent: 'flex-end', maxWidth: 36, alignSelf: 'center' },
-  bar: { width: '100%', backgroundColor: Colors.brandPrimary, borderTopLeftRadius: 4, borderTopRightRadius: 4, minHeight: 4 },
-  barValue: { fontFamily: Fonts.bodyMed, fontSize: 10, color: Colors.textSecondary, marginBottom: 4, minHeight: 14 },
-  barLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
-  caption: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.md, lineHeight: 15 },
+  bar: { width: '100%', backgroundColor: c.brandPrimary, borderTopLeftRadius: 4, borderTopRightRadius: 4, minHeight: 4 },
+  barValue: { fontFamily: Fonts.bodyMed, fontSize: 10, color: c.textSecondary, marginBottom: 4, minHeight: 14 },
+  barLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginTop: 6 },
+  caption: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: Spacing.md, lineHeight: 15 },
   // Anomaly strip
   stripArea: { flexDirection: 'row', alignItems: 'flex-end', height: 130, gap: 6 },
   stripCol: { flex: 1, alignItems: 'center', height: '100%' },
@@ -376,39 +381,39 @@ const styles = StyleSheet.create({
   captionRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginTop: Spacing.md, gap: 4 },
   dot: { width: 7, height: 7, borderRadius: 4, marginRight: 4 },
   legendInline: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendText: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textSecondary },
+  legendText: { fontFamily: Fonts.body, fontSize: 10, color: c.textSecondary },
   // Lifetime cap
   lifetimeCard: {},
   lifetimeHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
-  statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.3 },
+  statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.brandPrimary, letterSpacing: 0.3 },
   lifetimeNumbers: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: Spacing.md },
-  lifetimeBig: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  lifetimeSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  lifetimeBig: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5 },
+  lifetimeSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
   lifetimePct: { fontFamily: Fonts.headingMed, fontSize: 18, color: '#2A3B32' },
   lifetimeTrack: { height: 8, backgroundColor: 'rgba(42, 59, 50, 0.08)', borderRadius: 4, overflow: 'hidden' },
   lifetimeFill: { height: '100%', backgroundColor: '#2A3B32', borderRadius: 4 },
   // Things to know
   countPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
-  countPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: Colors.brandPrimary, letterSpacing: 0.3 },
+  countPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.brandPrimary, letterSpacing: 0.3 },
   nothingCard: { flexDirection: 'row', gap: 12, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(139, 155, 130, 0.08)' },
-  nothingTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  nothingBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  nothingTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  nothingBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
   anomalyRow: { flexDirection: 'row', gap: 10, padding: Spacing.md, borderRadius: Radius.md, marginBottom: 8, borderLeftWidth: 3 },
-  anomalyHeadline: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  anomalyDetail: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
+  anomalyHeadline: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  anomalyDetail: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 4, lineHeight: 17 },
   anomalyFooter: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 8 },
-  viewLink: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary, textDecorationLine: 'underline' },
-  disclaimer: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, fontStyle: 'italic', marginTop: Spacing.md, textAlign: 'center' },
+  viewLink: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.brandPrimary, textDecorationLine: 'underline' },
+  disclaimer: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, fontStyle: 'italic', marginTop: Spacing.md, textAlign: 'center' },
   // Sheet
   sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheetCard: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
-  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  sheetTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, marginBottom: Spacing.md },
+  sheetCard: { backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  sheetTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginBottom: Spacing.md },
   sheetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
-  sheetLabel: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary },
-  sheetValue: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  sheetDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.borderSubtle, marginTop: 8 },
-  sheetCta: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
-  sheetCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-});
+  sheetLabel: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary },
+  sheetValue: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.brandPrimary },
+  sheetDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.borderSubtle, marginTop: 8 },
+  sheetCta: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
+  sheetCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+}); }

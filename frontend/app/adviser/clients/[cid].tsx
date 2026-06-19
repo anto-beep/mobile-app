@@ -4,7 +4,10 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api, extractErrorMessage } from '../../../src/lib/api';
-import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../../src/lib/theme';
+import { Fonts, formatAUD, Radius, Spacing } from '../../../src/lib/theme';
+import type { ColorPalette } from '../../../src/lib/theme';
+import { useColors } from '../../../src/hooks/useColors';
+import { useThemedStyles } from '../../../src/hooks/useThemedStyles';
 import { toast } from '../../../src/components/Toast';
 import { downloadReviewPack } from '../../../src/lib/reviewPack';
 
@@ -18,6 +21,8 @@ type Snapshot = {
 };
 
 export default function ClientSnapshot() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { cid } = useLocalSearchParams<{ cid?: string }>();
   const router = useRouter();
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -62,7 +67,7 @@ export default function ClientSnapshot() {
   if (loading) {
     return (
       <View style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator color={Colors.brandPrimary} />
+        <ActivityIndicator color={c.brandPrimary} />
       </View>
     );
   }
@@ -71,14 +76,14 @@ export default function ClientSnapshot() {
     return (
       <ScrollView contentContainerStyle={[styles.scroll, { flexGrow: 1, justifyContent: 'center' }]}>
         <View style={styles.pendingCard}>
-          <View style={styles.pendingIcon}><Ionicons name="mail-unread" size={26} color={Colors.brandSecondary} /></View>
+          <View style={styles.pendingIcon}><Ionicons name="mail-unread" size={26} color={c.brandSecondary} /></View>
           <Text style={styles.h1}>Invite pending</Text>
           <Text style={styles.sub}>
             <Text style={{ fontFamily: Fonts.bodySemi }}>{notLinked.client_name}</Text> hasn’t accepted yet. Once they sign up, this page will show their household, statements and anomalies.
           </Text>
           <Text style={styles.subMuted}>{notLinked.client_email}</Text>
           <TouchableOpacity style={styles.cta} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={14} color={Colors.cream} />
+            <Ionicons name="chevron-back" size={14} color={c.cream} />
             <Text style={styles.ctaText}>Back to roster</Text>
           </TouchableOpacity>
         </View>
@@ -109,7 +114,7 @@ export default function ClientSnapshot() {
       {/* Metrics */}
       <View style={styles.tileRow}>
         <View style={styles.tile}><Text style={styles.tileVal}>{snap.metrics.statements_total}</Text><Text style={styles.tileLabel}>Statements</Text></View>
-        <View style={styles.tile}><Text style={[styles.tileVal, { color: Colors.severityAlert }]}>{snap.metrics.anomalies_total}</Text><Text style={styles.tileLabel}>Anomalies</Text></View>
+        <View style={styles.tile}><Text style={[styles.tileVal, { color: c.severityAlert }]}>{snap.metrics.anomalies_total}</Text><Text style={styles.tileLabel}>Anomalies</Text></View>
       </View>
 
       {/* Recent statements */}
@@ -122,7 +127,7 @@ export default function ClientSnapshot() {
             <Text style={styles.stmtTitle}>{s.period_label || (s.uploaded_at ? new Date(s.uploaded_at).toLocaleDateString() : 'Statement')}</Text>
             <Text style={styles.stmtSub}>Gross {formatAUD(s.gross || 0)} · {s.anomaly_count ?? 0} anomalies</Text>
           </View>
-          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
         </View>
       ))}
 
@@ -131,8 +136,8 @@ export default function ClientSnapshot() {
         <>
           <Text style={styles.sectionLabel}>Flagged items</Text>
           {snap.flagged_sample.map((f, i) => (
-            <View key={i} style={[styles.anomalyRow, { borderLeftColor: Colors.severityWarning }]}>
-              <Ionicons name="warning-outline" size={16} color={Colors.severityWarning} style={{ marginTop: 2 }} />
+            <View key={i} style={[styles.anomalyRow, { borderLeftColor: c.severityWarning }]}>
+              <Ionicons name="warning-outline" size={16} color={c.severityWarning} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.anomalyHeadline}>{f.headline || 'Heads up'}</Text>
                 {f.detail ? <Text style={styles.anomalyDetail} numberOfLines={3}>{f.detail}</Text> : null}
@@ -146,10 +151,10 @@ export default function ClientSnapshot() {
 
       <TouchableOpacity onPress={onDownload} disabled={downloading} style={[styles.pdfCta, downloading && { opacity: 0.6 }]} testID="adviser-download-pdf">
         {downloading ? (
-          <ActivityIndicator color={Colors.cream} />
+          <ActivityIndicator color={c.cream} />
         ) : (
           <>
-            <Ionicons name="download-outline" size={16} color={Colors.cream} />
+            <Ionicons name="download-outline" size={16} color={c.cream} />
             <Text style={styles.pdfCtaText}>Download review pack (PDF)</Text>
           </>
         )}
@@ -160,37 +165,37 @@ export default function ClientSnapshot() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: Spacing.lg, backgroundColor: Colors.background },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, lineHeight: 20, textAlign: 'center' },
-  subMuted: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: 2 },
-  notes: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 6, fontStyle: 'italic' },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginTop: Spacing.lg },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, marginBottom: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.borderSubtle },
-  k: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary },
-  v: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
+  scroll: { padding: Spacing.lg, backgroundColor: c.background },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, lineHeight: 20, textAlign: 'center' },
+  subMuted: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: 2 },
+  notes: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 6, fontStyle: 'italic' },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginTop: Spacing.lg },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, marginBottom: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.borderSubtle },
+  k: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary },
+  v: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
   tileRow: { flexDirection: 'row', gap: 8, marginTop: Spacing.md },
-  tile: { flex: 1, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md },
-  tileVal: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary },
-  tileLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, color: Colors.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
-  stmtRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: 6 },
-  stmtTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  stmtSub: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  tile: { flex: 1, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md },
+  tileVal: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary },
+  tileLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, color: c.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
+  stmtRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 6 },
+  stmtTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  stmtSub: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
   anomalyRow: { flexDirection: 'row', gap: 8, padding: Spacing.md, borderRadius: Radius.sm, marginBottom: 6, borderLeftWidth: 3, backgroundColor: 'rgba(183, 121, 31, 0.05)' },
-  anomalyHeadline: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  anomalyDetail: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
-  emptyMini: { padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center' },
-  emptyMiniText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted },
-  disclaimer: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, fontStyle: 'italic', marginTop: Spacing.lg, textAlign: 'center' },
-  pdfCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
-  pdfCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  pendingCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)', alignItems: 'center' },
+  anomalyHeadline: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  anomalyDetail: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 4, lineHeight: 17 },
+  emptyMini: { padding: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.sm, borderWidth: 1, borderColor: c.borderSubtle, alignItems: 'center' },
+  emptyMiniText: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted },
+  disclaimer: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, fontStyle: 'italic', marginTop: Spacing.lg, textAlign: 'center' },
+  pdfCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  pdfCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  pendingCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)', alignItems: 'center' },
   pendingIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(183, 121, 31, 0.15)', marginBottom: Spacing.md },
-  cta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 44, marginTop: Spacing.lg },
-  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-});
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: Spacing.lg, borderRadius: 100, backgroundColor: c.brandPrimary, minHeight: 44, marginTop: Spacing.lg },
+  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+}); }

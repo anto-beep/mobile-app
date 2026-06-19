@@ -3,10 +3,15 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackHeader from '../../src/components/BackHeader';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 
 export default function SmsSettings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [opts, setOpts] = useState({ urgent: true, weekly: false, billing: true });
   function toggle(key: keyof typeof opts) {
     setOpts((p) => {
@@ -32,7 +37,7 @@ export default function SmsSettings() {
                 <Text style={styles.label}>{r.label}</Text>
                 <Text style={styles.sub}>{r.sub}</Text>
               </View>
-              <Switch value={opts[r.key]} onValueChange={() => toggle(r.key)} trackColor={{ true: Colors.brandPrimary, false: Colors.border }} />
+              <Switch value={opts[r.key]} onValueChange={() => toggle(r.key)} trackColor={{ true: c.brandPrimary, false: c.border }} />
             </View>
           ))}
         </View>
@@ -40,11 +45,11 @@ export default function SmsSettings() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  head: { ...Type.body, color: Colors.textSecondary, marginBottom: Spacing.md, lineHeight: 22 },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  label: { ...Type.bodySemi, color: Colors.textPrimary },
-  sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 3, lineHeight: 17 },
-});
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  head: { ...Type.body, color: c.textSecondary, marginBottom: Spacing.md, lineHeight: 22 },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: c.border },
+  label: { ...Type.bodySemi, color: c.textPrimary },
+  sub: { ...Type.caption, color: c.textSecondary, marginTop: 3, lineHeight: 17 },
+}); }

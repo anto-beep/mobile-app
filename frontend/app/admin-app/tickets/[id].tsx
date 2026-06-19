@@ -5,7 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { adminApi, useAdminAuth } from '../../../src/context/AdminAuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../../src/lib/theme';
+import type { ColorPalette } from '../../../src/lib/theme';
+import { useColors } from '../../../src/hooks/useColors';
+import { useThemedStyles } from '../../../src/hooks/useThemedStyles';
 import { toast } from '../../../src/components/Toast';
 
 type Msg = { id: string; from: 'user' | 'admin'; body: string; created_at: string; internal?: boolean; admin_email?: string };
@@ -21,6 +24,8 @@ const STATUSES = ['open', 'in_progress', 'waiting_on_user', 'resolved'];
 const PRIORITIES = ['P1', 'P2', 'P3'];
 
 export default function TicketDetail() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { admin } = useAdminAuth();
@@ -52,7 +57,7 @@ export default function TicketDetail() {
   useFocusEffect(useCallback(() => { load(); loadMacros(); }, [load, loadMacros]));
 
   if (loading) {
-    return <SafeAreaView style={styles.safe}><View style={styles.fill}><ActivityIndicator color={Colors.brandPrimary} /></View></SafeAreaView>;
+    return <SafeAreaView style={styles.safe}><View style={styles.fill}><ActivityIndicator color={c.brandPrimary} /></View></SafeAreaView>;
   }
   if (!ticket) {
     return <SafeAreaView style={styles.safe}><View style={styles.fill}><Text style={styles.empty}>Ticket not found.</Text></View></SafeAreaView>;
@@ -97,14 +102,14 @@ export default function TicketDetail() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={12} testID="ticket-back">
-            <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.subjectMeta}>Ticket · {ticket.priority}</Text>
             <Text style={styles.subject} numberOfLines={2}>{ticket.subject}</Text>
           </View>
           <TouchableOpacity onPress={callOrText} hitSlop={12} testID="ticket-contact">
-            <Ionicons name="mail-outline" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="mail-outline" size={20} color={c.brandPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -116,7 +121,7 @@ export default function TicketDetail() {
               const active = ticket.status === s;
               return (
                 <TouchableOpacity key={s} style={[styles.chip, active && styles.chipActive]} onPress={() => updateField('status', s)} disabled={!!busy} testID={`status-${s}`}>
-                  {busy === `status${s}` ? <ActivityIndicator size="small" color={active ? Colors.cream : Colors.brandPrimary} /> : (
+                  {busy === `status${s}` ? <ActivityIndicator size="small" color={active ? c.cream : c.brandPrimary} /> : (
                     <Text style={[styles.chipText, active && styles.chipTextActive]}>{s.replace('_', ' ')}</Text>
                   )}
                 </TouchableOpacity>
@@ -131,7 +136,7 @@ export default function TicketDetail() {
               const active = ticket.priority === p;
               return (
                 <TouchableOpacity key={p} style={[styles.chip, active && (p === 'P1' ? styles.chipDanger : styles.chipActive)]} onPress={() => updateField('priority', p)} disabled={!!busy} testID={`priority-${p}`}>
-                  {busy === `priority${p}` ? <ActivityIndicator size="small" color={active ? Colors.cream : Colors.brandPrimary} /> : (
+                  {busy === `priority${p}` ? <ActivityIndicator size="small" color={active ? c.cream : c.brandPrimary} /> : (
                     <Text style={[styles.chipText, active && styles.chipTextActive]}>{p}</Text>
                   )}
                 </TouchableOpacity>
@@ -141,18 +146,18 @@ export default function TicketDetail() {
           <View style={{ flex: 1 }} />
           {ticket.assigned_admin_id !== admin?.id ? (
             <TouchableOpacity onPress={() => updateField('assigned_admin_id', admin?.id)} style={styles.assignBtn} disabled={!!busy} testID="assign-me">
-              {busy?.startsWith('assigned') ? <ActivityIndicator size="small" color={Colors.brandPrimary} /> : (
-                <><Ionicons name="person-add-outline" size={12} color={Colors.brandPrimary} /><Text style={styles.assignText}>Assign to me</Text></>
+              {busy?.startsWith('assigned') ? <ActivityIndicator size="small" color={c.brandPrimary} /> : (
+                <><Ionicons name="person-add-outline" size={12} color={c.brandPrimary} /><Text style={styles.assignText}>Assign to me</Text></>
               )}
             </TouchableOpacity>
           ) : (
-            <View style={styles.assignBtn}><Ionicons name="person" size={12} color={Colors.brandSecondary} /><Text style={[styles.assignText, { color: Colors.brandSecondary }]}>Assigned to you</Text></View>
+            <View style={styles.assignBtn}><Ionicons name="person" size={12} color={c.brandSecondary} /><Text style={[styles.assignText, { color: c.brandSecondary }]}>Assigned to you</Text></View>
           )}
         </View>
 
         {/* User info */}
         <View style={styles.userCard}>
-          <View style={styles.userIcon}><Ionicons name="person-outline" size={16} color={Colors.brandPrimary} /></View>
+          <View style={styles.userIcon}><Ionicons name="person-outline" size={16} color={c.brandPrimary} /></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.userName}>{ticket.user_name || ticket.user_email}</Text>
             {ticket.user_name ? <Text style={styles.userEmail}>{ticket.user_email}</Text> : null}
@@ -164,7 +169,7 @@ export default function TicketDetail() {
           {ticket.messages.map((m) => (
             <View key={m.id} style={[styles.bubble, m.from === 'admin' ? styles.bubbleMe : styles.bubbleThem, m.internal ? styles.bubbleInternal : null]}>
               {m.internal ? <Text style={styles.internalLabel}>INTERNAL NOTE</Text> : null}
-              <Text style={[styles.bubbleText, m.from === 'admin' && !m.internal && { color: Colors.cream }]}>{m.body}</Text>
+              <Text style={[styles.bubbleText, m.from === 'admin' && !m.internal && { color: c.cream }]}>{m.body}</Text>
               <Text style={[styles.bubbleMeta, m.from === 'admin' && !m.internal && { color: 'rgba(250, 247, 242, 0.65)' }]}>
                 {m.from === 'admin' ? (m.admin_email || 'admin') : (ticket.user_name || 'user')} · {new Date(m.created_at).toLocaleString('en-AU')}
               </Text>
@@ -180,7 +185,7 @@ export default function TicketDetail() {
               value={reply}
               onChangeText={setReply}
               placeholder={internal ? 'Internal note…' : 'Reply to the customer…'}
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={styles.composerInput}
               multiline
               testID="reply-input"
@@ -188,16 +193,16 @@ export default function TicketDetail() {
           </View>
           <View style={styles.composerActions}>
             <TouchableOpacity onPress={() => setShowMacros(true)} style={styles.actionBtn} testID="open-macros">
-              <Ionicons name="bookmark-outline" size={14} color={Colors.brandPrimary} />
+              <Ionicons name="bookmark-outline" size={14} color={c.brandPrimary} />
               <Text style={styles.actionText}>Macros</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setInternal((i) => !i)} style={[styles.actionBtn, internal && styles.actionBtnActive]} testID="toggle-internal">
-              <Ionicons name={internal ? 'eye-off-outline' : 'eye-outline'} size={14} color={internal ? Colors.brandSecondary : Colors.brandPrimary} />
-              <Text style={[styles.actionText, internal && { color: Colors.brandSecondary }]}>{internal ? 'Internal' : 'Public'}</Text>
+              <Ionicons name={internal ? 'eye-off-outline' : 'eye-outline'} size={14} color={internal ? c.brandSecondary : c.brandPrimary} />
+              <Text style={[styles.actionText, internal && { color: c.brandSecondary }]}>{internal ? 'Internal' : 'Public'}</Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }} />
             <TouchableOpacity style={[styles.sendBtn, (!reply.trim() || sending) && { opacity: 0.5 }]} onPress={onSend} disabled={!reply.trim() || sending} testID="send-reply">
-              {sending ? <ActivityIndicator color={Colors.cream} size="small" /> : <><Ionicons name="send" size={14} color={Colors.cream} /><Text style={styles.sendText}>Send</Text></>}
+              {sending ? <ActivityIndicator color={c.cream} size="small" /> : <><Ionicons name="send" size={14} color={c.cream} /><Text style={styles.sendText}>Send</Text></>}
             </TouchableOpacity>
           </View>
         </View>
@@ -223,49 +228,49 @@ export default function TicketDetail() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   fill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  empty: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textMuted },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
-  subjectMeta: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted },
-  subject: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginTop: 2, letterSpacing: -0.3 },
+  empty: { fontFamily: Fonts.body, fontSize: 14, color: c.textMuted },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: c.borderSubtle },
+  subjectMeta: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted },
+  subject: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginTop: 2, letterSpacing: -0.3 },
   chipsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.md, paddingVertical: 6 },
-  chipsLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted, marginRight: 4 },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, minHeight: 30, alignItems: 'center', justifyContent: 'center', minWidth: 50 },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipDanger: { backgroundColor: Colors.danger, borderColor: Colors.danger },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, textTransform: 'capitalize' },
-  chipTextActive: { color: Colors.cream },
+  chipsLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted, marginRight: 4 },
+  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg, minHeight: 30, alignItems: 'center', justifyContent: 'center', minWidth: 50 },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipDanger: { backgroundColor: c.danger, borderColor: c.danger },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, textTransform: 'capitalize' },
+  chipTextActive: { color: c.cream },
   assignBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
-  assignText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary },
+  assignText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
   userCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: Spacing.md, marginTop: Spacing.sm, padding: Spacing.sm, backgroundColor: 'rgba(14, 77, 82, 0.04)', borderRadius: Radius.sm },
-  userIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: Colors.cardBg, alignItems: 'center', justifyContent: 'center' },
-  userName: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  userEmail: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary },
+  userIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: c.cardBg, alignItems: 'center', justifyContent: 'center' },
+  userName: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  userEmail: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary },
   thread: { padding: Spacing.md, gap: 10, flexGrow: 1 },
   bubble: { padding: 12, borderRadius: Radius.md, maxWidth: '85%' },
-  bubbleThem: { backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle, alignSelf: 'flex-start' },
-  bubbleMe: { backgroundColor: Colors.brandPrimary, alignSelf: 'flex-end' },
-  bubbleInternal: { backgroundColor: 'rgba(183, 121, 31, 0.15)', borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary, alignSelf: 'flex-end' },
-  internalLabel: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.8, color: Colors.brandSecondary, marginBottom: 4 },
-  bubbleText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.brandPrimary, lineHeight: 19 },
-  bubbleMeta: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, marginTop: 4 },
-  composer: { padding: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, backgroundColor: Colors.cardBg, gap: 6 },
-  internalBadge: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandSecondary, marginBottom: 4 },
-  composerRow: { backgroundColor: Colors.background, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 10 },
-  composerInput: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, paddingVertical: 10, minHeight: 44, maxHeight: 140 },
+  bubbleThem: { backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, alignSelf: 'flex-start' },
+  bubbleMe: { backgroundColor: c.brandPrimary, alignSelf: 'flex-end' },
+  bubbleInternal: { backgroundColor: 'rgba(183, 121, 31, 0.15)', borderLeftWidth: 3, borderLeftColor: c.brandSecondary, alignSelf: 'flex-end' },
+  internalLabel: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.8, color: c.brandSecondary, marginBottom: 4 },
+  bubbleText: { fontFamily: Fonts.body, fontSize: 13, color: c.brandPrimary, lineHeight: 19 },
+  bubbleMeta: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, marginTop: 4 },
+  composer: { padding: Spacing.md, borderTopWidth: 1, borderTopColor: c.borderSubtle, backgroundColor: c.cardBg, gap: 6 },
+  internalBadge: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandSecondary, marginBottom: 4 },
+  composerRow: { backgroundColor: c.background, borderRadius: Radius.sm, borderWidth: 1, borderColor: c.border, paddingHorizontal: 10 },
+  composerInput: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, paddingVertical: 10, minHeight: 44, maxHeight: 140 },
   composerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   actionBtnActive: { backgroundColor: 'rgba(183, 121, 31, 0.15)' },
-  actionText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary },
-  sendBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.sm, backgroundColor: Colors.brandPrimary, minHeight: 36 },
-  sendText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.cream },
+  actionText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
+  sendBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.sm, backgroundColor: c.brandPrimary, minHeight: 36 },
+  sendText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.cream },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
-  macrosSheet: { backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, maxHeight: '60%' },
+  macrosSheet: { backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, maxHeight: '60%' },
   macrosHandle: { width: 40, height: 4, backgroundColor: 'rgba(14,77,82,0.18)', borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
-  macrosTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, letterSpacing: -0.3, marginBottom: Spacing.sm },
-  macroRow: { padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 4 },
-  macroTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  macroBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
-});
+  macrosTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, letterSpacing: -0.3, marginBottom: Spacing.sm },
+  macroRow: { padding: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 4 },
+  macroTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  macroBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, lineHeight: 17 },
+}); }

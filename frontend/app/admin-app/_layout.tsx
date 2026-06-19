@@ -3,9 +3,13 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useAdminAuth } from '../../src/context/AdminAuthContext';
-import { Colors } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 
 export default function AdminAppLayout() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { admin, loading } = useAdminAuth();
   const router = useRouter();
 
@@ -17,15 +21,15 @@ export default function AdminAppLayout() {
 
   if (loading || !admin) {
     return (
-      <View style={styles.fill}><ActivityIndicator color={Colors.brandPrimary} size="large" /></View>
+      <View style={styles.fill}><ActivityIndicator color={c.brandPrimary} size="large" /></View>
     );
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }} />
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }} />
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
-});
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  fill: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },
+}); }

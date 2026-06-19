@@ -7,12 +7,17 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { confirmWithBiometric, biometryLabel } from '../../src/lib/biometric';
 import { isBiometricLockEnabled, setBiometricLockEnabled } from '../../src/components/BiometricGate';
 import { toast } from '../../src/components/Toast';
 
 export default function Security() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { user, logout } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -92,7 +97,7 @@ export default function Security() {
         <View style={styles.card} testID="security-biometric-card">
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
-              <Ionicons name="finger-print" size={20} color={Colors.brandPrimary} />
+              <Ionicons name="finger-print" size={20} color={c.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Biometric lock</Text>
@@ -106,8 +111,8 @@ export default function Security() {
               value={bioOn}
               onValueChange={toggleBio}
               disabled={!bioReady || Platform.OS === 'web'}
-              trackColor={{ false: Colors.borderSubtle, true: Colors.brandPrimary }}
-              thumbColor={Colors.cream}
+              trackColor={{ false: c.borderSubtle, true: c.brandPrimary }}
+              thumbColor={c.cream}
               testID="security-biometric-switch"
             />
           </View>
@@ -119,7 +124,7 @@ export default function Security() {
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
-              <Ionicons name="key-outline" size={20} color={Colors.brandPrimary} />
+              <Ionicons name="key-outline" size={20} color={c.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Reset your password</Text>
@@ -127,14 +132,14 @@ export default function Security() {
             </View>
           </View>
           <TouchableOpacity onPress={sendReset} disabled={busy === 'reset'} style={[styles.btn, busy === 'reset' && { opacity: 0.6 }]} testID="security-send-reset">
-            {busy === 'reset' ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Send reset link</Text>}
+            {busy === 'reset' ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Send reset link</Text>}
           </TouchableOpacity>
         </View>
 
         <View style={[styles.card, styles.dangerCard]}>
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(192, 57, 43, 0.1)' }]}>
-              <Ionicons name="trash-outline" size={20} color={Colors.severityAlert} />
+              <Ionicons name="trash-outline" size={20} color={c.severityAlert} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Delete account</Text>
@@ -154,19 +159,19 @@ export default function Security() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md },
   dangerCard: { borderColor: 'rgba(192, 57, 43, 0.3)', backgroundColor: 'rgba(192, 57, 43, 0.04)' },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md },
   iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  cardSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  btn: { backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center', minHeight: 46, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  dangerBtn: { backgroundColor: Colors.severityAlert, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center' },
-  dangerBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
-  helpText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: -Spacing.sm, lineHeight: 16 },
-});
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.brandPrimary },
+  cardSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 2 },
+  btn: { backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center', minHeight: 46, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  dangerBtn: { backgroundColor: c.severityAlert, borderRadius: Radius.md, paddingVertical: 12, alignItems: 'center' },
+  dangerBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  footnote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
+  helpText: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: -Spacing.sm, lineHeight: 16 },
+}); }

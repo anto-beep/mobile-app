@@ -6,11 +6,16 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BackHeader from '../../src/components/BackHeader';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { api } from '../../src/lib/api';
 import { toast } from '../../src/components/Toast';
 
 export default function DangerSettings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { logout } = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,7 +73,7 @@ export default function DangerSettings() {
       <BackHeader title="Danger zone" />
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: Spacing.md }}>
         <View style={styles.card}>
-          <Ionicons name="shield-outline" size={20} color={Colors.brandPrimary} />
+          <Ionicons name="shield-outline" size={20} color={c.brandPrimary} />
           <Text style={styles.title}>Sign out on every device</Text>
           <Text style={styles.body}>Useful if you lost a phone or shared the password with someone.</Text>
           <TouchableOpacity onPress={signOutEverywhere} disabled={!!busy} style={[styles.btn, styles.btnGhost]} testID="danger-logout-all">
@@ -77,8 +82,8 @@ export default function DangerSettings() {
         </View>
 
         <View style={[styles.card, styles.dangerCard]}>
-          <Ionicons name="warning-outline" size={20} color={Colors.brandSecondary} />
-          <Text style={[styles.title, { color: Colors.brandSecondary }]}>Delete account</Text>
+          <Ionicons name="warning-outline" size={20} color={c.brandSecondary} />
+          <Text style={[styles.title, { color: c.brandSecondary }]}>Delete account</Text>
           <Text style={styles.body}>Permanently removes every participant, statement, document, anomaly and audit-log entry tied to your account. Family members lose access too.</Text>
           <TouchableOpacity onPress={deleteAccount} disabled={!!busy} style={[styles.btn, styles.btnDanger]} testID="danger-delete-account">
             <Text style={styles.btnDangerText}>{busy === 'delete' ? 'Deleting…' : 'Delete account permanently'}</Text>
@@ -88,15 +93,15 @@ export default function DangerSettings() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, gap: 8 },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.border, padding: Spacing.md, gap: 8 },
   dangerCard: { backgroundColor: '#FBE5E0', borderColor: '#F2C5BB' },
-  title: { ...Type.h3, color: Colors.textPrimary, marginTop: 4 },
-  body: { ...Type.body, color: Colors.textSecondary, lineHeight: 22 },
+  title: { ...Type.h3, color: c.textPrimary, marginTop: 4 },
+  body: { ...Type.body, color: c.textSecondary, lineHeight: 22 },
   btn: { marginTop: 8, paddingVertical: 12, borderRadius: 9999, alignItems: 'center' },
-  btnGhost: { borderWidth: 1.5, borderColor: Colors.brandPrimary },
-  btnGhostText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-  btnDanger: { backgroundColor: Colors.brandSecondary },
+  btnGhost: { borderWidth: 1.5, borderColor: c.brandPrimary },
+  btnGhostText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  btnDanger: { backgroundColor: c.brandSecondary },
   btnDangerText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700' },
-});
+}); }

@@ -18,6 +18,9 @@ import * as Sharing from 'expo-sharing';
 import { api } from '../../src/lib/api';
 import { getAccessToken } from '../../src/lib/tokens';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 import { toast } from '../../src/components/Toast';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
@@ -41,6 +44,8 @@ type Stmt = {
 };
 
 export default function StatementDetail() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [stmt, setStmt] = useState<Stmt | null>(null);
@@ -262,7 +267,7 @@ export default function StatementDetail() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <BackHeader title="Statement" />
         <View style={styles.loadingFill}>
-          <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          <ActivityIndicator size="large" color={c.brandPrimary} />
         </View>
       </SafeAreaView>
     );
@@ -324,10 +329,10 @@ export default function StatementDetail() {
             activeOpacity={0.85}
           >
             {downloadingKind === 'original' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+              <ActivityIndicator color={c.brandPrimary} size="small" />
             ) : (
               <View style={styles.tileIconWrap}>
-                <Ionicons name="document-text" size={22} color={Colors.brandPrimary} />
+                <Ionicons name="document-text" size={22} color={c.brandPrimary} />
               </View>
             )}
             <Text style={styles.tileLabel}>Original (TXT)</Text>
@@ -343,10 +348,10 @@ export default function StatementDetail() {
             activeOpacity={0.85}
           >
             {downloadingKind === 'pdf' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+              <ActivityIndicator color={c.brandPrimary} size="small" />
             ) : (
               <View style={[styles.tileIconWrap, { backgroundColor: 'rgba(183, 121, 31, 0.10)' }]}>
-                <Ionicons name="sparkles" size={22} color={Colors.brandSecondary} />
+                <Ionicons name="sparkles" size={22} color={c.brandSecondary} />
               </View>
             )}
             <Text style={styles.tileLabel}>Decoded PDF</Text>
@@ -362,7 +367,7 @@ export default function StatementDetail() {
             activeOpacity={0.85}
           >
             {downloadingKind === 'csv' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+              <ActivityIndicator color={c.brandPrimary} size="small" />
             ) : (
               <View style={[styles.tileIconWrap, { backgroundColor: 'rgba(139, 155, 130, 0.14)' }]}>
                 <Ionicons name="grid" size={22} color="#5B7B5A" />
@@ -429,7 +434,7 @@ export default function StatementDetail() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Line items</Text>
           {(stmt.line_items || []).map((li: any) => {
-            const streamColor = Colors.streams[li.stream] || Colors.textMuted;
+            const streamColor = c.streams[li.stream] || c.textMuted;
             return (
               <View key={li.id} style={styles.lineItem} testID={`statement-line-item-${li.id}`}>
                 <View style={styles.lineItemHead}>
@@ -465,34 +470,34 @@ export default function StatementDetail() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontFamily: Fonts.body, color: Colors.textSecondary },
+  emptyText: { fontFamily: Fonts.body, color: c.textSecondary },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl },
   overline: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-    color: Colors.textMuted, marginBottom: 4,
+    color: c.textMuted, marginBottom: 4,
   },
-  h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  subline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.md },
+  h1: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5 },
+  subline: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.md },
   askBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md,
+    backgroundColor: c.brandPrimary, borderRadius: Radius.md,
     paddingVertical: 14, marginBottom: Spacing.md, minHeight: 50,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
   },
   askBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: '#FFFFFF', letterSpacing: 0.2 },
   downloadsLabel: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase',
-    color: Colors.textMuted, marginBottom: 10,
+    color: c.textMuted, marginBottom: 10,
   },
   tilesRow: { flexDirection: 'row', gap: 10, marginBottom: Spacing.lg },
   tile: {
     flex: 1, alignItems: 'center', justifyContent: 'flex-start',
     paddingVertical: 14, paddingHorizontal: 8, minHeight: 108,
-    borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle,
-    backgroundColor: Colors.cardBg,
+    borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle,
+    backgroundColor: c.cardBg,
   },
   tileBusy: { opacity: 0.55 },
   tileIconWrap: {
@@ -501,47 +506,47 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },
-  tileLabel: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, textAlign: 'center' },
-  tileHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
+  tileLabel: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, textAlign: 'center' },
+  tileHint: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 2, textAlign: 'center' },
   summaryCard: {
     backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.lg, padding: Spacing.md + 4,
     borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)', marginBottom: Spacing.lg,
   },
   summaryOverline: {
     fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
-    color: Colors.brandSecondary, marginBottom: 6,
+    color: c.brandSecondary, marginBottom: 6,
   },
-  summaryText: { fontFamily: Fonts.body, fontSize: 15, color: Colors.brandPrimary, lineHeight: 22 },
+  summaryText: { fontFamily: Fonts.body, fontSize: 15, color: c.brandPrimary, lineHeight: 22 },
   section: { marginBottom: Spacing.lg },
-  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 17, color: Colors.brandPrimary, marginBottom: Spacing.md },
+  sectionTitle: { fontFamily: Fonts.headingMed, fontSize: 17, color: c.brandPrimary, marginBottom: Spacing.md },
   anomalyCard: {
     borderRadius: Radius.md, padding: Spacing.md, borderLeftWidth: 4,
     marginBottom: Spacing.sm,
   },
   anomalyHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   anomalyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, flex: 1 },
-  anomalyDetail: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, marginTop: 6, lineHeight: 19 },
-  anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, fontStyle: 'italic', marginTop: 8 },
+  anomalyDetail: { fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, marginTop: 6, lineHeight: 19 },
+  anomalyAction: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, fontStyle: 'italic', marginTop: 8 },
   anomalyDollar: { fontFamily: Fonts.bodySemi, fontSize: 13 },
   anomaliesHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md, gap: 8, flexWrap: 'wrap' },
   impactPill: { backgroundColor: 'rgba(192, 57, 43, 0.10)', borderRadius: 100, paddingHorizontal: 10, paddingVertical: 5 },
-  impactPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.severityAlert, letterSpacing: 0.3 },
+  impactPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert, letterSpacing: 0.3 },
   evidenceBox: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' },
-  evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },
-  evidenceLine: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textPrimary, lineHeight: 17 },
-  anomalyRule: { fontFamily: 'Courier', fontSize: 10, color: Colors.textMuted, marginTop: 8, letterSpacing: 0.3 },
+  evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },
+  evidenceLine: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
+  anomalyRule: { fontFamily: 'Courier', fontSize: 10, color: c.textMuted, marginTop: 8, letterSpacing: 0.3 },
   lineItem: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md,
-    marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md,
+    marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
   },
   lineItemHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  lineDate: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted },
-  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  lineService: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 6 },
+  lineDate: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted },
+  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  lineService: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 6 },
   lineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' },
   streamChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
   streamDot: { width: 8, height: 8, borderRadius: 4 },
   streamChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
-  lineMetaText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
-  lineYouPaid: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textSecondary, marginTop: 6 },
-});
+  lineMetaText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
+  lineYouPaid: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textSecondary, marginTop: 6 },
+}); }

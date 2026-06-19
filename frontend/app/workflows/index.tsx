@@ -6,7 +6,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BackHeader from '../../src/components/BackHeader';
 import { useScenario } from '../../src/context/ScenarioContext';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { EmptyState } from '../../src/components/Screen';
 
 const ICON_FOR: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -16,6 +19,8 @@ const ICON_FOR: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function WorkflowsIndex() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { schema } = useScenario();
   const wfs = Object.values(schema?.workflows || {});
@@ -36,7 +41,7 @@ export default function WorkflowsIndex() {
               style={[styles.card, isEscalate && styles.cardEscalate]}
             >
               <View style={[styles.iconWrap, isEscalate && { backgroundColor: '#FDE8E2' }]}>
-                <Ionicons name={ICON_FOR[w.key] || 'flag-outline'} size={22} color={isEscalate ? '#A5512B' : Colors.brandPrimary} />
+                <Ionicons name={ICON_FOR[w.key] || 'flag-outline'} size={22} color={isEscalate ? '#A5512B' : c.brandPrimary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.title, isEscalate && { color: '#7A2210' }]}>{w.label}</Text>
@@ -45,7 +50,7 @@ export default function WorkflowsIndex() {
                   <View style={styles.escPill}><Text style={styles.escPillText}>Sensitive — escalation flow</Text></View>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
           );
         })}
@@ -53,14 +58,14 @@ export default function WorkflowsIndex() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  lead: { ...Type.body, color: Colors.textSecondary, lineHeight: 22 },
-  card: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, padding: Spacing.md },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  lead: { ...Type.body, color: c.textSecondary, lineHeight: 22 },
+  card: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, borderRadius: Radius.lg, padding: Spacing.md },
   cardEscalate: { borderColor: '#A5512B', borderWidth: 2, backgroundColor: '#FDF3EF' },
   iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(14,77,82,0.08)', alignItems: 'center', justifyContent: 'center' },
-  title: { ...Type.h3, color: Colors.textPrimary },
-  body: { ...Type.body, color: Colors.textSecondary, marginTop: 4, lineHeight: 21 },
+  title: { ...Type.h3, color: c.textPrimary },
+  body: { ...Type.body, color: c.textSecondary, marginTop: 4, lineHeight: 21 },
   escPill: { alignSelf: 'flex-start', marginTop: 8, backgroundColor: '#FBE5E0', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 3 },
   escPillText: { color: '#7A2210', fontFamily: Fonts.bodySemi, fontWeight: '700', fontSize: 11, letterSpacing: 0.4 },
-});
+}); }

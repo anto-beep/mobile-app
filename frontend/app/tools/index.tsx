@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 import { TabScrollBus } from '../../src/lib/tabScrollBus';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { TrialCountdownBanner } from '../../src/components/AITools';
 
 type Tool = {
@@ -97,6 +100,8 @@ const TOOLS: Tool[] = [
 ];
 
 export default function ToolsIndex() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const canGoBack = router.canGoBack();
   const scrollRef = useRef<ScrollView>(null);
@@ -110,7 +115,7 @@ export default function ToolsIndex() {
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} testID="tools-scroll">
         {canGoBack ? (
           <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-            <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         ) : null}
@@ -155,7 +160,7 @@ export default function ToolsIndex() {
               <Text style={styles.cardSub}>{t.sub}</Text>
               {t.trialNote && <Text style={styles.trialNote}>{t.trialNote}</Text>}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -163,14 +168,14 @@ export default function ToolsIndex() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xl },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
   aiBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
     backgroundColor: '#FFF8E1', borderRadius: Radius.md,
@@ -182,18 +187,18 @@ const styles = StyleSheet.create({
   aiBannerBody: { fontFamily: Fonts.body, fontSize: 12, color: '#6B5410', lineHeight: 18, marginTop: 4 },
   card: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md + 2,
-    marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md + 2,
+    marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
   },
   iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, flex: 1 },
-  cardSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
-  trialNote: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandSecondary, marginTop: 4 },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, flex: 1 },
+  cardSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 4, lineHeight: 17 },
+  trialNote: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandSecondary, marginTop: 4 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   badgeSage: { backgroundColor: 'rgba(27, 87, 51, 0.12)' },
   badgeNavy: { backgroundColor: 'rgba(14, 77, 82, 0.08)' },
   badgeText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.5 },
-  badgeTextSage: { color: Colors.success },
-  badgeTextNavy: { color: Colors.brandPrimary },
-});
+  badgeTextSage: { color: c.success },
+  badgeTextNavy: { color: c.brandPrimary },
+}); }

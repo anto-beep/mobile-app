@@ -12,7 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
 import BackHeader from '../src/components/BackHeader';
-import { Colors, Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { useScenario } from '../src/context/ScenarioContext';
 import { useAuth } from '../src/context/AuthContext';
 import { api } from '../src/lib/api';
@@ -23,6 +26,8 @@ const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL || '(unset)';
 type Probe = { label: string; status: 'ok' | 'fail' | 'busy' | 'idle'; detail?: string };
 
 export default function Diagnostics() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { schema, schemaError, majorMismatch, refreshSchema } = useScenario();
   const { user } = useAuth();
   const [probes, setProbes] = useState<Probe[]>([
@@ -93,7 +98,7 @@ export default function Diagnostics() {
               <Ionicons
                 name={p.status === 'ok' ? 'checkmark-circle' : p.status === 'fail' ? 'close-circle' : 'time-outline'}
                 size={16}
-                color={p.status === 'ok' ? '#0E4D52' : p.status === 'fail' ? '#A5512B' : Colors.textMuted}
+                color={p.status === 'ok' ? '#0E4D52' : p.status === 'fail' ? '#A5512B' : c.textMuted}
               />
               <Text style={styles.probeLabel}>{p.label}</Text>
               <Text style={styles.probeDetail}>{p.detail || ''}</Text>
@@ -130,20 +135,20 @@ function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  card: { backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, padding: Spacing.md },
-  title: { ...Type.bodySemi, color: Colors.textPrimary, marginBottom: 8 },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  card: { backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, borderRadius: Radius.lg, padding: Spacing.md },
+  title: { ...Type.bodySemi, color: c.textPrimary, marginBottom: 8 },
   body: { gap: 6 },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  k: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi },
-  v: { ...Type.caption, color: Colors.textPrimary, fontFamily: Fonts.bodyMed, flexShrink: 1, textAlign: 'right' },
+  k: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi },
+  v: { ...Type.caption, color: c.textPrimary, fontFamily: Fonts.bodyMed, flexShrink: 1, textAlign: 'right' },
   probeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  probeLabel: { ...Type.caption, color: Colors.textPrimary, fontFamily: Fonts.bodyMed, flex: 1 },
-  probeDetail: { ...Type.caption, color: Colors.textSecondary },
-  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.brandPrimary, paddingVertical: 10, borderRadius: 9999, marginTop: 6 },
+  probeLabel: { ...Type.caption, color: c.textPrimary, fontFamily: Fonts.bodyMed, flex: 1 },
+  probeDetail: { ...Type.caption, color: c.textSecondary },
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.brandPrimary, paddingVertical: 10, borderRadius: 9999, marginTop: 6 },
   btnText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700' },
-  btnGhost: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.brandPrimary },
-  btnGhostText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  btnGhost: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: c.brandPrimary },
+  btnGhostText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
   warn: { ...Type.caption, color: '#A5512B', fontFamily: Fonts.bodySemi, marginTop: 4 },
-});
+}); }

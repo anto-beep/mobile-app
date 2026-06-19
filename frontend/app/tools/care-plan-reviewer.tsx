@@ -8,6 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 const CANONICAL_CHECKS = [
@@ -26,6 +29,8 @@ const PILL: Record<string, { fg: string; bg: string }> = {
 };
 
 export default function CarePlanReviewer() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [plan, setPlan] = useState('');
@@ -39,7 +44,7 @@ export default function CarePlanReviewer() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
           <Text style={styles.h1}>Six-check care-plan review</Text>
           <AIAccuracyBanner tool="care-plan-reviewer" />
@@ -72,7 +77,7 @@ export default function CarePlanReviewer() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
           <Text style={styles.h1}>Six-check care-plan review</Text>
           <Text style={styles.sub}>Paste the participant's care plan. We check budget fit, CM cap, services, stream alignment, review date and goals.</Text>
@@ -91,16 +96,16 @@ export default function CarePlanReviewer() {
           </View>
 
           <Text style={styles.label}>Quarterly budget (optional)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={budget} onChangeText={setBudget} placeholder="e.g. 7424" placeholderTextColor={Colors.textMuted} testID="cp-quarterly-budget" />
+          <TextInput style={styles.input} keyboardType="numeric" value={budget} onChangeText={setBudget} placeholder="e.g. 7424" placeholderTextColor={c.textMuted} testID="cp-quarterly-budget" />
 
           <Text style={styles.label}>Care plan text</Text>
-          <TextInput style={[styles.input, { minHeight: 160, textAlignVertical: 'top' }]} value={plan} onChangeText={setPlan} placeholder="Paste the participant's care plan here…" placeholderTextColor={Colors.textMuted} multiline testID="careplan-text" />
+          <TextInput style={[styles.input, { minHeight: 160, textAlignVertical: 'top' }]} value={plan} onChangeText={setPlan} placeholder="Paste the participant's care plan here…" placeholderTextColor={c.textMuted} multiline testID="careplan-text" />
 
           <Text style={styles.label}>Specific concerns (optional)</Text>
-          <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={concerns} onChangeText={setConcerns} placeholder="e.g. Mobility has worsened — is this plan keeping up?" placeholderTextColor={Colors.textMuted} multiline testID="careplan-concerns" />
+          <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={concerns} onChangeText={setConcerns} placeholder="e.g. Mobility has worsened — is this plan keeping up?" placeholderTextColor={c.textMuted} multiline testID="careplan-concerns" />
 
           <TouchableOpacity onPress={review} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="careplan-review">
-            {loading ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Review the plan</Text>}
+            {loading ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Review the plan</Text>}
           </TouchableOpacity>
 
           {result && (
@@ -128,7 +133,7 @@ export default function CarePlanReviewer() {
                   <Text style={styles.qHead}>Ask your care manager</Text>
                   {result.questions_to_raise.map((q: string, i: number) => (
                     <View key={i} style={styles.qRow}>
-                      <Ionicons name="help-circle-outline" size={14} color={Colors.brandSecondary} />
+                      <Ionicons name="help-circle-outline" size={14} color={c.brandSecondary} />
                       <Text style={styles.qText}>{q}</Text>
                     </View>
                   ))}
@@ -142,32 +147,32 @@ export default function CarePlanReviewer() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.md, lineHeight: 19 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 6 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.md, lineHeight: 19 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.md, marginBottom: 6 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { minWidth: 40, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg, alignItems: 'center' },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
-  summary: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, lineHeight: 19, marginBottom: Spacing.md },
+  chip: { minWidth: 40, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg, alignItems: 'center' },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: c.border },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
+  summary: { fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, lineHeight: 19, marginBottom: Spacing.md },
   checkList: { gap: 8 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: Radius.md, borderLeftWidth: 3 },
-  checkLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  checkNote: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  checkLabel: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  checkNote: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2, lineHeight: 16 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100 },
   statusText: { fontFamily: Fonts.bodySemi, fontSize: 9, letterSpacing: 0.6 },
-  qHead: { fontFamily: Fonts.headingMed, fontSize: 14, color: Colors.brandPrimary, marginTop: Spacing.md, marginBottom: 6 },
+  qHead: { fontFamily: Fonts.headingMed, fontSize: 14, color: c.brandPrimary, marginTop: Spacing.md, marginBottom: 6 },
   qRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 4 },
-  qText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, flex: 1, lineHeight: 18 },
-});
+  qText: { fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, flex: 1, lineHeight: 18 },
+}); }

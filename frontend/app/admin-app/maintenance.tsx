@@ -6,13 +6,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { adminApi, useAdminAuth } from '../../src/context/AdminAuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 import { confirmWithBiometric, biometryLabel } from '../../src/lib/biometric';
 
 type HistoryItem = { id: string; at: string; enabled: boolean; message: string; actor_email: string; actor_role?: string };
 
 export default function AdminMaintenance() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { admin, touch } = useAdminAuth();
   const [loading, setLoading] = useState(true);
@@ -105,14 +110,14 @@ export default function AdminMaintenance() {
     <SafeAreaView style={styles.safe} edges={['top']} onTouchStart={touch}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} testID="maint-back">
-          <Ionicons name="chevron-back" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="chevron-back" size={22} color={c.brandPrimary} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.overline}>System</Text>
@@ -121,7 +126,7 @@ export default function AdminMaintenance() {
 
         {!isSuper ? (
           <View style={styles.lockedCard}>
-            <Ionicons name="lock-closed" size={18} color={Colors.danger} />
+            <Ionicons name="lock-closed" size={18} color={c.danger} />
             <View style={{ flex: 1 }}>
               <Text style={styles.lockedTitle}>Super admin only</Text>
               <Text style={styles.lockedBody}>Your current role is {admin.admin_role.replace('_', ' ')}. Ask a super_admin to toggle maintenance.</Text>
@@ -130,7 +135,7 @@ export default function AdminMaintenance() {
         ) : null}
 
         {loading ? (
-          <View style={styles.loader}><ActivityIndicator color={Colors.brandPrimary} /></View>
+          <View style={styles.loader}><ActivityIndicator color={c.brandPrimary} /></View>
         ) : (
           <>
             <View style={[styles.statusCard, enabled ? styles.statusOn : styles.statusOff]}>
@@ -147,8 +152,8 @@ export default function AdminMaintenance() {
                 value={enabled}
                 disabled={!isSuper || saving}
                 onValueChange={(v) => confirmAndSave(v)}
-                trackColor={{ false: Colors.borderSubtle, true: 'rgba(192, 57, 43, 0.7)' }}
-                thumbColor={enabled ? Colors.danger : Colors.cardBg}
+                trackColor={{ false: c.borderSubtle, true: 'rgba(192, 57, 43, 0.7)' }}
+                thumbColor={enabled ? c.danger : c.cardBg}
                 testID="maintenance-switch"
               />
             </View>
@@ -158,7 +163,7 @@ export default function AdminMaintenance() {
               value={message}
               onChangeText={(t) => { setMessage(t); setDirty(true); }}
               placeholder="We'll be back at 10pm AEST tonight."
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={styles.input}
               multiline
               numberOfLines={3}
@@ -170,9 +175,9 @@ export default function AdminMaintenance() {
 
             {dirty ? (
               <TouchableOpacity style={styles.saveBtn} onPress={saveMessageOnly} disabled={saving} testID="save-message">
-                {saving ? <ActivityIndicator color={Colors.cream} /> : (
+                {saving ? <ActivityIndicator color={c.cream} /> : (
                   <>
-                    <Ionicons name="save-outline" size={16} color={Colors.cream} />
+                    <Ionicons name="save-outline" size={16} color={c.cream} />
                     <Text style={styles.saveBtnText}>Save message</Text>
                   </>
                 )}
@@ -180,7 +185,7 @@ export default function AdminMaintenance() {
             ) : null}
 
             <View style={styles.bioHint}>
-              <Ionicons name="finger-print" size={14} color={Colors.brandSecondary} />
+              <Ionicons name="finger-print" size={14} color={c.brandSecondary} />
               <Text style={styles.bioHintText}>Each change is confirmed with {biometryLabel()} and logged below.</Text>
             </View>
 
@@ -188,12 +193,12 @@ export default function AdminMaintenance() {
             <View style={styles.histCard}>
               {history.length === 0 ? (
                 <View style={styles.emptyRow}>
-                  <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
+                  <Ionicons name="time-outline" size={14} color={c.textMuted} />
                   <Text style={styles.emptyText}>No history yet.</Text>
                 </View>
               ) : history.map((h) => (
                 <View key={h.id} style={styles.histRow}>
-                  <View style={[styles.histDot, { backgroundColor: h.enabled ? Colors.danger : Colors.success }]} />
+                  <View style={[styles.histDot, { backgroundColor: h.enabled ? c.danger : c.success }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.histTitle}>{h.enabled ? 'Enabled' : 'Disabled'}{h.message ? ` — “${h.message}”` : ''}</Text>
                     <Text style={styles.histMeta}>{new Date(h.at).toLocaleString()} · {h.actor_email}</Text>
@@ -210,38 +215,38 @@ export default function AdminMaintenance() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   header: { paddingHorizontal: Spacing.lg, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
   backBtn: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 12 },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: Colors.brandPrimary, marginLeft: 2 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: c.brandPrimary, marginLeft: 2 },
   scroll: { padding: Spacing.lg, paddingTop: 4 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 30, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4, lineHeight: 18 },
   loader: { paddingVertical: 40, alignItems: 'center' },
   lockedCard: { flexDirection: 'row', gap: 10, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderWidth: 1, borderColor: 'rgba(192, 57, 43, 0.3)' },
-  lockedTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  lockedBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  lockedTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  lockedBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.md, marginTop: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
   statusOn: { backgroundColor: 'rgba(192, 57, 43, 0.08)', borderColor: 'rgba(192, 57, 43, 0.4)' },
-  statusOff: { backgroundColor: Colors.cardBg, borderColor: Colors.borderSubtle },
-  statusOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted },
-  statusValue: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginTop: 4 },
-  statusMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 4 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, marginTop: Spacing.md, marginBottom: 6 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: Radius.md, padding: Spacing.md, minHeight: 90, textAlignVertical: 'top' },
-  help: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: Colors.brandPrimary },
-  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  statusOff: { backgroundColor: c.cardBg, borderColor: c.borderSubtle },
+  statusOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted },
+  statusValue: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginTop: 4 },
+  statusMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 4 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, marginTop: Spacing.md, marginBottom: 6 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, borderRadius: Radius.md, padding: Spacing.md, minHeight: 90, textAlignVertical: 'top' },
+  help: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 6 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginTop: Spacing.md, borderRadius: Radius.md, backgroundColor: c.brandPrimary },
+  saveBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
   bioHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md, padding: 10, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.1)' },
-  bioHintText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, flex: 1 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
-  histCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: Spacing.sm },
-  histRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
+  bioHintText: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, flex: 1 },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
+  histCard: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, paddingHorizontal: Spacing.sm },
+  histRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
   histDot: { width: 8, height: 8, borderRadius: 4 },
-  histTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  histMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  histTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  histMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 16, paddingHorizontal: Spacing.sm },
-  emptyText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
-});
+  emptyText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
+}); }

@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { Colors, Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 const FALLBACK_SERVICES = ['Personal care', 'Domestic assistance', 'Nursing', 'Physiotherapy', 'Cleaning', 'Transport'];
@@ -18,6 +21,8 @@ const VERDICT_COLORS: Record<string, string> = {
 };
 
 export default function PriceChecker() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user } = useAuth();
   const [services, setServices] = useState<string[]>(FALLBACK_SERVICES);
@@ -37,7 +42,7 @@ export default function PriceChecker() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
@@ -65,19 +70,19 @@ export default function PriceChecker() {
     }
   };
 
-  const verdictColor = result ? VERDICT_COLORS[result.verdict] || Colors.brandPrimary : Colors.brandPrimary;
+  const verdictColor = result ? VERDICT_COLORS[result.verdict] || c.brandPrimary : c.brandPrimary;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
           <Text style={styles.sub}>We'll compare against the network median. National price caps were deferred indefinitely in May 2026 — providers price competitively below this median.</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <View style={styles.capsNote} testID="pc-caps-note">
-            <Ionicons name="information-circle-outline" size={14} color={Colors.brandSecondary} />
+            <Ionicons name="information-circle-outline" size={14} color={c.brandSecondary} />
             <Text style={styles.capsNoteText}>National price caps were deferred indefinitely in May 2026 — the verdict below is median-only.</Text>
           </View>
 
@@ -96,7 +101,7 @@ export default function PriceChecker() {
           </View>
 
           <Text style={styles.label}>Rate ($/hr or $/unit)</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={rate} onChangeText={setRate} placeholder="65.00" placeholderTextColor={Colors.textMuted} testID="price-rate-input" />
+          <TextInput style={styles.input} keyboardType="numeric" value={rate} onChangeText={setRate} placeholder="65.00" placeholderTextColor={c.textMuted} testID="price-rate-input" />
 
           <TouchableOpacity onPress={check} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="price-check-button">
             <Text style={styles.btnText}>{loading ? 'Checking…' : 'Check it'}</Text>
@@ -118,13 +123,13 @@ export default function PriceChecker() {
               </View>
               {result.caps_note ? (
                 <View style={styles.capsNote} testID="pc-result-caps-note">
-                  <Ionicons name="information-circle-outline" size={12} color={Colors.brandSecondary} />
+                  <Ionicons name="information-circle-outline" size={12} color={c.brandSecondary} />
                   <Text style={styles.capsNoteText}>{result.caps_note}</Text>
                 </View>
               ) : null}
               {result.suggested_action && (
                 <View style={styles.action}>
-                  <Ionicons name="arrow-forward" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="arrow-forward" size={14} color={c.brandPrimary} />
                   <Text style={styles.actionText}>{result.suggested_action}</Text>
                 </View>
               )}
@@ -136,32 +141,32 @@ export default function PriceChecker() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
   back: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 8 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.md, marginBottom: 8 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.cardBg },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.cardBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  result: { marginTop: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: Colors.borderSubtle },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  input: { fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary, backgroundColor: c.cardBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
   verdict: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 8 },
-  assessment: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 20, marginBottom: Spacing.md },
+  assessment: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, lineHeight: 20, marginBottom: Spacing.md },
   statRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
-  stat: { flex: 1, padding: Spacing.sm, backgroundColor: Colors.background, borderRadius: Radius.sm },
-  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: Colors.textMuted },
-  statValue: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, marginTop: 2 },
-  action: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
-  actionText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flex: 1, fontStyle: 'italic' },
-  capsNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: Colors.brandSecondary, marginTop: Spacing.sm, marginBottom: Spacing.sm },
-  capsNoteText: { flex: 1, fontFamily: Fonts.body, fontSize: 11, color: Colors.textPrimary, lineHeight: 15 },
-});
+  stat: { flex: 1, padding: Spacing.sm, backgroundColor: c.background, borderRadius: Radius.sm },
+  statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted },
+  statValue: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, marginTop: 2 },
+  action: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: c.borderSubtle },
+  actionText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flex: 1, fontStyle: 'italic' },
+  capsNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary, marginTop: Spacing.sm, marginBottom: Spacing.sm },
+  capsNoteText: { flex: 1, fontFamily: Fonts.body, fontSize: 11, color: c.textPrimary, lineHeight: 15 },
+}); }

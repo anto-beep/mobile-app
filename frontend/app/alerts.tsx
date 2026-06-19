@@ -9,9 +9,14 @@ import { useParticipants } from '../src/context/ParticipantsContext';
 import { AlertCell } from '../src/components/Timeline';
 import { EmptyState } from '../src/components/Screen';
 import { ListSkeleton } from '../src/components/Skeleton';
-import { Colors, Spacing, Type } from '../src/lib/theme';
+import { Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 export default function AlertsInbox() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { active, participantSig } = useParticipants();
   const { getAlerts } = useScenario();
   const [items, setItems] = useState<any[]>([]);
@@ -34,7 +39,7 @@ export default function AlertsInbox() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Alerts" />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.head}>
           <Text style={Type.h1 as any}>Active alerts</Text>
           {!!active && <Text style={styles.sub}>For {active.first_name}</Text>}
@@ -48,8 +53,8 @@ export default function AlertsInbox() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
-  sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },
-});
+  sub: { ...Type.caption, color: c.textSecondary, marginTop: 2 },
+}); }

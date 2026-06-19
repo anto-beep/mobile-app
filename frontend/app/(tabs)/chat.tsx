@@ -19,7 +19,10 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useScenario } from '../../src/context/ScenarioContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 
 type Turn = { id?: string; role: 'user' | 'assistant'; content: string };
 
@@ -36,6 +39,8 @@ const LAST_ACTIVE_KEY = 'wayly:chat:last_active';
 const RESUME_DISMISSED_KEY = 'wayly:chat:resume_dismissed_at';
 
 export default function Chat() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const scenario = useScenario();
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -220,14 +225,14 @@ export default function Chat() {
         >
           {loading ? (
             <View style={styles.loadingFill}>
-              <ActivityIndicator color={Colors.brandPrimary} />
+              <ActivityIndicator color={c.brandPrimary} />
             </View>
           ) : (
             <>
               {showResume && turns.length > 0 ? (
                 <View style={styles.resumeCard} testID="chat-resume-card">
                   <View style={styles.resumeIcon}>
-                    <Ionicons name="chatbubbles" size={18} color={Colors.brandPrimary} />
+                    <Ionicons name="chatbubbles" size={18} color={c.brandPrimary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.resumeTitle}>Welcome back</Text>
@@ -254,7 +259,7 @@ export default function Chat() {
                       testID={`chat-starter-${p.slice(0, 8)}`}
                     >
                       <Text style={styles.starterText}>{p}</Text>
-                      <Ionicons name="arrow-forward" size={14} color={Colors.brandPrimary} />
+                      <Ionicons name="arrow-forward" size={14} color={c.brandPrimary} />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -280,7 +285,7 @@ export default function Chat() {
               {sending && (
                 <View style={[styles.bubbleRow, styles.bubbleRowLeft]}>
                   <View style={[styles.bubble, styles.bubbleAssistant]}>
-                    <ActivityIndicator color={Colors.brandPrimary} size="small" />
+                    <ActivityIndicator color={c.brandPrimary} size="small" />
                   </View>
                 </View>
               )}
@@ -292,7 +297,7 @@ export default function Chat() {
           <TextInput
             style={styles.input}
             placeholder="Ask a question…"
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={draft}
             onChangeText={setDraft}
             multiline
@@ -304,7 +309,7 @@ export default function Chat() {
             style={[styles.sendBtn, (!draft.trim() || sending) && { opacity: 0.4 }]}
             testID="chat-send-button"
           >
-            <Ionicons name="arrow-up" size={20} color={Colors.cream} />
+            <Ionicons name="arrow-up" size={20} color={c.cream} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -312,12 +317,12 @@ export default function Chat() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   // New teal banner header
   tealBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.brandPrimary,
+    backgroundColor: c.brandPrimary,
     paddingHorizontal: Spacing.md, paddingVertical: 10,
     minHeight: 52, gap: 8,
   },
@@ -341,53 +346,53 @@ const styles = StyleSheet.create({
   newPillText: { color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 12 },
   subHeader: {
     paddingHorizontal: Spacing.lg, paddingVertical: 10,
-    backgroundColor: Colors.cardBg, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderBottomWidth: 1, borderBottomColor: c.borderSubtle,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: 2 },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, minHeight: 36 },
-  newBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
+  header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: c.borderSubtle, gap: 12 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background, borderWidth: 1, borderColor: c.borderSubtle, marginTop: 2 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: c.background, borderWidth: 1, borderColor: c.border, minHeight: 36 },
+  newBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary },
   resumeCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: Spacing.md, marginBottom: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)' },
   resumeIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.08)' },
-  resumeTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  resumeBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 17 },
+  resumeTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  resumeBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2, lineHeight: 17 },
   resumeRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   resumeBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
-  resumeBtnPrimary: { backgroundColor: Colors.brandPrimary },
-  resumeBtnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.border },
-  resumeBtnTextPrimary: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.cream },
-  resumeBtnTextGhost: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
-  sub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+  resumeBtnPrimary: { backgroundColor: c.brandPrimary },
+  resumeBtnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.border },
+  resumeBtnTextPrimary: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.cream },
+  resumeBtnTextGhost: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
+  sub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 4 },
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.sm },
   loadingFill: { padding: Spacing.xl, alignItems: 'center' },
-  starterTitle: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.sm },
+  starterTitle: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.sm },
   starter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.cardBg, padding: Spacing.md, borderRadius: Radius.md,
-    marginBottom: 8, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, padding: Spacing.md, borderRadius: Radius.md,
+    marginBottom: 8, borderWidth: 1, borderColor: c.borderSubtle,
   },
-  starterText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary, flex: 1, marginRight: 8 },
+  starterText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary, flex: 1, marginRight: 8 },
   bubbleRow: { flexDirection: 'row', marginVertical: 4 },
   bubbleRowLeft: { justifyContent: 'flex-start' },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
-  bubbleUser: { backgroundColor: Colors.brandPrimary, borderBottomRightRadius: 4 },
-  bubbleAssistant: { backgroundColor: Colors.cardBg, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  bubbleTextUser: { fontFamily: Fonts.body, fontSize: 14, color: Colors.cream, lineHeight: 20 },
-  bubbleTextAsst: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
+  bubbleUser: { backgroundColor: c.brandPrimary, borderBottomRightRadius: 4 },
+  bubbleAssistant: { backgroundColor: c.cardBg, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: c.borderSubtle },
+  bubbleTextUser: { fontFamily: Fonts.body, fontSize: 14, color: c.cream, lineHeight: 20 },
+  bubbleTextAsst: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, lineHeight: 20 },
   composer: {
     flexDirection: 'row', alignItems: 'flex-end', padding: Spacing.md, gap: 8,
-    backgroundColor: Colors.cardBg, borderTopWidth: 1, borderTopColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderTopWidth: 1, borderTopColor: c.borderSubtle,
   },
   input: {
-    flex: 1, fontFamily: Fonts.body, fontSize: 15, color: Colors.textPrimary,
-    backgroundColor: Colors.background, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10,
-    maxHeight: 120, minHeight: 44, borderWidth: 1, borderColor: Colors.border,
+    flex: 1, fontFamily: Fonts.body, fontSize: 15, color: c.textPrimary,
+    backgroundColor: c.background, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10,
+    maxHeight: 120, minHeight: 44, borderWidth: 1, borderColor: c.border,
   },
   sendBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.brandPrimary,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: c.brandPrimary,
     alignItems: 'center', justifyContent: 'center',
   },
-});
+}); }

@@ -12,9 +12,14 @@ import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth, EmailVerificationRequiredError } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 
 export default function Login() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -128,7 +133,7 @@ export default function Login() {
               autoComplete="email"
               keyboardType="email-address"
               placeholder="you@example.com"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={styles.input}
             />
 
@@ -142,7 +147,7 @@ export default function Login() {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 placeholder="••••••••"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 style={[styles.input, styles.passwordInput]}
                 autoComplete="password"
                 autoCapitalize="none"
@@ -155,7 +160,7 @@ export default function Login() {
                 accessibilityRole="button"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textSecondary} />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={c.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -201,7 +206,7 @@ export default function Login() {
               disabled={submitting}
               style={[styles.googleBtn, submitting && { opacity: 0.6 }]}
             >
-              <Ionicons name="logo-google" size={18} color={Colors.brandPrimary} />
+              <Ionicons name="logo-google" size={18} color={c.brandPrimary} />
               <Text style={styles.googleBtnText}>Continue with Google</Text>
             </TouchableOpacity>
 
@@ -219,7 +224,7 @@ export default function Login() {
               onPress={() => router.push('/admin-auth/login' as any)}
               testID="admin-signin-link"
             >
-              <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
+              <Ionicons name="shield-checkmark-outline" size={13} color={c.textMuted} />
               <Text style={styles.staffLinkText}>Wayly staff sign-in</Text>
             </TouchableOpacity>
           </View>
@@ -228,66 +233,66 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   kb: { flex: 1 },
   scroll: { flexGrow: 1, padding: Spacing.lg, justifyContent: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xl, alignSelf: 'center' },
   logo: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.brandPrimary,
+    width: 32, height: 32, borderRadius: 16, backgroundColor: c.brandPrimary,
     alignItems: 'center', justifyContent: 'center',
   },
   logoImg: { width: 40, height: 40, borderRadius: 8 },
-  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
+  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5 },
   card: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    shadowColor: Colors.brandPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4,
+    borderWidth: 1, borderColor: c.borderSubtle,
+    shadowColor: c.brandPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   overline: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-    color: Colors.textMuted, marginBottom: Spacing.sm,
+    color: c.textMuted, marginBottom: Spacing.sm,
   },
-  h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginBottom: 6 },
+  h1: { fontFamily: Fonts.heading, fontSize: 30, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 15, color: c.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginBottom: 6 },
   input: {
-    fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary,
-    backgroundColor: Colors.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14,
-    borderWidth: 1, borderColor: Colors.border,
+    fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary,
+    backgroundColor: c.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14,
+    borderWidth: 1, borderColor: c.border,
   },
   passwordWrap: { position: 'relative', justifyContent: 'center' },
   passwordInput: { paddingRight: 48 },
   eyeBtn: { position: 'absolute', right: 4, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' },
   error: {
-    fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.severityAlert, marginTop: Spacing.md,
+    fontFamily: Fonts.bodyMed, fontSize: 13, color: c.severityAlert, marginTop: Spacing.md,
   },
   btn: {
-    marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md,
+    marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md,
     paddingVertical: 16, alignItems: 'center', minHeight: 52, justifyContent: 'center',
   },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.cream },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.cream },
   forgotRow: { alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 4, marginTop: 8, minHeight: 32, justifyContent: 'center' },
-  forgotText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, textDecorationLine: 'underline' },
+  forgotText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, textDecorationLine: 'underline' },
   switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.lg },
-  muted: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary },
-  linkText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary, textDecorationLine: 'underline' },
+  muted: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary },
+  linkText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, textDecorationLine: 'underline' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-  dividerText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
+  dividerText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
   googleBtn: {
-    marginTop: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md,
+    marginTop: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.md,
     paddingVertical: 14, alignItems: 'center', justifyContent: 'center',
     flexDirection: 'row', gap: 10, minHeight: 52,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1, borderColor: c.border,
   },
-  googleBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
+  googleBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
   demoChip: {
     marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: 'rgba(139, 155, 130, 0.08)',
     borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', gap: 8,
   },
-  demoText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, flex: 1 },
-  demoBold: { fontFamily: Fonts.bodySemi, color: Colors.textPrimary },
+  demoText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, flex: 1 },
+  demoBold: { fontFamily: Fonts.bodySemi, color: c.textPrimary },
   staffLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.md, paddingVertical: 10 },
-  staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textMuted, textDecorationLine: 'underline' },
-});
+  staffLinkText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted, textDecorationLine: 'underline' },
+}); }

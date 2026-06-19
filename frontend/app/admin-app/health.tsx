@@ -8,6 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { adminApi, useAdminAuth } from '../../src/context/AdminAuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 
 type Service = {
@@ -33,6 +36,8 @@ function statusTone(status: string) {
 }
 
 export default function AdminHealth() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { admin, touch } = useAdminAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -83,21 +88,21 @@ export default function AdminHealth() {
     <SafeAreaView style={styles.safe} edges={['top']} onTouchStart={touch}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} testID="health-back">
-          <Ionicons name="chevron-back" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="chevron-back" size={22} color={c.brandPrimary} />
           <Text style={styles.backText}>Inbox</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setDetails({}); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setDetails({}); load(); }} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>System</Text>
         <Text style={styles.h1}>Health</Text>
         <Text style={styles.sub}>Live status of the services Wayly depends on. Tap a card to expand.</Text>
 
         {loading ? (
-          <View style={styles.loader}><ActivityIndicator color={Colors.brandPrimary} /></View>
+          <View style={styles.loader}><ActivityIndicator color={c.brandPrimary} /></View>
         ) : (
           <View style={{ gap: 10, marginTop: Spacing.md }}>
             {services.map((s) => {
@@ -109,7 +114,7 @@ export default function AdminHealth() {
                   key={s.name}
                   activeOpacity={0.85}
                   onPress={() => onToggle(s.name)}
-                  style={[styles.card, isOpen && { borderColor: Colors.brandPrimary }]}
+                  style={[styles.card, isOpen && { borderColor: c.brandPrimary }]}
                   testID={`health-${s.name.toLowerCase()}`}
                 >
                   <View style={styles.cardHead}>
@@ -133,7 +138,7 @@ export default function AdminHealth() {
                   {isOpen ? (
                     <View style={styles.expand}>
                       {detailLoading === s.name && !detail ? (
-                        <ActivityIndicator color={Colors.brandPrimary} />
+                        <ActivityIndicator color={c.brandPrimary} />
                       ) : detail ? (
                         <>
                           <View style={styles.kpiRow}>
@@ -168,7 +173,7 @@ export default function AdminHealth() {
                               <Text style={styles.sectionLabel}>Recent errors</Text>
                               {detail.recent_errors.map((e, i) => (
                                 <View key={i} style={styles.errRow}>
-                                  <View style={[styles.dot, { backgroundColor: Colors.danger }]} />
+                                  <View style={[styles.dot, { backgroundColor: c.danger }]} />
                                   <View style={{ flex: 1 }}>
                                     <Text style={styles.errCode}>{e.code}</Text>
                                     <Text style={styles.errMessage}>{e.message}</Text>
@@ -179,7 +184,7 @@ export default function AdminHealth() {
                             </View>
                           ) : (
                             <View style={styles.allClear}>
-                              <Ionicons name="shield-checkmark" size={14} color={Colors.success} />
+                              <Ionicons name="shield-checkmark" size={14} color={c.success} />
                               <Text style={styles.allClearText}>No errors logged in the last 24h.</Text>
                             </View>
                           )}
@@ -194,20 +199,20 @@ export default function AdminHealth() {
         )}
 
         <View style={styles.llmRow}>
-          <Ionicons name="sparkles" size={14} color={Colors.brandSecondary} />
+          <Ionicons name="sparkles" size={14} color={c.brandSecondary} />
           <Text style={styles.llmText}>LLM errors in last 24h: <Text style={styles.llmCount}>{llmErrors}</Text></Text>
         </View>
 
         {admin.admin_role === 'super_admin' ? (
           <TouchableOpacity style={styles.cta} onPress={() => router.push('/admin-app/maintenance' as any)} testID="open-maintenance">
-            <Ionicons name="build" size={16} color={Colors.brandPrimary} />
+            <Ionicons name="build" size={16} color={c.brandPrimary} />
             <Text style={styles.ctaText}>Open maintenance mode</Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-forward" size={14} color={c.brandPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={[styles.cta, { opacity: 0.5 }]}>
-            <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />
-            <Text style={[styles.ctaText, { color: Colors.textMuted }]}>Maintenance toggle is super_admin only</Text>
+            <Ionicons name="lock-closed" size={14} color={c.textMuted} />
+            <Text style={[styles.ctaText, { color: c.textMuted }]}>Maintenance toggle is super_admin only</Text>
           </View>
         )}
 
@@ -217,46 +222,46 @@ export default function AdminHealth() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   header: { paddingHorizontal: Spacing.lg, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
   backBtn: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 12 },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: Colors.brandPrimary, marginLeft: 2 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: c.brandPrimary, marginLeft: 2 },
   scroll: { padding: Spacing.lg, paddingTop: 4 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 30, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 30, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   loader: { paddingVertical: 40, alignItems: 'center' },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  serviceName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
+  serviceName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginTop: 3 },
-  meta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary },
-  metaDot: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginHorizontal: 5 },
+  meta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary },
+  metaDot: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginHorizontal: 5 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   pillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
-  expand: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.borderSubtle, gap: 14 },
+  expand: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.borderSubtle, gap: 14 },
   kpiRow: { flexDirection: 'row', gap: 8 },
-  kpi: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.sm, padding: 10, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center' },
-  kpiValue: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary },
-  kpiLabel: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
+  kpi: { flex: 1, backgroundColor: c.background, borderRadius: Radius.sm, padding: 10, borderWidth: 1, borderColor: c.borderSubtle, alignItems: 'center' },
+  kpiValue: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary },
+  kpiLabel: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, marginTop: 2, textAlign: 'center' },
   sparkWrap: { gap: 6 },
   spark: { flexDirection: 'row', alignItems: 'flex-end', height: 50, gap: 3 },
-  sparkBar: { flex: 1, backgroundColor: Colors.brandPrimary, borderRadius: 2, opacity: 0.85 },
+  sparkBar: { flex: 1, backgroundColor: c.brandPrimary, borderRadius: 2, opacity: 0.85 },
   sparkAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  sparkAxisText: { fontFamily: Fonts.body, fontSize: 9, color: Colors.textMuted },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: 6 },
-  errRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.borderSubtle },
+  sparkAxisText: { fontFamily: Fonts.body, fontSize: 9, color: c.textMuted },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted, marginBottom: 6 },
+  errRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderSubtle },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  errCode: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
-  errMessage: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  errTime: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted },
+  errCode: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary },
+  errMessage: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  errTime: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted },
   allClear: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  allClearText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.success },
+  allClearText: { fontFamily: Fonts.body, fontSize: 12, color: c.success },
   llmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.lg, padding: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)' },
-  llmText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
-  llmCount: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: Spacing.lg, borderRadius: Radius.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border },
-  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-});
+  llmText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
+  llmCount: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: Spacing.lg, borderRadius: Radius.md, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border },
+  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+}); }

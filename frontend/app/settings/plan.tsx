@@ -12,7 +12,10 @@ import BackHeader from '../../src/components/BackHeader';
 import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useParticipants } from '../../src/context/ParticipantsContext';
-import { Colors, Fonts, Radius, Spacing, Type, formatAUD2 } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type, formatAUD2 } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { daysUntil, formatAUWeekday, swatchForIndex, initialOf } from '../../src/lib/format';
 import { toast } from '../../src/components/Toast';
 
@@ -25,6 +28,8 @@ const PLAN_META: Record<Plan, { label: string; price: number; perks: string[] }>
 };
 
 export default function PlanSettings() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { user, refresh: refreshAuth } = useAuth();
   const { participants, summary, refetch } = useParticipants();
@@ -174,7 +179,7 @@ export default function PlanSettings() {
               </View>
               {meta.perks.map((perk) => (
                 <View key={perk} style={styles.perkRow}>
-                  <Ionicons name="checkmark" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="checkmark" size={14} color={c.brandPrimary} />
                   <Text style={styles.perk}>{perk}</Text>
                 </View>
               ))}
@@ -207,47 +212,47 @@ export default function PlanSettings() {
 function Tile({ label, value, icon }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }) {
   return (
     <View style={styles.tile}>
-      <Ionicons name={icon} size={16} color={Colors.brandPrimary} />
+      <Ionicons name={icon} size={16} color={c.brandPrimary} />
       <Text style={styles.tileLabel}>{label}</Text>
       <Text style={styles.tileValue} numberOfLines={1}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  tileCard: { backgroundColor: Colors.cardBg, borderRadius: 16, padding: Spacing.md, margin: Spacing.md, borderWidth: 1, borderColor: Colors.border, gap: 10 },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  tileCard: { backgroundColor: c.cardBg, borderRadius: 16, padding: Spacing.md, margin: Spacing.md, borderWidth: 1, borderColor: c.border, gap: 10 },
   tileRow: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, backgroundColor: '#F4ECE0', borderRadius: 12, padding: Spacing.sm, gap: 4 },
-  tileLabel: { ...Type.caption, color: Colors.textSecondary, fontFamily: Fonts.bodyMed },
-  tileValue: { ...Type.h3, color: Colors.textPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  tileLabel: { ...Type.caption, color: c.textSecondary, fontFamily: Fonts.bodyMed },
+  tileValue: { ...Type.h3, color: c.textPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
   trialBar: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FAEFD4', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#E8D9B3' },
   trialText: { ...Type.body, color: '#5C3D11', fontFamily: Fonts.bodySemi, flex: 1 },
   partRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   partChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F4ECE0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999 },
   partSw: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   partInit: { color: '#fff', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700' },
-  partName: { ...Type.caption, color: Colors.textPrimary, fontFamily: Fonts.bodyMed, maxWidth: 90 },
+  partName: { ...Type.caption, color: c.textPrimary, fontFamily: Fonts.bodyMed, maxWidth: 90 },
   addonTag: { backgroundColor: '#F9E5C4', borderRadius: 9999, paddingHorizontal: 6, paddingVertical: 1 },
   addonTagText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 9, fontWeight: '700' },
 
-  sectionLabel: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingTop: 6, paddingBottom: 4 },
-  planCard: { backgroundColor: Colors.cardBg, borderRadius: 14, padding: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 10, borderWidth: 1, borderColor: Colors.border, gap: 6 },
-  planCardActive: { borderColor: Colors.brandPrimary, borderWidth: 2 },
-  planTitle: { ...Type.h3, color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 20 },
-  planPrice: { ...Type.body, color: Colors.textSecondary, fontFamily: Fonts.bodyMed, marginLeft: 4 },
-  curPill: { marginLeft: 'auto', backgroundColor: Colors.brandPrimary, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
+  sectionLabel: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingTop: 6, paddingBottom: 4 },
+  planCard: { backgroundColor: c.cardBg, borderRadius: 14, padding: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 10, borderWidth: 1, borderColor: c.border, gap: 6 },
+  planCardActive: { borderColor: c.brandPrimary, borderWidth: 2 },
+  planTitle: { ...Type.h3, color: c.textPrimary, fontFamily: Fonts.heading, fontSize: 20 },
+  planPrice: { ...Type.body, color: c.textSecondary, fontFamily: Fonts.bodyMed, marginLeft: 4 },
+  curPill: { marginLeft: 'auto', backgroundColor: c.brandPrimary, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
   curPillText: { color: '#fff', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   perkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 1 },
-  perk: { ...Type.body, color: Colors.textSecondary },
+  perk: { ...Type.body, color: c.textSecondary },
 
   btnRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 9999, alignItems: 'center' },
-  btnGhost: { borderWidth: 1.5, borderColor: Colors.brandPrimary },
-  btnGhostText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-  btnSolid: { backgroundColor: Colors.brandPrimary },
+  btnGhost: { borderWidth: 1.5, borderColor: c.brandPrimary },
+  btnGhostText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  btnSolid: { backgroundColor: c.brandPrimary },
   btnSolidText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700' },
 
   cancelRow: { alignItems: 'center', paddingVertical: 20 },
-  cancelText: { color: Colors.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },
-});
+  cancelText: { color: c.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },
+}); }

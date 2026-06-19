@@ -7,7 +7,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 
 type Member = {
   user_id: string;
@@ -25,6 +28,8 @@ const ROLES = [
 ];
 
 export default function Members() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { user } = useAuth();
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
@@ -89,7 +94,7 @@ export default function Members() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <BackHeader title="Family members" />
         <View style={styles.gateCard} testID="members-upgrade-gate">
-          <Ionicons name="people-outline" size={32} color={Colors.brandSecondary} />
+          <Ionicons name="people-outline" size={32} color={c.brandSecondary} />
           <Text style={styles.gateTitle}>Family invites are on Family plan</Text>
           <Text style={styles.gateBody}>Upgrade to Family to invite up to 5 people to your dashboard — siblings, your participant, even an advisor.</Text>
           <TouchableOpacity onPress={() => router.push('/settings/plan' as any)} style={styles.gateBtn} testID="members-go-to-plan">
@@ -106,7 +111,7 @@ export default function Members() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" testID="members-scroll">
           <Text style={styles.sectionLabel}>Members</Text>
-          {loading ? <ActivityIndicator color={Colors.brandPrimary} /> : members.length === 0 ? (
+          {loading ? <ActivityIndicator color={c.brandPrimary} /> : members.length === 0 ? (
             <Text style={styles.emptyText}>No-one else yet — invite your first family member below.</Text>
           ) : members.map((m) => (
             <View key={m.user_id || m.email} style={styles.memberCard} testID={`member-${m.user_id || m.email}`}>
@@ -119,7 +124,7 @@ export default function Members() {
               </View>
               {m.user_id && m.user_id !== user?.id && (
                 <TouchableOpacity onPress={() => remove(m.user_id, m.name)} testID={`member-remove-${m.user_id}`}>
-                  <Ionicons name="close-circle-outline" size={22} color={Colors.severityAlert} />
+                  <Ionicons name="close-circle-outline" size={22} color={c.severityAlert} />
                 </TouchableOpacity>
               )}
             </View>
@@ -131,7 +136,7 @@ export default function Members() {
             <TextInput
               value={email} onChangeText={setEmail}
               autoCapitalize="none" keyboardType="email-address"
-              placeholder="sister@example.com" placeholderTextColor={Colors.textMuted}
+              placeholder="sister@example.com" placeholderTextColor={c.textMuted}
               style={styles.input} testID="members-invite-email"
             />
             <Text style={[styles.label, { marginTop: Spacing.md }]}>Role</Text>
@@ -151,7 +156,7 @@ export default function Members() {
             <TextInput
               value={note} onChangeText={setNote}
               placeholder="Hey — added you to Mum's Wayly so you can keep an eye too."
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]}
               multiline testID="members-invite-note"
             />
@@ -165,29 +170,29 @@ export default function Members() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  emptyText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center', padding: Spacing.lg },
-  memberCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, marginBottom: 8, borderWidth: 1, borderColor: Colors.borderSubtle },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  memberName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
-  memberMeta: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  inviteCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginBottom: 6 },
-  input: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.sm },
+  emptyText: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, textAlign: 'center', padding: Spacing.lg },
+  memberCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, backgroundColor: c.cardBg, borderRadius: Radius.md, marginBottom: 8, borderWidth: 1, borderColor: c.borderSubtle },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  memberName: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  memberMeta: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  inviteCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginBottom: 6 },
+  input: { fontFamily: Fonts.body, fontSize: 15, color: c.textPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.background },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  btn: { marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-  gateCard: { margin: Spacing.lg, padding: Spacing.lg, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', gap: 8 },
-  gateTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, marginTop: Spacing.sm, textAlign: 'center', letterSpacing: -0.3 },
-  gateBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
-  gateBtn: { marginTop: Spacing.md, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, paddingHorizontal: 24 },
-  gateBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-});
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: c.border, backgroundColor: c.background },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  btn: { marginTop: Spacing.md, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+  gateCard: { margin: Spacing.lg, padding: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, alignItems: 'center', gap: 8 },
+  gateTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, marginTop: Spacing.sm, textAlign: 'center', letterSpacing: -0.3 },
+  gateBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
+  gateBtn: { marginTop: Spacing.md, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, paddingHorizontal: 24 },
+  gateBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+}); }

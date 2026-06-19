@@ -6,10 +6,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BackHeader from '../src/components/BackHeader';
 import { api } from '../src/lib/api';
-import { Colors, Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { EmptyState, LoadingBlock } from '../src/components/Screen';
 
 export default function Search() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,13 +36,13 @@ export default function Search() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Search" />
       <View style={styles.box}>
-        <Ionicons name="search" size={18} color={Colors.textMuted} />
+        <Ionicons name="search" size={18} color={c.textMuted} />
         <TextInput
           testID="global-search-input"
           value={q}
           onChangeText={setQ}
           placeholder="Search statements, documents, visits…"
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={c.textMuted}
           style={styles.input}
           autoFocus
         />
@@ -71,12 +76,12 @@ export default function Search() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  box: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: Spacing.md, marginTop: 6, marginBottom: 4, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 9999, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border },
-  input: { flex: 1, fontFamily: Fonts.body, color: Colors.textPrimary, fontSize: 16, paddingVertical: 0 },
-  groupLabel: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, paddingHorizontal: Spacing.lg, paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 0.8 },
-  row: { backgroundColor: Colors.cardBg, marginHorizontal: Spacing.md, marginBottom: 6, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border },
-  rowTitle: { ...Type.bodySemi, color: Colors.textPrimary },
-  rowSub: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },
-});
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
+  box: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: Spacing.md, marginTop: 6, marginBottom: 4, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 9999, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border },
+  input: { flex: 1, fontFamily: Fonts.body, color: c.textPrimary, fontSize: 16, paddingVertical: 0 },
+  groupLabel: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, paddingHorizontal: Spacing.lg, paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 0.8 },
+  row: { backgroundColor: c.cardBg, marginHorizontal: Spacing.md, marginBottom: 6, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: c.border },
+  rowTitle: { ...Type.bodySemi, color: c.textPrimary },
+  rowSub: { ...Type.caption, color: c.textSecondary, marginTop: 2 },
+}); }

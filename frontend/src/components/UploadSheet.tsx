@@ -24,7 +24,10 @@ import {
   uploadPhrase,
   UploadProgressPhase,
 } from '../lib/upload';
-import { Colors, Fonts, Radius, Spacing } from '../lib/theme';
+import { Fonts, Radius, Spacing } from '../lib/theme';
+import type { ColorPalette } from '../lib/theme';
+import { useColors } from '../hooks/useColors';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 
 type Props = {
   visible: boolean;
@@ -34,6 +37,8 @@ type Props = {
 type Mode = 'menu' | 'paste';
 
 export default function UploadSheet({ visible, onClose }: Props) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<UploadProgressPhase>('picking');
@@ -98,7 +103,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
 
           {busy ? (
             <View style={styles.progressView} testID="upload-loading-view">
-              <ActivityIndicator color={Colors.brandPrimary} size="large" />
+              <ActivityIndicator color={c.brandPrimary} size="large" />
               <Text style={styles.progressTitle}>
                 {mode === 'paste' ? 'Reading your text…' : 'Reading your statement…'}
               </Text>
@@ -116,7 +121,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                   testID="paste-back"
                   hitSlop={8}
                 >
-                  <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+                  <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title}>Paste your statement</Text>
@@ -135,7 +140,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                   value={pasted}
                   onChangeText={setPasted}
                   placeholder={"e.g. HomeCare Plus — Statement May 2026\nPersonal care 14/05 $240.50\nDomestic 18/05 $84.00\nTotal: $504.50"}
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={c.textMuted}
                   textAlignVertical="top"
                   testID="paste-input"
                 />
@@ -148,7 +153,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                 disabled={pasted.trim().length < 10}
                 testID="paste-submit"
               >
-                <Ionicons name="sparkles-outline" size={16} color={Colors.cream} />
+                <Ionicons name="sparkles-outline" size={16} color={c.cream} />
                 <Text style={styles.primaryCtaText}>Decode this statement</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleClose} testID="paste-cancel" style={styles.cancel}>
@@ -164,35 +169,35 @@ export default function UploadSheet({ visible, onClose }: Props) {
 
               <TouchableOpacity testID="action-take-photo" style={styles.action} onPress={() => run(uploadFromCamera)}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name="camera-outline" size={22} color={Colors.brandPrimary} />
+                  <Ionicons name="camera-outline" size={22} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Take a photo</Text>
                   <Text style={styles.actionSub}>Best for paper statements</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity testID="action-pick-library" style={styles.action} onPress={() => run(uploadFromLibrary)}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name="image-outline" size={22} color={Colors.brandPrimary} />
+                  <Ionicons name="image-outline" size={22} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Pick from library</Text>
                   <Text style={styles.actionSub}>Use a photo you've already taken</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity testID="action-upload-pdf" style={styles.action} onPress={() => run(uploadFromDocument)}>
                 <View style={styles.iconWrap}>
-                  <Ionicons name="document-text-outline" size={22} color={Colors.brandPrimary} />
+                  <Ionicons name="document-text-outline" size={22} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Upload a PDF</Text>
                   <Text style={styles.actionSub}>If you've been emailed one</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -201,13 +206,13 @@ export default function UploadSheet({ visible, onClose }: Props) {
                 onPress={() => setMode('paste')}
               >
                 <View style={styles.iconWrap}>
-                  <Ionicons name="clipboard-outline" size={22} color={Colors.brandPrimary} />
+                  <Ionicons name="clipboard-outline" size={22} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Paste text</Text>
                   <Text style={styles.actionSub}>Copy text from email or your provider's portal</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleClose} testID="upload-sheet-cancel" style={styles.cancel}>
@@ -221,11 +226,11 @@ export default function UploadSheet({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(14, 77, 82, 0.5)' },
   kavWrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: Colors.cardBg,
+    backgroundColor: c.cardBg,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: Spacing.lg,
@@ -233,11 +238,11 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
   },
   handle: {
-    width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2,
+    width: 40, height: 4, backgroundColor: c.border, borderRadius: 2,
     alignSelf: 'center', marginBottom: Spacing.md,
   },
-  title: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
+  title: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.3 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
   action: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingVertical: 14, paddingHorizontal: Spacing.md,
@@ -248,14 +253,14 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(183, 121, 31, 0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  actionTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  actionSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  actionTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.brandPrimary },
+  actionSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 2 },
   cancel: { alignItems: 'center', paddingVertical: 14 },
-  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: Colors.textSecondary },
+  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: c.textSecondary },
   progressView: { alignItems: 'center', paddingVertical: Spacing.xl, gap: Spacing.md },
-  progressTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, marginTop: Spacing.sm },
-  progressBody: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
-  progressHint: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: Spacing.sm },
+  progressTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, marginTop: Spacing.sm },
+  progressBody: { fontFamily: Fonts.body, fontSize: 15, color: c.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
+  progressHint: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: Spacing.sm },
 
   // Paste-mode styles
   pasteHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, marginBottom: Spacing.md },
@@ -268,19 +273,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(14, 77, 82, 0.03)',
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderColor: c.borderSubtle,
     minHeight: 180,
     padding: Spacing.md,
     fontFamily: Fonts.body,
     fontSize: 13,
-    color: Colors.brandPrimary,
+    color: c.brandPrimary,
     lineHeight: 19,
   },
-  helperText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  helperText: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 6 },
   primaryCta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, marginTop: Spacing.md,
+    backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, marginTop: Spacing.md,
     minHeight: 48,
   },
-  primaryCtaText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
-});
+  primaryCtaText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
+}); }

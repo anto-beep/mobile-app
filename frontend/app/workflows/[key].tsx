@@ -11,11 +11,16 @@ import BackHeader from '../../src/components/BackHeader';
 import { useScenario } from '../../src/context/ScenarioContext';
 import { useParticipants } from '../../src/context/ParticipantsContext';
 import { ContactCard } from '../../src/components/Timeline';
-import { Colors, Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 import { EmptyState } from '../../src/components/Screen';
 
 export default function WorkflowRunner() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { key } = useLocalSearchParams<{ key: string }>();
   const { active } = useParticipants();
@@ -89,7 +94,7 @@ export default function WorkflowRunner() {
           {/* Progress dots */}
           <View style={styles.dots} testID={`workflow-${wf.key}-progress`}>
             {steps.map((_, i) => (
-              <View key={i} style={[styles.dot, i <= step && (isEscalate ? { backgroundColor: '#A5512B' } : { backgroundColor: Colors.brandPrimary })]} />
+              <View key={i} style={[styles.dot, i <= step && (isEscalate ? { backgroundColor: '#A5512B' } : { backgroundColor: c.brandPrimary })]} />
             ))}
           </View>
           <Text style={[Type.h2 as any, isEscalate && { color: '#7A2210' }]}>{current?.title || `Step ${step + 1}`}</Text>
@@ -103,7 +108,7 @@ export default function WorkflowRunner() {
           {current?.event_type && (
             <View style={{ gap: 10, marginTop: 6 }}>
               <Text style={styles.lbl}>Effective date</Text>
-              <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={Colors.textMuted} style={styles.input} />
+              <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} style={styles.input} />
               {(current.payload_fields || []).map((f) => (
                 <View key={f.key} style={{ gap: 4 }}>
                   <Text style={styles.lbl}>{f.label}{f.required ? ' *' : ''}</Text>
@@ -111,7 +116,7 @@ export default function WorkflowRunner() {
                     value={payload[f.key] || ''}
                     onChangeText={(v) => setPayload((p) => ({ ...p, [f.key]: v }))}
                     placeholder={f.placeholder || f.label}
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={c.textMuted}
                     style={styles.input}
                     keyboardType={f.type === 'number' ? 'number-pad' : 'default'}
                     testID={`wf-field-${f.key}`}
@@ -140,17 +145,17 @@ export default function WorkflowRunner() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginVertical: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.border },
-  intro: { ...Type.body, color: Colors.textSecondary, lineHeight: 23 },
-  body: { ...Type.body, color: Colors.textPrimary, lineHeight: 23 },
-  lbl: { ...Type.caption, color: Colors.textSecondary, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.6 },
-  input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: Colors.textPrimary },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 9999, backgroundColor: Colors.brandPrimary, marginTop: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
+  intro: { ...Type.body, color: c.textSecondary, lineHeight: 23 },
+  body: { ...Type.body, color: c.textPrimary, lineHeight: 23 },
+  lbl: { ...Type.caption, color: c.textSecondary, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: c.textPrimary },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 9999, backgroundColor: c.brandPrimary, marginTop: 8 },
   ctaEscalate: { backgroundColor: '#A5512B' },
   ctaText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700', fontSize: 15 },
   back: { alignItems: 'center', paddingVertical: 10 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-});
+  backText: { color: c.textSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+}); }

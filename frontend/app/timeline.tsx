@@ -11,9 +11,14 @@ import { TimelineCell, StatusBadge } from '../src/components/Timeline';
 import { LogScenarioSheet } from '../src/components/LogScenarioSheet';
 import { EmptyState } from '../src/components/Screen';
 import { ListSkeleton } from '../src/components/Skeleton';
-import { Colors, Fonts, Spacing, Type } from '../src/lib/theme';
+import { Fonts, Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 export default function Timeline() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { active, participantSig } = useParticipants();
   const { getTimeline } = useScenario();
@@ -51,7 +56,7 @@ export default function Timeline() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Timeline" />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brandPrimary} />} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.head}>
           <Text style={Type.h1 as any}>{active.first_name}</Text>
           {!!lifecycle && <StatusBadge state={lifecycle} />}
@@ -68,8 +73,8 @@ export default function Timeline() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center', elevation: 4 },
-});
+  fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+}); }

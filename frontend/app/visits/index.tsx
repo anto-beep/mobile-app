@@ -22,6 +22,9 @@ import { useFocusEffect } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
 import { useParticipants } from '../../src/context/ParticipantsContext';
@@ -74,6 +77,8 @@ function fromLocalInput(local: string): string {
 }
 
 export default function Visits() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { participantSig, active } = useParticipants();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,7 +195,7 @@ export default function Visits() {
             {fmtTime(v.starts_at)} · {fmtDuration(v.duration_minutes)}{v.location ? ` · ${v.location}` : ''}{v.provider ? ` · ${v.provider}` : ''}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+        <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -228,28 +233,28 @@ export default function Visits() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <BackHeader title="Calendar" rightAccessory={(
         <TouchableOpacity onPress={openCreate} style={styles.addBtn} testID="visits-add">
-          <Ionicons name="add" size={16} color={Colors.cream} />
+          <Ionicons name="add" size={16} color={c.cream} />
           <Text style={styles.addBtnText}>Add visit</Text>
         </TouchableOpacity>
       )} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Visit calendar</Text>
         <Text style={styles.h1}>Upcoming appointments & home visits</Text>
         <Text style={styles.sub}>Track GP appointments, allied-health visits, ACAT reviews, and provider home visits in one place.</Text>
 
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 40 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 40 }} />
         ) : visits.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="calendar-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="calendar-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No visits yet</Text>
             <Text style={styles.emptyBody}>Add your first appointment with the button above.</Text>
             <TouchableOpacity style={styles.emptyCta} onPress={openCreate} testID="visits-empty-add">
-              <Ionicons name="add" size={14} color={Colors.cream} />
+              <Ionicons name="add" size={14} color={c.cream} />
               <Text style={styles.emptyCtaText}>Add your first visit</Text>
             </TouchableOpacity>
           </View>
@@ -278,7 +283,7 @@ export default function Visits() {
           <Text style={styles.modalTitle}>{modal?._editing ? 'Edit visit' : 'New visit'}</Text>
 
             <Text style={styles.label}>Title</Text>
-            <TextInput value={modal?.title || ''} onChangeText={(t) => setModal((m) => m && { ...m, title: t })} placeholder="GP follow-up · Physio · ACAT review" placeholderTextColor={Colors.textMuted} style={styles.input} testID="visit-title" />
+            <TextInput value={modal?.title || ''} onChangeText={(t) => setModal((m) => m && { ...m, title: t })} placeholder="GP follow-up · Physio · ACAT review" placeholderTextColor={c.textMuted} style={styles.input} testID="visit-title" />
 
             <Text style={styles.label}>When</Text>
             {Platform.OS === 'web' ? (
@@ -292,10 +297,10 @@ export default function Visits() {
                 onChange: (e: any) => setModal((m) => m && { ...m, starts_at: fromLocalInput(e?.target?.value || '') }),
                 'data-testid': 'visit-starts-at',
                 style: {
-                  fontFamily: 'inherit', fontSize: 14, color: Colors.brandPrimary,
-                  background: Colors.background,
+                  fontFamily: 'inherit', fontSize: 14, color: c.brandPrimary,
+                  background: c.background,
                   borderRadius: 8, padding: '12px 14px',
-                  border: `1px solid ${Colors.borderSubtle}`,
+                  border: `1px solid ${c.borderSubtle}`,
                   outline: 'none', width: '100%',
                   boxSizing: 'border-box', minHeight: 46,
                 },
@@ -308,7 +313,7 @@ export default function Visits() {
                   testID="visit-pick-date"
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="calendar-outline" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="calendar-outline" size={14} color={c.brandPrimary} />
                   <Text style={styles.dtBtnText} numberOfLines={1}>
                     {modal?.starts_at ? fmtDateLabel(modal.starts_at) : 'Pick date'}
                   </Text>
@@ -319,7 +324,7 @@ export default function Visits() {
                   testID="visit-pick-time"
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="time-outline" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="time-outline" size={14} color={c.brandPrimary} />
                   <Text style={styles.dtBtnText} numberOfLines={1}>
                     {modal?.starts_at ? fmtTime(modal.starts_at) : 'Pick time'}
                   </Text>
@@ -360,25 +365,25 @@ export default function Visits() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {KINDS.map((k) => (
                 <TouchableOpacity key={k.value} onPress={() => setModal((m) => m && { ...m, kind: k.value })} style={[styles.chip, modal?.kind === k.value && styles.chipActive]}>
-                  <Ionicons name={k.icon} size={12} color={modal?.kind === k.value ? Colors.cream : Colors.brandPrimary} />
+                  <Ionicons name={k.icon} size={12} color={modal?.kind === k.value ? c.cream : c.brandPrimary} />
                   <Text style={[styles.chipText, modal?.kind === k.value && styles.chipTextActive]}>{k.label}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
             <Text style={styles.label}>Location (optional)</Text>
-            <TextInput value={modal?.location || ''} onChangeText={(t) => setModal((m) => m && { ...m, location: t })} placeholder="Where will this happen?" placeholderTextColor={Colors.textMuted} style={styles.input} testID="visit-location" />
+            <TextInput value={modal?.location || ''} onChangeText={(t) => setModal((m) => m && { ...m, location: t })} placeholder="Where will this happen?" placeholderTextColor={c.textMuted} style={styles.input} testID="visit-location" />
 
             <Text style={styles.label}>Provider (optional)</Text>
-            <TextInput value={modal?.provider || ''} onChangeText={(t) => setModal((m) => m && { ...m, provider: t })} placeholder="Dr Lee · MyAged Co" placeholderTextColor={Colors.textMuted} style={styles.input} testID="visit-provider" />
+            <TextInput value={modal?.provider || ''} onChangeText={(t) => setModal((m) => m && { ...m, provider: t })} placeholder="Dr Lee · MyAged Co" placeholderTextColor={c.textMuted} style={styles.input} testID="visit-provider" />
 
             <Text style={styles.label}>Notes (optional)</Text>
-            <TextInput value={modal?.notes || ''} onChangeText={(t) => setModal((m) => m && { ...m, notes: t })} placeholder="Anything to remember?" placeholderTextColor={Colors.textMuted} multiline numberOfLines={3} style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} testID="visit-notes" />
+            <TextInput value={modal?.notes || ''} onChangeText={(t) => setModal((m) => m && { ...m, notes: t })} placeholder="Anything to remember?" placeholderTextColor={c.textMuted} multiline numberOfLines={3} style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} testID="visit-notes" />
 
             <TouchableOpacity onPress={submit} disabled={saving} style={[styles.cta, saving && { opacity: 0.6 }]} testID="visit-save">
-              {saving ? <ActivityIndicator color={Colors.cream} /> : (
+              {saving ? <ActivityIndicator color={c.cream} /> : (
                 <>
-                  <Ionicons name="checkmark" size={14} color={Colors.cream} />
+                  <Ionicons name="checkmark" size={14} color={c.cream} />
                   <Text style={styles.ctaText}>{modal?._editing ? 'Save changes' : 'Add visit'}</Text>
                 </>
               )}
@@ -386,7 +391,7 @@ export default function Visits() {
 
             {modal?._editing ? (
               <TouchableOpacity onPress={() => modal.id && remove(modal as Visit)} style={styles.deleteBtn} testID="visit-delete">
-                <Ionicons name="trash-outline" size={14} color={Colors.danger} />
+                <Ionicons name="trash-outline" size={14} color={c.danger} />
                 <Text style={styles.deleteBtnText}>Remove visit</Text>
               </TouchableOpacity>
             ) : null}
@@ -400,53 +405,53 @@ export default function Visits() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingTop: 4 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, lineHeight: 19 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 32 },
-  addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.cream },
-  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: Colors.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
-  dateLabel: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary, marginTop: 8, marginBottom: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: 6 },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, lineHeight: 19 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 100, backgroundColor: c.brandPrimary, minHeight: 32 },
+  addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.cream },
+  sectionLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: c.textMuted, marginTop: Spacing.lg, marginBottom: 6 },
+  dateLabel: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary, marginTop: 8, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 6 },
   kindIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 8, marginTop: Spacing.md },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
-  emptyCta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100, backgroundColor: Colors.brandPrimary, marginTop: Spacing.sm, minHeight: 40 },
-  emptyCtaText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.cream },
+  rowTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  rowMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 8, marginTop: Spacing.md },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+  emptyCta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100, backgroundColor: c.brandPrimary, marginTop: Spacing.sm, minHeight: 40 },
+  emptyCtaText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.cream },
   // Modal
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '88%' },
-  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, marginBottom: Spacing.sm },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, marginTop: 10, marginBottom: 4 },
-  hint: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, marginTop: 4 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '88%' },
+  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginBottom: Spacing.sm },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, marginTop: 10, marginBottom: 4 },
+  hint: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, marginTop: 4 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.borderSubtle },
   chipRow: { gap: 6, paddingVertical: 4 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle, minHeight: 30 },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
-  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, backgroundColor: c.background, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 30 },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  ctaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8, paddingVertical: 10, borderRadius: Radius.md, backgroundColor: 'rgba(192, 57, 43, 0.08)' },
-  deleteBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.danger },
+  deleteBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.danger },
   cancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
-  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
+  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
   // Date/time picker
   dtRow: { flexDirection: 'row', gap: 8 },
   dtBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.background, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.background, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: c.borderSubtle,
     paddingHorizontal: Spacing.md, paddingVertical: 12, minHeight: 46,
   },
-  dtBtnText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flexShrink: 1 },
+  dtBtnText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flexShrink: 1 },
   dtDone: { alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
-  dtDoneText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-});
+  dtDoneText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+}); }

@@ -7,9 +7,13 @@ import BackHeader from '../src/components/BackHeader';
 import { EmptyState } from '../src/components/Screen';
 import { LogScenarioSheet } from '../src/components/LogScenarioSheet';
 import { useParticipants } from '../src/context/ParticipantsContext';
-import { Colors } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 export default function LogScenarioRoute() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { active } = useParticipants();
   const [open, setOpen] = useState(true);
@@ -28,4 +32,4 @@ export default function LogScenarioRoute() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Colors.bg } });
+function makeStyles(c: ColorPalette) { return StyleSheet.create({ safe: { flex: 1, backgroundColor: c.bg } }); }

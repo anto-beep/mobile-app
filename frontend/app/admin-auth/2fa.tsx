@@ -6,11 +6,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAdminAuth } from '../../src/context/AdminAuthContext';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 
 const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Admin2FA() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { verify2FA } = useAdminAuth();
   const { temp_token, role } = useLocalSearchParams<{ temp_token: string; role: string }>();
@@ -53,12 +58,12 @@ export default function Admin2FA() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.back} onPress={() => router.replace('/admin-auth/login' as any)}>
-            <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-back" size={20} color={c.brandPrimary} />
             <Text style={styles.backText}>Use a different account</Text>
           </TouchableOpacity>
 
           <View style={styles.badge}>
-            <Ionicons name="shield-checkmark" size={20} color={Colors.brandSecondary} />
+            <Ionicons name="shield-checkmark" size={20} color={c.brandSecondary} />
             <Text style={styles.badgeText}>{role || 'staff'}</Text>
           </View>
           <Text style={styles.title}>Verification code</Text>
@@ -73,7 +78,7 @@ export default function Admin2FA() {
             value={code}
             onChangeText={(t) => setCode(useBackup ? t.toUpperCase() : t.replace(/[^\d]/g, ''))}
             placeholder={useBackup ? 'ABCD1234' : '· · · · · ·'}
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={c.textMuted}
             keyboardType={useBackup ? 'default' : 'number-pad'}
             maxLength={useBackup ? 8 : 6}
             autoCapitalize="characters"
@@ -83,7 +88,7 @@ export default function Admin2FA() {
           />
 
           <TouchableOpacity style={[styles.primary, busy && { opacity: 0.6 }]} onPress={onSubmit} disabled={busy} testID="admin-2fa-submit">
-            {busy ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.primaryText}>Verify</Text>}
+            {busy ? <ActivityIndicator color={c.cream} /> : <Text style={styles.primaryText}>Verify</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => { setUseBackup((b) => !b); setCode(''); }} style={styles.toggle} testID="admin-2fa-toggle-backup">
@@ -117,14 +122,14 @@ function DevCodeHint() {
   return (
     <View style={devStyles.box}>
       <View style={devStyles.titleRow}>
-        <Ionicons name="construct-outline" size={12} color={Colors.brandSecondary} />
+        <Ionicons name="construct-outline" size={12} color={c.brandSecondary} />
         <Text style={devStyles.title}>DEV SHORTCUT</Text>
       </View>
       <Text style={devStyles.body}>
         Container clock differs from your phone, so authenticator codes won't match. Tap below to fetch the code computed on the server.
       </Text>
       <TouchableOpacity style={devStyles.btn} onPress={fetchCode} disabled={busy} testID="admin-2fa-devcode">
-        {busy ? <ActivityIndicator size="small" color={Colors.brandPrimary} /> : <Text style={devStyles.btnText}>{code ? `Code: ${code} (refresh)` : 'Show current code'}</Text>}
+        {busy ? <ActivityIndicator size="small" color={c.brandPrimary} /> : <Text style={devStyles.btnText}>{code ? `Code: ${code} (refresh)` : 'Show current code'}</Text>}
       </TouchableOpacity>
       {code ? <Text style={devStyles.foot}>Valid for ~{validFor}s. Paste into the input above.</Text> : null}
     </View>
@@ -141,18 +146,18 @@ const devStyles = StyleSheet.create({
   foot: { fontFamily: Fonts.body, fontSize: 10, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
 });
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, gap: 4 },
   back: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: Spacing.lg },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(183, 121, 31, 0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, marginBottom: Spacing.sm },
-  badgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandSecondary, letterSpacing: 0.5, textTransform: 'uppercase' },
-  title: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5, marginBottom: 6 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginBottom: Spacing.lg, lineHeight: 19 },
-  codeInput: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, paddingVertical: 16, paddingHorizontal: Spacing.md, fontFamily: Fonts.bodySemi, fontSize: 24, color: Colors.brandPrimary, borderWidth: 1, borderColor: Colors.border, textAlign: 'center', letterSpacing: 6, minHeight: 56, marginBottom: Spacing.md },
-  primary: { backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 48 },
-  primaryText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.cream },
+  badgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.brandSecondary, letterSpacing: 0.5, textTransform: 'uppercase' },
+  title: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5, marginBottom: 6 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginBottom: Spacing.lg, lineHeight: 19 },
+  codeInput: { backgroundColor: c.cardBg, borderRadius: Radius.md, paddingVertical: 16, paddingHorizontal: Spacing.md, fontFamily: Fonts.bodySemi, fontSize: 24, color: c.brandPrimary, borderWidth: 1, borderColor: c.border, textAlign: 'center', letterSpacing: 6, minHeight: 56, marginBottom: Spacing.md },
+  primary: { backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center', minHeight: 48 },
+  primaryText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
   toggle: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.sm },
-  toggleText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandSecondary, textDecorationLine: 'underline' },
-});
+  toggleText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandSecondary, textDecorationLine: 'underline' },
+}); }

@@ -8,7 +8,10 @@ import BackHeader from '../../src/components/BackHeader';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { TOKEN_KEY, extractErrorMessage } from '../../src/lib/api';
 import { getToken } from '../../src/lib/tokenStorage';
 import { toast } from '../../src/components/Toast';
@@ -17,6 +20,8 @@ const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 type Period = 'quarter' | 'all';
 
 export default function Reports() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [busy, setBusy] = useState<Period | null>(null);
 
   async function download(period: Period) {
@@ -73,7 +78,7 @@ export default function Reports() {
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
-              <Ionicons name="document-text-outline" size={22} color={Colors.brandPrimary} />
+              <Ionicons name="document-text-outline" size={22} color={c.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>This quarter</Text>
@@ -87,10 +92,10 @@ export default function Reports() {
             testID="reports-download-quarter"
           >
             {busy === 'quarter' ? (
-              <ActivityIndicator color={Colors.cream} />
+              <ActivityIndicator color={c.cream} />
             ) : (
               <>
-                <Ionicons name="download-outline" size={16} color={Colors.cream} />
+                <Ionicons name="download-outline" size={16} color={c.cream} />
                 <Text style={styles.btnText}>Download quarter PDF</Text>
               </>
             )}
@@ -100,7 +105,7 @@ export default function Reports() {
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(122, 155, 126, 0.15)' }]}>
-              <Ionicons name="albums-outline" size={22} color={Colors.severityInfo} />
+              <Ionicons name="albums-outline" size={22} color={c.severityInfo} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>All-time</Text>
@@ -114,10 +119,10 @@ export default function Reports() {
             testID="reports-download-all"
           >
             {busy === 'all' ? (
-              <ActivityIndicator color={Colors.cream} />
+              <ActivityIndicator color={c.cream} />
             ) : (
               <>
-                <Ionicons name="download-outline" size={16} color={Colors.cream} />
+                <Ionicons name="download-outline" size={16} color={c.cream} />
                 <Text style={styles.btnText}>Download all-time PDF</Text>
               </>
             )}
@@ -132,24 +137,24 @@ export default function Reports() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60 },
-  overline: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.textMuted, letterSpacing: 1.4 },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, marginTop: 2, marginBottom: 4 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginBottom: Spacing.lg, lineHeight: 19 },
+  overline: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.textMuted, letterSpacing: 1.4 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, marginTop: 2, marginBottom: 4 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginBottom: Spacing.lg, lineHeight: 19 },
   card: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg,
+    borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md },
   iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  cardSub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.brandPrimary },
+  cardSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 2 },
   btn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, minHeight: 46,
+    backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 12, minHeight: 46,
   },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
-  footnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
-});
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
+  footnote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 16 },
+}); }

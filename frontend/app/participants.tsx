@@ -7,11 +7,16 @@ import { useRouter } from 'expo-router';
 import BackHeader from '../src/components/BackHeader';
 import { useParticipants } from '../src/context/ParticipantsContext';
 import { api } from '../src/lib/api';
-import { Colors, Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { swatchForIndex, initialOf } from '../src/lib/format';
 import { toast } from '../src/components/Toast';
 
 export default function Participants() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { participants, summary, refetch } = useParticipants();
   const [showAdd, setShowAdd] = useState(false);
@@ -90,7 +95,7 @@ export default function Participants() {
               </View>
 
               <View style={styles.emailPill}>
-                <Ionicons name="mail-outline" size={11} color={Colors.textSecondary} />
+                <Ionicons name="mail-outline" size={11} color={c.textSecondary} />
                 <Text style={styles.emailText} numberOfLines={1}>{p.contact_email || '—'}</Text>
               </View>
 
@@ -102,7 +107,7 @@ export default function Participants() {
                   onPress={() => router.push(`/timeline?participant=${p.id}` as any)}
                   testID={`participant-timeline-${p.id}`}
                 >
-                  <Ionicons name="calendar-outline" size={14} color={Colors.brandPrimary} />
+                  <Ionicons name="calendar-outline" size={14} color={c.brandPrimary} />
                   <Text style={styles.actionText}>Timeline</Text>
                 </TouchableOpacity>
                 <View style={styles.actionDivider} />
@@ -112,7 +117,7 @@ export default function Participants() {
                     testID={`participant-restore-${p.id}`}
                     onPress={() => restore(p.id)}
                   >
-                    <Ionicons name="refresh" size={14} color={Colors.brandPrimary} />
+                    <Ionicons name="refresh" size={14} color={c.brandPrimary} />
                     <Text style={styles.actionText}>Restore</Text>
                   </TouchableOpacity>
                 ) : (
@@ -121,7 +126,7 @@ export default function Participants() {
                     onPress={() => router.push(`/participants/${p.id}` as any)}
                     testID={`participant-edit-${p.id}`}
                   >
-                    <Ionicons name="create-outline" size={14} color={Colors.brandPrimary} />
+                    <Ionicons name="create-outline" size={14} color={c.brandPrimary} />
                     <Text style={styles.actionText}>Edit details</Text>
                   </TouchableOpacity>
                 )}
@@ -133,8 +138,8 @@ export default function Participants() {
                       testID={`participant-remove-${p.id}`}
                       onPress={() => remove(p.id, !!p.is_primary)}
                     >
-                      <Ionicons name="trash-outline" size={14} color={Colors.severityAlert} />
-                      <Text style={[styles.actionText, { color: Colors.severityAlert }]}>Remove</Text>
+                      <Ionicons name="trash-outline" size={14} color={c.severityAlert} />
+                      <Text style={[styles.actionText, { color: c.severityAlert }]}>Remove</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -186,10 +191,10 @@ function AddParticipantSheet({ open, onClose, onCreated }: { open: boolean; onCl
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.handle} />
           <Text style={styles.sheetTitle}>Add a participant</Text>
-          <TextInput value={first} onChangeText={setFirst} placeholder="First name" placeholderTextColor={Colors.textMuted} style={styles.input} />
-          <TextInput value={last} onChangeText={setLast} placeholder="Last name (optional)" placeholderTextColor={Colors.textMuted} style={styles.input} />
-          <TextInput value={provider} onChangeText={setProvider} placeholder="Provider name" placeholderTextColor={Colors.textMuted} style={styles.input} />
-          <TextInput value={cls} onChangeText={setCls} placeholder="Classification (1‑8)" placeholderTextColor={Colors.textMuted} style={styles.input} keyboardType="number-pad" />
+          <TextInput value={first} onChangeText={setFirst} placeholder="First name" placeholderTextColor={c.textMuted} style={styles.input} />
+          <TextInput value={last} onChangeText={setLast} placeholder="Last name (optional)" placeholderTextColor={c.textMuted} style={styles.input} />
+          <TextInput value={provider} onChangeText={setProvider} placeholder="Provider name" placeholderTextColor={c.textMuted} style={styles.input} />
+          <TextInput value={cls} onChangeText={setCls} placeholder="Classification (1‑8)" placeholderTextColor={c.textMuted} style={styles.input} keyboardType="number-pad" />
           <TouchableOpacity onPress={submit} disabled={busy} style={[styles.submit, busy && { opacity: 0.6 }]} testID="submit-participant">
             <Text style={styles.submitText}>{busy ? 'Adding…' : 'Add participant'}</Text>
           </TouchableOpacity>
@@ -199,47 +204,47 @@ function AddParticipantSheet({ open, onClose, onCreated }: { open: boolean; onCl
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   heroWrap: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5, lineHeight: 32 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5, lineHeight: 32 },
   countPill: { backgroundColor: 'rgba(14, 77, 82, 0.10)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  countPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary, letterSpacing: 0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, lineHeight: 19 },
+  countPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.brandPrimary, letterSpacing: 0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, lineHeight: 19 },
   addCta: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#A5512B', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, minHeight: 34 },
   addCtaText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: '#FFFFFF' },
 
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginTop: 10, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3 },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginTop: 10, borderWidth: 1, borderColor: c.border, borderLeftWidth: 3 },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   swatch: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   initial: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700', fontSize: 16 },
-  name: { ...Type.bodySemi, color: Colors.textPrimary, fontSize: 17 },
-  meta: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },
+  name: { ...Type.bodySemi, color: c.textPrimary, fontSize: 17 },
+  meta: { ...Type.caption, color: c.textSecondary, marginTop: 2 },
   coverage: { fontFamily: Fonts.body, fontSize: 12, color: '#A5512B', marginTop: 4 },
   coverageBold: { fontFamily: Fonts.bodySemi, color: '#A5512B' },
   primaryPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F9E5C4', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 3 },
   primaryText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  pending: { ...Type.caption, color: Colors.warning, marginTop: 6 },
+  pending: { ...Type.caption, color: c.warning, marginTop: 6 },
 
-  emailPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: Colors.bg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, marginTop: 10, borderWidth: 1, borderColor: Colors.borderSubtle },
-  emailText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary },
+  emailPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: c.bg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, marginTop: 10, borderWidth: 1, borderColor: c.borderSubtle },
+  emailText: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary },
 
-  actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: Colors.borderSubtle, marginTop: 12, paddingTop: 10 },
+  actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: c.borderSubtle, marginTop: 12, paddingTop: 10 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6, minHeight: 36 },
-  actionDivider: { width: 1, height: 18, backgroundColor: Colors.borderSubtle },
-  actionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
+  actionDivider: { width: 1, height: 18, backgroundColor: c.borderSubtle },
+  actionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
 
-  limitCard: { marginTop: 14, marginHorizontal: Spacing.md, padding: Spacing.md, borderRadius: 14, borderWidth: 1, borderColor: Colors.border, backgroundColor: '#FAF1E0', gap: 8 },
-  limitText: { ...Type.body, color: Colors.textPrimary },
-  limitCta: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },
+  limitCard: { marginTop: 14, marginHorizontal: Spacing.md, padding: Spacing.md, borderRadius: 14, borderWidth: 1, borderColor: c.border, backgroundColor: '#FAF1E0', gap: 8 },
+  limitText: { ...Type.body, color: c.textPrimary },
+  limitCta: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(14,30,32,0.55)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 30, gap: 10 },
+  sheet: { backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 30, gap: 10 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 999, backgroundColor: '#D3C9BB', marginBottom: 6 },
-  sheetTitle: { ...Type.h3, color: Colors.textPrimary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: Colors.textPrimary },
-  submit: { backgroundColor: Colors.brandPrimary, paddingVertical: 14, borderRadius: 9999, alignItems: 'center', marginTop: 4 },
+  sheetTitle: { ...Type.h3, color: c.textPrimary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: c.textPrimary },
+  submit: { backgroundColor: c.brandPrimary, paddingVertical: 14, borderRadius: 9999, alignItems: 'center', marginTop: 4 },
   submitText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700' },
-});
+}); }

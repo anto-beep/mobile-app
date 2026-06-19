@@ -20,7 +20,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { api, extractErrorMessage } from '../../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { toast } from '../../src/components/Toast';
 import BackHeader from '../../src/components/BackHeader';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
@@ -71,6 +74,8 @@ function fmtBytes(n: number): string {
 }
 
 export default function Documents() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   // Phase 6: Document Vault carries care plans, financial docs, medical
   // documents — block screenshot / screen recording.
@@ -193,13 +198,13 @@ export default function Documents() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <BackHeader title="Document vault" rightAccessory={(
         <TouchableOpacity onPress={pickFile} style={styles.uploadBtn} testID="docs-upload-btn">
-          <Ionicons name="cloud-upload-outline" size={16} color={Colors.cream} />
+          <Ionicons name="cloud-upload-outline" size={16} color={c.cream} />
           <Text style={styles.uploadBtnText}>Upload</Text>
         </TouchableOpacity>
       )} />
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Household</Text>
         <Text style={styles.h1}>Your documents</Text>
@@ -229,7 +234,7 @@ export default function Documents() {
             if (cnt === 0) return null;
             return (
               <TouchableOpacity key={c} onPress={() => setFilter(c)} style={[styles.chip, filter === c && styles.chipActive]}>
-                <Ionicons name={CATEGORY_ICON[c] || 'document-outline'} size={12} color={filter === c ? Colors.cream : Colors.brandPrimary} />
+                <Ionicons name={CATEGORY_ICON[c] || 'document-outline'} size={12} color={filter === c ? c.cream : c.brandPrimary} />
                 <Text style={[styles.chipText, filter === c && styles.chipTextActive]}>{CATEGORY_LABEL[c] || c} ({cnt})</Text>
               </TouchableOpacity>
             );
@@ -238,14 +243,14 @@ export default function Documents() {
 
         {/* List */}
         {loading ? (
-          <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 40 }} />
+          <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 40 }} />
         ) : filteredDocs.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="folder-open-outline" size={28} color={Colors.textMuted} />
+            <Ionicons name="folder-open-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>{filter ? `No ${CATEGORY_LABEL[filter] || filter} files yet` : 'Vault is empty'}</Text>
             <Text style={styles.emptyBody}>Tap Upload to add an aged-care assessment, statement, or any other PDF / image. Files stay private to your household.</Text>
             <TouchableOpacity style={styles.emptyCta} onPress={pickFile} testID="docs-empty-upload">
-              <Ionicons name="add" size={14} color={Colors.cream} />
+              <Ionicons name="add" size={14} color={c.cream} />
               <Text style={styles.emptyCtaText}>Upload your first file</Text>
             </TouchableOpacity>
           </View>
@@ -254,7 +259,7 @@ export default function Documents() {
             <View key={d.id} style={styles.docCard}>
               <View style={styles.docHead}>
                 <View style={styles.docIcon}>
-                  <Ionicons name={CATEGORY_ICON[d.category] || 'document-outline'} size={18} color={Colors.brandPrimary} />
+                  <Ionicons name={CATEGORY_ICON[d.category] || 'document-outline'} size={18} color={c.brandPrimary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.docTitle} numberOfLines={1}>{d.title || d.filename}</Text>
@@ -267,13 +272,13 @@ export default function Documents() {
               <View style={styles.docActions}>
                 {d.category === 'statement' ? (
                   <TouchableOpacity style={styles.miniBtn} onPress={() => decodeStatement(d)} testID={`doc-decode-${d.id}`}>
-                    <Ionicons name="sparkles-outline" size={12} color={Colors.brandPrimary} />
+                    <Ionicons name="sparkles-outline" size={12} color={c.brandPrimary} />
                     <Text style={styles.miniBtnText}>Decode</Text>
                   </TouchableOpacity>
                 ) : null}
                 <TouchableOpacity style={[styles.miniBtn, styles.miniBtnGhost]} onPress={() => removeDoc(d)} testID={`doc-delete-${d.id}`}>
-                  <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                  <Text style={[styles.miniBtnText, { color: Colors.danger }]}>Delete</Text>
+                  <Ionicons name="trash-outline" size={12} color={c.danger} />
+                  <Text style={[styles.miniBtnText, { color: c.danger }]}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -296,22 +301,22 @@ export default function Documents() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {categories.map((c) => (
                 <TouchableOpacity key={c} onPress={() => setPickerCategory(c)} style={[styles.chip, pickerCategory === c && styles.chipActive]}>
-                  <Ionicons name={CATEGORY_ICON[c] || 'document-outline'} size={12} color={pickerCategory === c ? Colors.cream : Colors.brandPrimary} />
+                  <Ionicons name={CATEGORY_ICON[c] || 'document-outline'} size={12} color={pickerCategory === c ? c.cream : c.brandPrimary} />
                   <Text style={[styles.chipText, pickerCategory === c && styles.chipTextActive]}>{CATEGORY_LABEL[c]}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
             <Text style={styles.label}>Title</Text>
-            <TextInput value={pickerTitle} onChangeText={setPickerTitle} placeholder="e.g. Margaret's April statement" placeholderTextColor={Colors.textMuted} style={styles.input} testID="docs-upload-title" />
+            <TextInput value={pickerTitle} onChangeText={setPickerTitle} placeholder="e.g. Margaret's April statement" placeholderTextColor={c.textMuted} style={styles.input} testID="docs-upload-title" />
 
             <Text style={styles.label}>Notes (optional)</Text>
-            <TextInput value={pickerNotes} onChangeText={setPickerNotes} placeholder="Why is this important?" placeholderTextColor={Colors.textMuted} multiline numberOfLines={2} style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }]} testID="docs-upload-notes" />
+            <TextInput value={pickerNotes} onChangeText={setPickerNotes} placeholder="Why is this important?" placeholderTextColor={c.textMuted} multiline numberOfLines={2} style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }]} testID="docs-upload-notes" />
 
             <TouchableOpacity onPress={submitUpload} disabled={uploading} style={[styles.modalCta, uploading && { opacity: 0.6 }]} testID="docs-upload-submit">
-              {uploading ? <ActivityIndicator color={Colors.cream} /> : (
+              {uploading ? <ActivityIndicator color={c.cream} /> : (
                 <>
-                  <Ionicons name="cloud-upload" size={14} color={Colors.cream} />
+                  <Ionicons name="cloud-upload" size={14} color={c.cream} />
                   <Text style={styles.modalCtaText}>Upload to vault</Text>
                 </>
               )}
@@ -326,52 +331,52 @@ export default function Documents() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingTop: 4 },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
-  h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
-  sub: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, lineHeight: 19 },
-  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 100, backgroundColor: Colors.brandPrimary, minHeight: 32 },
-  uploadBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.cream },
-  meterCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: Spacing.md },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted },
+  h1: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5, marginTop: 2 },
+  sub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 6, lineHeight: 19 },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 100, backgroundColor: c.brandPrimary, minHeight: 32 },
+  uploadBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.cream },
+  meterCard: { backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: c.borderSubtle, marginTop: Spacing.md },
   meterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 },
-  meterLabel: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
-  meterValue: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
-  meterMuted: { fontFamily: Fonts.body, color: Colors.textMuted },
+  meterLabel: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
+  meterValue: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  meterMuted: { fontFamily: Fonts.body, color: c.textMuted },
   meterTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(14, 77, 82, 0.08)', overflow: 'hidden' },
-  meterFill: { height: '100%', backgroundColor: Colors.brandPrimary },
-  meterFootnote: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  meterFill: { height: '100%', backgroundColor: c.brandPrimary },
+  meterFootnote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 6 },
   chipRow: { gap: 6, paddingVertical: Spacing.md, paddingRight: Spacing.lg },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle, minHeight: 32 },
-  chipActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
-  chipTextActive: { color: Colors.cream },
-  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, gap: 8 },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
-  emptyCta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100, backgroundColor: Colors.brandPrimary, marginTop: Spacing.sm, minHeight: 40 },
-  emptyCtaText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.cream },
-  docCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 32 },
+  chipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  chipText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary },
+  chipTextActive: { color: c.cream },
+  emptyCard: { padding: Spacing.lg, alignItems: 'center', backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, gap: 8 },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+  emptyCta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100, backgroundColor: c.brandPrimary, marginTop: Spacing.sm, minHeight: 40 },
+  emptyCtaText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.cream },
+  docCard: { backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 8 },
   docHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   docIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.06)' },
-  docTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.brandPrimary },
-  docMeta: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.3 },
-  docNotes: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+  docTitle: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  docMeta: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.3 },
+  docNotes: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginTop: 4 },
   docActions: { flexDirection: 'row', gap: 6, marginTop: 10 },
   miniBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, backgroundColor: 'rgba(14, 77, 82, 0.06)', minHeight: 28 },
   miniBtnGhost: { backgroundColor: 'rgba(192, 57, 43, 0.06)' },
-  miniBtnText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary },
+  miniBtnText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.brandPrimary },
   // Modal
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalCard: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary },
-  modalSub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, marginTop: 4, marginBottom: 8 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary, marginTop: 10, marginBottom: 4 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.brandPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.borderSubtle },
-  modalCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
-  modalCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: Colors.cream },
+  modalCard: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36 },
+  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary },
+  modalSub: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: 4, marginBottom: 8 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, marginTop: 10, marginBottom: 4 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.brandPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.borderSubtle },
+  modalCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, minHeight: 50 },
+  modalCtaText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.cream },
   modalCancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
-  modalCancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
-});
+  modalCancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
+}); }

@@ -13,9 +13,14 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
-import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 
 export default function Forgot() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -44,13 +49,13 @@ export default function Forgot() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24} showsVerticalScrollIndicator={false}>
           <TouchableOpacity style={styles.back} onPress={() => router.back()} testID="forgot-back">
-            <Ionicons name="chevron-back" size={22} color={Colors.brandPrimary} />
+            <Ionicons name="chevron-back" size={22} color={c.brandPrimary} />
             <Text style={styles.backText}>Sign in</Text>
           </TouchableOpacity>
 
           <View style={styles.brand}>
             <View style={styles.logo}>
-              <Ionicons name="key-outline" size={18} color={Colors.cream} />
+              <Ionicons name="key-outline" size={18} color={c.cream} />
             </View>
             <Text style={styles.brandText}>Wayly</Text>
           </View>
@@ -58,7 +63,7 @@ export default function Forgot() {
           <View style={styles.card}>
             {done ? (
               <>
-                <View style={styles.successIcon}><Ionicons name="mail" size={28} color={Colors.brandPrimary} /></View>
+                <View style={styles.successIcon}><Ionicons name="mail" size={28} color={c.brandPrimary} /></View>
                 <Text style={styles.h1}>Check your inbox</Text>
                 <Text style={styles.sub}>
                   If an account with <Text style={{ fontFamily: Fonts.bodySemi }}>{email.trim()}</Text> exists, we've sent a password reset link. It expires in 1 hour.
@@ -87,7 +92,7 @@ export default function Forgot() {
                   keyboardType="email-address"
                   inputMode="email"
                   placeholder="you@example.com"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={c.textMuted}
                   style={styles.input}
                   testID="forgot-email"
                 />
@@ -95,7 +100,7 @@ export default function Forgot() {
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 
                 <TouchableOpacity onPress={onSubmit} disabled={submitting} style={[styles.btn, submitting && { opacity: 0.6 }]} testID="forgot-submit">
-                  {submitting ? <ActivityIndicator color={Colors.cream} /> : <Text style={styles.btnText}>Send reset link</Text>}
+                  {submitting ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Send reset link</Text>}
                 </TouchableOpacity>
 
                 <Text style={styles.help}>We'll never share your email. Links expire after 1 hour for safety.</Text>
@@ -107,25 +112,25 @@ export default function Forgot() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { flexGrow: 1, padding: Spacing.lg },
   back: { flexDirection: 'row', alignItems: 'center', minHeight: 44, marginBottom: Spacing.md },
-  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: Colors.brandPrimary, marginLeft: 2 },
+  backText: { fontFamily: Fonts.bodyMed, fontSize: 15, color: c.brandPrimary, marginLeft: 2 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, alignSelf: 'center' },
-  logo: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center' },
-  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: Colors.borderSubtle },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted, marginBottom: Spacing.sm },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: Spacing.sm, lineHeight: 21 },
-  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textSecondary, marginTop: Spacing.lg, marginBottom: 6 },
-  input: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14, borderWidth: 1, borderColor: Colors.border },
-  error: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.severityAlert, marginTop: Spacing.md },
-  btn: { marginTop: Spacing.lg, backgroundColor: Colors.brandPrimary, borderRadius: Radius.md, paddingVertical: 16, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
-  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.cream },
+  logo: { width: 36, height: 36, borderRadius: 18, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, letterSpacing: -0.5 },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg + 4, borderWidth: 1, borderColor: c.borderSubtle },
+  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: Spacing.sm },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
+  sub: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: Spacing.sm, lineHeight: 21 },
+  label: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textSecondary, marginTop: Spacing.lg, marginBottom: 6 },
+  input: { fontFamily: Fonts.body, fontSize: 16, color: c.textPrimary, backgroundColor: c.inputBg, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 14, borderWidth: 1, borderColor: c.border },
+  error: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.severityAlert, marginTop: Spacing.md },
+  btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 16, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
+  btnText: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.cream },
   ghostBtn: { marginTop: Spacing.sm, paddingVertical: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+  ghostBtnText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.brandPrimary },
   successIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(183, 121, 31, 0.15)', alignSelf: 'center', marginBottom: Spacing.md },
-  help: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: Spacing.md, textAlign: 'center' },
-});
+  help: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: Spacing.md, textAlign: 'center' },
+}); }

@@ -12,8 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
-import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
+import { Fonts, formatAUD2, Radius, Spacing  } from '../../src/lib/theme';
+import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
+import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import UploadSheet from '../../src/components/UploadSheet';
 import { useParticipants } from '../../src/context/ParticipantsContext';
 
@@ -30,6 +32,8 @@ type Statement = {
 export default function StatementsList() {
   const router = useRouter();
   const { participantSig, active } = useParticipants();
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scrollRef = React.useRef<ScrollView>(null);
   React.useEffect(() => {
     const { TabScrollBus } = require('../../src/lib/tabScrollBus');
@@ -68,7 +72,7 @@ export default function StatementsList() {
   }, [participantSig, active?.id]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: c.background }]} edges={['top']}>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scroll}
@@ -79,7 +83,7 @@ export default function StatementsList() {
               setRefreshing(true);
               load();
             }}
-            tintColor={Colors.brandPrimary}
+            tintColor={c.brandPrimary}
           />
         }
         testID="statements-scroll-view"
@@ -89,11 +93,11 @@ export default function StatementsList() {
 
         {loading ? (
           <View style={styles.loadingFill}>
-            <ActivityIndicator size="large" color={Colors.brandPrimary} />
+            <ActivityIndicator size="large" color={c.brandPrimary} />
           </View>
         ) : statements.length === 0 ? (
           <View style={styles.empty} testID="statements-empty">
-            <Ionicons name="document-text-outline" size={36} color={Colors.textMuted} />
+            <Ionicons name="document-text-outline" size={36} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No statements yet</Text>
             <Text style={styles.emptyBody}>
               Tap the camera button below to add the first one. We'll do the reading.
@@ -121,14 +125,14 @@ export default function StatementsList() {
                   </Text>
                   {alertCount > 0 && (
                     <View style={styles.alertChip}>
-                      <Ionicons name="alert-circle" size={12} color={Colors.severityAlert} />
+                      <Ionicons name="alert-circle" size={12} color={c.severityAlert} />
                       <Text style={styles.alertChipText}>
                         {alertCount} thing{alertCount > 1 ? 's' : ''} to know
                       </Text>
                     </View>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
             );
           })
@@ -142,7 +146,7 @@ export default function StatementsList() {
         onPress={() => setUploadOpen(true)}
         testID="statements-upload-fab"
       >
-        <Ionicons name="add" size={28} color={Colors.cream} />
+        <Ionicons name="add" size={28} color={c.cream} />
       </TouchableOpacity>
 
       <UploadSheet visible={uploadOpen} onClose={() => setUploadOpen(false)} />
@@ -150,38 +154,38 @@ export default function StatementsList() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   overline: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
-    color: Colors.textMuted, marginBottom: 4,
+    color: c.textMuted, marginBottom: 4,
   },
-  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, marginBottom: Spacing.lg, letterSpacing: -0.5 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, marginBottom: Spacing.lg, letterSpacing: -0.5 },
   loadingFill: { padding: Spacing.xl, alignItems: 'center' },
   empty: {
-    backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.xl,
-    alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.xl,
+    alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
   },
-  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: Colors.brandPrimary, marginTop: 8 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary, marginTop: 8 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.cardBg, borderRadius: Radius.md,
+    backgroundColor: c.cardBg, borderRadius: Radius.md,
     padding: Spacing.md + 2, marginBottom: Spacing.sm,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: 1, borderColor: c.borderSubtle,
   },
-  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  cardMeta: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  cardTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: c.brandPrimary },
+  cardMeta: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 2 },
   alertChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
     backgroundColor: 'rgba(192, 57, 43, 0.1)', paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: 100, marginTop: 6,
   },
-  alertChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.severityAlert },
+  alertChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert },
   fab: {
     position: 'absolute', right: Spacing.lg, bottom: Spacing.lg, width: 60, height: 60, borderRadius: 30,
-    backgroundColor: Colors.brandPrimary, alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.brandPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
+    backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center',
+    shadowColor: c.brandPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
   },
-});
+}); }

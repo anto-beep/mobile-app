@@ -11,7 +11,10 @@ import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
-import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../src/lib/theme';
+import type { ColorPalette } from '../src/lib/theme';
+import { useColors } from '../src/hooks/useColors';
+import { useThemedStyles } from '../src/hooks/useThemedStyles';
 
 type Status = {
   in_progress?: boolean;
@@ -32,6 +35,8 @@ const STATUS_PILL: Record<string, { tint: string; label: string }> = {
 };
 
 export default function ProviderSwitch() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { data, loading, refreshing, refresh } = useApi<Status>('/provider-switch/status');
 
   const [open, setOpen] = useState(false);
@@ -83,10 +88,10 @@ export default function ProviderSwitch() {
       <BackHeader title="Switch provider" />
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.brandPrimary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="swap-horizontal-outline" size={22} color={Colors.brandPrimary} />
+          <Ionicons name="swap-horizontal-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Switch provider</Text>
         </View>
         <Text style={styles.subhero}>Move services to a new aged-care provider. Wayly handles the notice letter, tracks unbilled hours and watches the budget transfer.</Text>
@@ -96,10 +101,10 @@ export default function ProviderSwitch() {
           <Text style={styles.bigVal}>{data?.current_provider || 'Your provider'}</Text>
         </View>
 
-        {loading && !data ? <ActivityIndicator color={Colors.brandPrimary} /> : !inProgress ? (
+        {loading && !data ? <ActivityIndicator color={c.brandPrimary} /> : !inProgress ? (
           <>
             <View style={styles.emptyCard}>
-              <Ionicons name="swap-horizontal-outline" size={28} color={Colors.textMuted} />
+              <Ionicons name="swap-horizontal-outline" size={28} color={c.textMuted} />
               <Text style={styles.emptyTitle}>No switch in progress</Text>
               <Text style={styles.emptyBody}>Start one when you&apos;re ready — most switches take 30 days notice. We&apos;ll guide you through every step.</Text>
               <TouchableOpacity style={styles.cta} onPress={() => setOpen(true)} testID="provider-switch-start">
@@ -130,7 +135,7 @@ export default function ProviderSwitch() {
               </View>
             )}
             <TouchableOpacity onPress={cancel} style={styles.cancelBtn} testID="provider-switch-cancel">
-              <Ionicons name="close-circle-outline" size={14} color={Colors.severityAlert} />
+              <Ionicons name="close-circle-outline" size={14} color={c.severityAlert} />
               <Text style={styles.cancelText}>Cancel this switch</Text>
             </TouchableOpacity>
           </View>
@@ -153,10 +158,10 @@ export default function ProviderSwitch() {
           <Text style={styles.help}>We&apos;ll draft a formal notice letter once you tell us where you&apos;re moving.</Text>
 
           <Text style={styles.lbl}>New provider</Text>
-          <TextInput style={styles.input} value={newProvider} onChangeText={setNewProvider} placeholder="e.g. SilverCare Plus" placeholderTextColor={Colors.textMuted} testID="provider-new" />
+          <TextInput style={styles.input} value={newProvider} onChangeText={setNewProvider} placeholder="e.g. SilverCare Plus" placeholderTextColor={c.textMuted} testID="provider-new" />
 
           <Text style={styles.lbl}>Reason (optional)</Text>
-          <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={reason} onChangeText={setReason} multiline placeholder="Why are you moving? Service quality, billing, location, fit…" placeholderTextColor={Colors.textMuted} testID="provider-reason" />
+          <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={reason} onChangeText={setReason} multiline placeholder="Why are you moving? Service quality, billing, location, fit…" placeholderTextColor={c.textMuted} testID="provider-reason" />
 
           <Text style={styles.lbl}>Target switch date (optional)</Text>
           {Platform.OS === 'web' ? (
@@ -165,10 +170,10 @@ export default function ProviderSwitch() {
               value: targetDate || '',
               onChange: (e: any) => setTargetDate(e?.target?.value || undefined),
               'data-testid': 'provider-target-date',
-              style: { fontFamily: 'inherit', fontSize: 14, color: Colors.brandPrimary, background: Colors.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${Colors.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+              style: { fontFamily: 'inherit', fontSize: 14, color: c.brandPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
             })
           ) : (
-            <TextInput style={styles.input} value={targetDate || ''} onChangeText={setTargetDate} placeholder="YYYY-MM-DD" placeholderTextColor={Colors.textMuted} testID="provider-target-date" />
+            <TextInput style={styles.input} value={targetDate || ''} onChangeText={setTargetDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} testID="provider-target-date" />
           )}
 
           <TouchableOpacity onPress={start} disabled={busy} style={[styles.cta, busy && { opacity: 0.6 }]} testID="provider-switch-save">
@@ -186,34 +191,34 @@ export default function ProviderSwitch() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
-  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
-  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
-  progressCard: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  card: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
+  progressCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: Spacing.md },
   progRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.6, color: Colors.textSecondary },
-  bigVal: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.brandPrimary, marginTop: 4 },
-  body: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, marginTop: 2, lineHeight: 19 },
+  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 0.6, color: c.textSecondary },
+  bigVal: { fontFamily: Fonts.heading, fontSize: 20, color: c.brandPrimary, marginTop: 4 },
+  body: { fontFamily: Fonts.body, fontSize: 13, color: c.textPrimary, marginTop: 2, lineHeight: 19 },
   pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   pillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.4 },
-  emptyCard: { padding: Spacing.lg, alignItems: 'center', gap: 8, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: Spacing.md },
-  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
-  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.brandPrimary, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999, marginTop: Spacing.sm, minHeight: 44 },
+  emptyCard: { padding: Spacing.lg, alignItems: 'center', gap: 8, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.brandPrimary, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999, marginTop: Spacing.sm, minHeight: 44 },
   ctaText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: '#FFFFFF' },
   cancelBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: Spacing.md, paddingVertical: 8 },
-  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.severityAlert },
+  cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.severityAlert },
   // modal
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '90%' },
-  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: Spacing.md },
-  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: Colors.brandPrimary, marginBottom: 4 },
-  help: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 18 },
-  input: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: Colors.borderSubtle, minHeight: 46 },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 36, maxHeight: '90%' },
+  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginBottom: Spacing.md },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginBottom: 4 },
+  help: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, marginBottom: Spacing.sm, lineHeight: 18 },
+  input: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, backgroundColor: c.background, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: 12, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 46 },
   cancelLink: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
-  cancelLinkText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
-});
+  cancelLinkText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
+}); }
