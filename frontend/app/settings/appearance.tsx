@@ -27,7 +27,21 @@ export default function AppearanceSettings() {
       <BackHeader title="Appearance" />
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: Spacing.md }}>
         <View style={styles.card}>
-          <Text style={styles.label}>Theme</Text>
+          <Text style={styles.label}>Appearance</Text>
+          <Text style={styles.sub}>Pick how Wayly should look. We&apos;ll keep the system clock and battery readable — black on light, white on dark.</Text>
+
+          {/* Live preview swatches — show what the current pick will look like */}
+          <View style={styles.preview}>
+            <View style={[styles.previewTile, effective === 'light' ? styles.previewLight : styles.previewDark]}>
+              <Text style={[styles.previewLbl, { color: effective === 'light' ? '#0E4D52' : '#F0EBE0' }]}>Aa</Text>
+              <View style={[styles.previewDot, { backgroundColor: effective === 'light' ? '#0E4D52' : '#5FA9AF' }]} />
+            </View>
+            <Text style={styles.previewMeta}>
+              Active: <Text style={styles.subBold}>{effective === 'dark' ? 'Dark' : 'Light'}</Text>
+              {choice === 'system' ? ' (matching your phone)' : ''}
+            </Text>
+          </View>
+
           <View style={styles.row}>
             {themes.map((t) => (
               <TouchableOpacity
@@ -41,10 +55,6 @@ export default function AppearanceSettings() {
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.sub}>
-            Active: <Text style={styles.subBold}>{effective === 'dark' ? 'Dark' : 'Light'}</Text>
-            {choice === 'system' ? ' (matching your phone)' : ''}. We use this to keep the system clock and battery icon visible — black on light backdrops, white on dark.
-          </Text>
         </View>
 
         <View style={styles.card}>
@@ -88,4 +98,12 @@ const styles = StyleSheet.create({
   themePillText: { ...Type.body, color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 13 },
   themePillTextActive: { color: '#FFFFFF' },
   subBold: { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary },
+  preview: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
+  previewTile: { width: 64, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, gap: 2 },
+  previewLight: { backgroundColor: '#FBF8F3', borderColor: 'rgba(14,77,82,0.12)' },
+  previewDark: { backgroundColor: '#1A1815', borderColor: 'rgba(240,235,224,0.14)' },
+  previewLbl: { fontFamily: Fonts.heading, fontSize: 18 },
+  previewDot: { width: 10, height: 3, borderRadius: 2 },
+  previewMeta: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
+  sub: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
 });

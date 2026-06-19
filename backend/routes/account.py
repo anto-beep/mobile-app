@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 
 from auth import get_current_user_id
 from deps import db
@@ -77,3 +77,31 @@ async def build_account_payload(user_id: str) -> Dict[str, Any]:
 @router.get("/account")
 async def get_account(user_id: str = Depends(get_current_user_id)):
     return await build_account_payload(user_id)
+
+
+# ─────────────────── User preferences (Phase 1 — appearance) ───────────────────
+@router.get("/users/me/preferences")
+async def get_preferences(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "preferences": 1})
+    prefs = (user or {}).get("preferences") or {}
+    return {
+        "appearance": prefs.get("appearance", "system"),
+    }
+
+
+@router.patch("/users/me/preferences")
+async def patch_preferences(
+    body: Dict[str, Any] = Body(...),
+    user_id: str = Depends(get_current_user_id),
+):
+    update: Dict[str, Any] = {}
+    if "appearance" in body:
+        v = str(body["appearance"]).lower()
+        if v not in ("light", "dark", "system"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="appearance must be light|dark|system")
+        update["preferences.appearance"] = v
+    if not update:
+        return await get_preferences(user_id)
+    await db.users.update_one({"id": user_id}, {"$set": update})
+    return await get_preferences(user_id)

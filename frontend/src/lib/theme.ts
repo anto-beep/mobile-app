@@ -71,6 +71,48 @@ export const Colors = {
   danger: '#C0392B',
 } as const;
 
+// ─────────────────── DARK PALETTE (Phase 1) ───────────────────
+// Warm near-black surfaces + warm off-white text. Lifted brand colours
+// for AAA contrast on the dark background. See acceptance spec.
+export const DarkColors = {
+  background: '#1A1815',
+  bg: '#1A1815',
+  brandPrimary: '#5FA9AF',
+  brandPrimaryDeep: '#0E4D52',
+  brandSecondary: '#D89C7A',
+  brandSecondaryDeep: '#A5512B',
+  focusRing: '#E5B492',
+  cream: '#F0EBE0',
+  streams: {
+    Clinical: '#8BB392',
+    Independence: '#A9C8AE',
+    'Everyday Living': '#D89C7A',
+  } as Record<string, string>,
+  severityAlert: '#F08A7E',
+  severityWarning: '#E5B36A',
+  severityInfo: '#A9C8AE',
+  textPrimary: '#F0EBE0',
+  textSecondary: '#C8C1B3',
+  textMuted: '#8E867A',
+  textInverse: '#1A1815',
+  cardBg: '#26231F',
+  cardBgWarm: '#2E2A25',
+  inputBg: '#1F1D1A',
+  border: 'rgba(240, 235, 224, 0.14)',
+  borderSubtle: 'rgba(240, 235, 224, 0.08)',
+  surfaceTint: 'rgba(240, 235, 224, 0.05)',
+  success: '#7FB58E',
+  warning: '#E5B36A',
+  danger: '#F08A7E',
+} as const;
+
+export type ColorPalette = typeof Colors;
+
+/** Resolve the active palette from a theme choice. */
+export function getColors(effective: 'light' | 'dark'): ColorPalette {
+  return effective === 'dark' ? (DarkColors as unknown as ColorPalette) : Colors;
+}
+
 export const Spacing = {
   xs: 4,
   sm: 8,

@@ -6,6 +6,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../lib/api';
 
 export type ThemeChoice = 'light' | 'dark' | 'system';
 export type EffectiveTheme = 'light' | 'dark';
@@ -28,7 +29,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [choice, setChoiceState] = useState<ThemeChoice>('system');
 
-  // Hydrate the stored preference once.
+  // Phase 1 no-flash: synchronously hydrate from AsyncStorage on mount so the
+  // first frame already reflects the user's choice. Then in the background
+  // try to load from the server (cross-device sync).
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(STORAGE_KEY)
@@ -37,12 +40,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (v === 'light' || v === 'dark' || v === 'system') setChoiceState(v);
       })
       .catch(() => {});
+    // Server hydrate (auth required; ignore failures silently).
+    api.get<{ appearance?: ThemeChoice }>('/users/me/preferences')
+      .then(({ data }) => {
+        const v = data?.appearance;
+        if (!mounted) return;
+        if (v === 'light' || v === 'dark' || v === 'system') {
+          setChoiceState(v);
+          AsyncStorage.setItem(STORAGE_KEY, v).catch(() => {});
+        }
+      })
+      .catch(() => {});
     return () => { mounted = false; };
   }, []);
 
   const setChoice = useCallback(async (c: ThemeChoice) => {
     setChoiceState(c);
-    try { await AsyncStorage.setItem(STORAGE_KEY, c); } catch { /* ignore */ }
+    try { await AsyncStorage.setItem(STORAGE_KEY, c); } catch {}
+    // Persist to server (best-effort cross-device sync).
+    api.patch('/users/me/preferences', { appearance: c }).catch(() => {});
   }, []);
 
   const effective: EffectiveTheme = useMemo(() => {
