@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
+import { useColors } from '../../src/hooks/useColors';
 import { useAuth } from '../../src/context/AuthContext';
 import { useParticipants } from '../../src/context/ParticipantsContext';
 import UploadSheet from '../../src/components/UploadSheet';

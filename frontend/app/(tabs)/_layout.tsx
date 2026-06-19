@@ -1,22 +1,21 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../src/lib/theme';
+import { Colors, Fonts, getColors } from '../../src/lib/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { TabScrollBus } from '../../src/lib/tabScrollBus';
 
-// Phase B \u2014 5-tab bottom nav.
-// Dashboard \u00b7 Family wall \u00b7 Statements \u00b7 Tools \u00b7 More
-// All other historical screens (chat, family v1, profile, notifications)
-// are still routable, just hidden from the tab bar.
 export default function TabsLayout() {
+  const { effective } = useTheme();
+  const c = getColors(effective);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.brandPrimary,
-        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarActiveTintColor: c.brandPrimary,
+        tabBarInactiveTintColor: c.textMuted,
         tabBarStyle: {
-          backgroundColor: Colors.cardBg,
-          borderTopColor: Colors.border,
+          backgroundColor: c.cardBg,
+          borderTopColor: c.border,
           borderTopWidth: 1,
           paddingTop: 6,
           height: 84,
