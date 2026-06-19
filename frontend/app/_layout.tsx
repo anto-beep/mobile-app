@@ -15,7 +15,6 @@ import { OnboardingGate } from '../src/components/OnboardingGate';
 import { SchemaBanner } from '../src/components/SchemaBanner';
 import { PushDeepLinkListener } from '../src/components/PushDeepLinkListener';
 import { ToastProvider } from '../src/components/Toast';
-import { AccessibilityWidget } from '../src/components/AccessibilityWidget';
 import { ThemedShell } from '../src/components/ThemedShell';
 import { DeepLinkHandler } from '../src/components/DeepLinkHandler';
 import { NotificationRouter } from '../src/components/NotificationRouter';
@@ -71,7 +70,7 @@ function RootStack() {
       </BiometricGate>
       <DeepLinkHandler />
       <NotificationRouter />
-      <AccessibilityWidget />
+      {/* AccessibilityWidget removed per request — settings still accessible via More → Settings → Appearance. */}
     </>
   );
 }

@@ -55,20 +55,27 @@ export function ThemedShell({ children }: { children: React.ReactNode }) {
   // Theme picker (light/dark/system) overrides the a11y darkMode toggle.
   const isDark = theme.effective === 'dark' || a11y.darkMode;
 
-  // Web-only: apply a CSS `invert + hue-rotate` filter to the document root
-  // when dark mode is on. This is the classic trick that flips light surfaces
-  // to dark and dark text to light without rewriting every StyleSheet. It
-  // preserves brand colours reasonably (teal → warm rust). On native we
-  // fall back to a translucent dark overlay below.
+  // Web-only: tag the document root so future per-component dark styling
+  // can target `html[data-wayly-theme="dark"]`. We no longer try to do a
+  // global colour-flip — those hacks produce inconsistent half-themed
+  // surfaces. Full dark palette is a per-screen StyleSheet refactor we'll
+  // ship in a follow-up.
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     try {
-      const root = (globalThis as any).document?.documentElement;
-      if (!root) return;
-      const existing = root.style.filter || '';
-      const cleaned = existing.replace(/\s*invert\(1\)\s*hue-rotate\(180deg\)\s*/g, '').trim();
-      root.style.filter = isDark ? `${cleaned} invert(1) hue-rotate(180deg)`.trim() : cleaned;
-      root.style.background = isDark ? '#000' : '';
+      const doc: any = (globalThis as any).document;
+      if (!doc) return;
+      const root = doc.documentElement;
+      try {
+        const existing = (root.style.filter || '').replace(/\s*invert\(1\)\s*hue-rotate\(180deg\)\s*/g, '').trim();
+        root.style.filter = existing;
+        root.style.background = '';
+      } catch {}
+      root.setAttribute('data-wayly-theme', isDark ? 'dark' : 'light');
+      root.style.colorScheme = isDark ? 'dark' : 'light';
+      const ID = 'wayly-dark-overrides';
+      const el = doc.getElementById(ID);
+      if (el) el.remove();
     } catch {}
   }, [isDark]);
 
@@ -104,20 +111,8 @@ export function ThemedShell({ children }: { children: React.ReactNode }) {
         {children}
       </View>
 
-      {/* Dark mode for NATIVE: use a near-opaque dark overlay with multiply
-          blending so cream surfaces actually turn dark and text reads white.
-          On web we skip this — the `invert + hue-rotate` filter on the root
-          element (see useEffect above) handles it cleanly there. */}
-      {isDark && Platform.OS !== 'web' && (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.overlay,
-            { backgroundColor: 'rgba(0, 0, 0, 0.86)' },
-          ]}
-          testID="dark-mode-overlay"
-        />
-      )}
+      {/* No overlay — dark mode uses CSS variable overrides on web; native
+          dark theme is a per-component palette (a separate effort). */}
 
       {/* High contrast: CSS filter on web; gentle tint fallback on native. */}
       {a11y.highContrast && (
