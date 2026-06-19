@@ -74,6 +74,10 @@ async function fileToBase64(uri: string): Promise<string | null> {
 export default function FamilyWall() {
   const { user } = useAuth();
   const { active, participantSig } = useParticipants();
+  // Note: useScrollToTop not wired because family-wall.tsx is also a top-
+  // level route (/family-wall) and useRoute() throws there. Tab scroll-to-
+  // top is still active for the other tabs (today/statements/tools/more).
+  const scrollRef = useRef<any>(null);
 
   // Composer state
   const [text, setText] = useState('');
@@ -88,6 +92,9 @@ export default function FamilyWall() {
   // Recording — expo-audio
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [recording, setRecording] = useState(false);
+  // When true, the next stop will transcribe the audio into text;
+  // when false, we attach the audio clip as-is (Voice note vs Dictate).
+  const [transcribeNext, setTranscribeNext] = useState(false);
   const [recElapsed, setRecElapsed] = useState(0);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -208,6 +215,11 @@ export default function FamilyWall() {
       setAudioMime(mime);
       setAudioDurationMs(recElapsed);
 
+      if (!transcribeNext) {
+        toast.success('Voice note attached.');
+        return;
+      }
+
       // Transcribe → fill the text box.
       setTranscribing(true);
       try {
@@ -281,19 +293,19 @@ export default function FamilyWall() {
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Family wall" />
       <KeyboardAwareScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         bottomOffset={24}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandPrimary} />}
       >
         <View style={styles.heroRow}>
-          <Ionicons name="people-circle-outline" size={22} color={Colors.brandPrimary} />
-          <Text style={styles.hero}>Family wall</Text>
+          <Ionicons name="heart-outline" size={22} color={Colors.severityAlert} />
+          <Text style={styles.hero}>Family Wall</Text>
         </View>
         <Text style={styles.subhero}>
-          Share a quick note, photo or voice memo with everyone caring for {active?.first_name || 'this participant'}.
+          A simple digital fridge door for {active?.first_name || 'this participant'}. Photos, messages, and quick voice notes from everyone in the family.
         </Text>
 
         {/* Composer */}
@@ -302,7 +314,7 @@ export default function FamilyWall() {
             value={text}
             onChangeText={setText}
             multiline
-            placeholder={`What's happening with ${active?.first_name || 'them'}?`}
+            placeholder={`Share a moment, an update, or a memory with ${active?.first_name || 'them'}…`}
             placeholderTextColor={Colors.textMuted}
             style={styles.input}
             editable={!submitting}
@@ -346,14 +358,35 @@ export default function FamilyWall() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.toolBtn, recording && styles.toolBtnRec]}
-              onPress={recording ? stopRecording : startRecording}
+              style={[styles.toolBtn, recording && !transcribeNext && styles.toolBtnRec]}
+              onPress={() => { setTranscribeNext(false); recording ? stopRecording() : startRecording(); }}
               disabled={submitting || transcribing}
-              testID="wall-voice-toggle"
+              testID="wall-voice-note"
               accessibilityRole="button"
-              accessibilityLabel={recording ? 'Stop recording' : 'Record a voice note'}
+              accessibilityLabel={recording && !transcribeNext ? 'Stop recording' : 'Record a voice note'}
             >
-              {recording ? (
+              {recording && !transcribeNext ? (
+                <>
+                  <View style={styles.recDot} />
+                  <Text style={[styles.toolBtnText, styles.toolBtnTextRec]}>{fmtMs(recElapsed)} · Stop</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="mic-outline" size={18} color={Colors.brandPrimary} />
+                  <Text style={styles.toolBtnText}>Voice note</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toolBtn, recording && transcribeNext && styles.toolBtnRec]}
+              onPress={() => { setTranscribeNext(true); recording ? stopRecording() : startRecording(); }}
+              disabled={submitting || transcribing}
+              testID="wall-dictate"
+              accessibilityRole="button"
+              accessibilityLabel={recording && transcribeNext ? 'Stop dictation' : 'Dictate'}
+            >
+              {recording && transcribeNext ? (
                 <>
                   <View style={styles.recDot} />
                   <Text style={[styles.toolBtnText, styles.toolBtnTextRec]}>{fmtMs(recElapsed)} · Stop</Text>
@@ -365,7 +398,7 @@ export default function FamilyWall() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="mic-outline" size={18} color={Colors.brandPrimary} />
+                  <Ionicons name="mic-circle-outline" size={18} color={Colors.brandPrimary} />
                   <Text style={styles.toolBtnText}>Dictate</Text>
                 </>
               )}
@@ -385,7 +418,7 @@ export default function FamilyWall() {
               ) : (
                 <>
                   <Ionicons name="send-outline" size={14} color="#FFFFFF" />
-                  <Text style={styles.postBtnText}>Post</Text>
+                  <Text style={styles.postBtnText}>Share</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -397,10 +430,10 @@ export default function FamilyWall() {
           <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 32 }} />
         ) : posts.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="people-circle-outline" size={28} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>Quiet here — for now</Text>
+            <Ionicons name="chatbox-ellipses-outline" size={28} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>Be the first to share a moment with {active?.first_name || 'them'}.</Text>
             <Text style={styles.emptyBody}>
-              Anything you post above will appear here for everyone in {active?.first_name || 'this participant'}&apos;s family circle.
+              Anything you share above will land here for everyone in {active?.first_name || 'this participant'}&apos;s family circle.
             </Text>
           </View>
         ) : posts.map((p) => <PostCard key={p.id} post={p} self={user?.id === p.author_id} />)}

@@ -1,6 +1,6 @@
 // More — grouped drawer-like screen accessed from the 4th tab.
 // Spec section 5 of MOBILE_AGENT_DASHBOARD_PROMPT.md.
-import React from 'react';
+import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,6 +22,8 @@ type Item = {
 type Group = { title: string; items: Item[] };
 
 export default function More() {
+  const scrollRef = useRef<ScrollView>(null);
+  // Tab scroll-to-top — wired in (tabs)/more.tsx wrapper if needed.
   const router = useRouter();
   const { user, logout } = useAuth();
   const { summary } = useParticipants();
@@ -69,7 +71,7 @@ export default function More() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <WaylyHeader />
       <TrialCountdownBanner />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.head}>
           <Text style={Type.h1 as any}>More</Text>
           {!!user && <Text style={styles.meta}>Signed in as {user.name}</Text>}

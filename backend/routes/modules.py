@@ -36,6 +36,123 @@ async def list_budget_alerts(p: dict = Depends(get_active_participant)):
     return {"items": await _list("budget_alerts", p), "active_participant_id": p["id"]}
 
 
+@router.post("/budget/alerts")
+async def create_budget_alert(
+    body: Dict[str, Any] = Body(...),
+    p: dict = Depends(get_active_participant),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Configure a new threshold-style budget alert (per-stream % cap)."""
+    stream = (body.get("stream") or "ALL").upper().replace(" ", "_")
+    try:
+        threshold = float(body.get("threshold_pct") or body.get("threshold") or 80)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="threshold_pct must be a number")
+    threshold = max(1.0, min(threshold, 100.0))
+    doc = {
+        "id": new_id(),
+        "participant_id": p["id"],
+        "user_id": user_id,
+        "stream": stream,
+        "threshold_pct": threshold,
+        "email_me": bool(body.get("email_me", True)),
+        "active": True,
+        "created_at": now_iso(),
+    }
+    await db.budget_alerts.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.delete("/budget/alerts/{alert_id}")
+async def delete_budget_alert(
+    alert_id: str,
+    p: dict = Depends(get_active_participant),
+):
+    res = await db.budget_alerts.delete_one({"id": alert_id, "participant_id": p["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"ok": True}
+
+
+# ─────────────────────── HOSPITAL LIAISON (stays) ───────────────────────
+@router.get("/hospital/admissions")
+async def list_hospital_admissions(p: dict = Depends(get_active_participant)):
+    cur = db.hospital_admissions.find(
+        {"participant_id": p["id"]}, {"_id": 0}
+    ).sort("admitted_at", -1).limit(50)
+    return {"items": await cur.to_list(50)}
+
+
+@router.post("/hospital/admissions")
+async def create_hospital_admission(
+    body: Dict[str, Any] = Body(...),
+    p: dict = Depends(get_active_participant),
+    user_id: str = Depends(get_current_user_id),
+):
+    hospital = (body.get("hospital") or "").strip()
+    admitted_at = (body.get("admitted_at") or "").strip()
+    if not hospital:
+        raise HTTPException(status_code=400, detail="hospital is required")
+    if not admitted_at:
+        raise HTTPException(status_code=400, detail="admitted_at is required")
+    doc = {
+        "id": new_id(),
+        "participant_id": p["id"],
+        "user_id": user_id,
+        "hospital": hospital[:200],
+        "reason": (body.get("reason") or "")[:500],
+        "admitted_at": admitted_at,
+        "discharged_at": body.get("discharged_at"),
+        "restorative_pathway": bool(body.get("restorative_pathway", False)),
+        "services_paused": bool(body.get("services_paused", True)),
+        "notes": (body.get("notes") or "")[:2000],
+        "status": "ADMITTED" if not body.get("discharged_at") else "DISCHARGED",
+        "created_at": now_iso(),
+    }
+    await db.hospital_admissions.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.patch("/hospital/admissions/{admission_id}")
+async def update_hospital_admission(
+    admission_id: str,
+    body: Dict[str, Any] = Body(...),
+    p: dict = Depends(get_active_participant),
+):
+    update: Dict[str, Any] = {}
+    for key in ("discharged_at", "reason", "notes", "restorative_pathway", "services_paused"):
+        if key in body:
+            update[key] = body[key]
+    if update.get("discharged_at"):
+        update["status"] = "DISCHARGED"
+    if not update:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    update["updated_at"] = now_iso()
+    res = await db.hospital_admissions.update_one(
+        {"id": admission_id, "participant_id": p["id"]},
+        {"$set": update},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    doc = await db.hospital_admissions.find_one(
+        {"id": admission_id, "participant_id": p["id"]}, {"_id": 0}
+    )
+    return doc
+
+
+@router.delete("/hospital/admissions/{admission_id}")
+async def delete_hospital_admission(
+    admission_id: str,
+    p: dict = Depends(get_active_participant),
+):
+    res = await db.hospital_admissions.delete_one({"id": admission_id, "participant_id": p["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    return {"ok": True}
+
+
 # ─────────────────────── REPORTS (summary index) ───────────────────────
 # Replaced by routes/reports.py which owns the full Reports tab now —
 # per-participant library, 8 report types, persisted PDFs.

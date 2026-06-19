@@ -12,11 +12,11 @@ import {
   Pressable,
   TextInput,
   RefreshControl,
-  KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -226,10 +226,10 @@ export default function Visits() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Visits" rightAccessory={(
+      <BackHeader title="Calendar" rightAccessory={(
         <TouchableOpacity onPress={openCreate} style={styles.addBtn} testID="visits-add">
           <Ionicons name="add" size={16} color={Colors.cream} />
-          <Text style={styles.addBtnText}>Add</Text>
+          <Text style={styles.addBtnText}>Add visit</Text>
         </TouchableOpacity>
       )} />
 
@@ -237,9 +237,9 @@ export default function Visits() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.brandPrimary} />}
       >
-        <Text style={styles.overline}>Calendar</Text>
-        <Text style={styles.h1}>Your visits</Text>
-        <Text style={styles.sub}>Appointments, home visits, telehealth and assessments — all on one timeline.</Text>
+        <Text style={styles.overline}>Visit calendar</Text>
+        <Text style={styles.h1}>Upcoming appointments & home visits</Text>
+        <Text style={styles.sub}>Track GP appointments, allied-health visits, ACAT reviews, and provider home visits in one place.</Text>
 
         {loading ? (
           <ActivityIndicator color={Colors.brandPrimary} style={{ paddingVertical: 40 }} />
@@ -247,7 +247,7 @@ export default function Visits() {
           <View style={styles.emptyCard}>
             <Ionicons name="calendar-outline" size={28} color={Colors.textMuted} />
             <Text style={styles.emptyTitle}>No visits yet</Text>
-            <Text style={styles.emptyBody}>Add an appointment, GP visit, or assessment to keep everyone in your family in the loop.</Text>
+            <Text style={styles.emptyBody}>Add your first appointment with the button above.</Text>
             <TouchableOpacity style={styles.emptyCta} onPress={openCreate} testID="visits-empty-add">
               <Ionicons name="add" size={14} color={Colors.cream} />
               <Text style={styles.emptyCtaText}>Add your first visit</Text>
@@ -266,11 +266,16 @@ export default function Visits() {
 
       {/* Add / Edit modal */}
       <Modal visible={!!modal} animationType="slide" transparent onRequestClose={() => setModal(null)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <Pressable style={styles.backdrop} onPress={() => !saving && setModal(null)} />
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
-            <Text style={styles.modalTitle}>{modal?._editing ? 'Edit visit' : 'New visit'}</Text>
+        <Pressable style={styles.backdrop} onPress={() => !saving && setModal(null)} />
+        <KeyboardAwareScrollView
+          style={styles.sheet}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={24}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.handle} />
+          <Text style={styles.modalTitle}>{modal?._editing ? 'Edit visit' : 'New visit'}</Text>
 
             <Text style={styles.label}>Title</Text>
             <TextInput value={modal?.title || ''} onChangeText={(t) => setModal((m) => m && { ...m, title: t })} placeholder="GP follow-up · Physio · ACAT review" placeholderTextColor={Colors.textMuted} style={styles.input} testID="visit-title" />
@@ -389,8 +394,7 @@ export default function Visits() {
             <TouchableOpacity onPress={() => !saving && setModal(null)} style={styles.cancel}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       </Modal>
     </SafeAreaView>
   );

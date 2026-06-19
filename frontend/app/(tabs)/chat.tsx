@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useScenario } from '../../src/context/ScenarioContext';
@@ -35,6 +36,7 @@ const LAST_ACTIVE_KEY = 'wayly:chat:last_active';
 const RESUME_DISMISSED_KEY = 'wayly:chat:resume_dismissed_at';
 
 export default function Chat() {
+  const router = useRouter();
   const scenario = useScenario();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
@@ -180,6 +182,16 @@ export default function Chat() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={10}
+          testID="chat-back-btn"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.overline}>Help</Text>
           <Text style={styles.h1}>Ask Wayly</Text>
@@ -301,6 +313,7 @@ export default function Chat() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
   header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 12 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: 2 },
   newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, minHeight: 36 },
   newBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary },
   resumeCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: Spacing.md, marginBottom: Spacing.md, borderRadius: Radius.md, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)' },

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
@@ -91,6 +92,8 @@ const num = (v: any, fallback = 0): number => {
 };
 
 export default function Today() {
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const router = useRouter();
   const { user } = useAuth();
   const { participantSig, active: activeParticipant } = useParticipants();
@@ -283,6 +286,7 @@ export default function Today() {
       <VerificationBanner />
       <TrialCountdownBanner />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandPrimary} />}
         testID="today-scroll"

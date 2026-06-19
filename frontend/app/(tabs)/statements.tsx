@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/lib/api';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
@@ -29,6 +30,8 @@ type Statement = {
 export default function StatementsList() {
   const router = useRouter();
   const { participantSig, active } = useParticipants();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const [statements, setStatements] = useState<Statement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,6 +65,7 @@ export default function StatementsList() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         refreshControl={
           <RefreshControl

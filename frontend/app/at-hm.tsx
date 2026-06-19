@@ -5,6 +5,7 @@ import {
   ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
@@ -114,9 +115,14 @@ export default function AtHm() {
       </ScrollView>
 
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <Pressable style={styles.backdrop} onPress={() => !busy && setOpen(false)} />
-          <View style={styles.sheet}>
+        <Pressable style={styles.backdrop} onPress={() => !busy && setOpen(false)} />
+        <KeyboardAwareScrollView
+          style={styles.sheet}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={24}
+          showsVerticalScrollIndicator={false}
+        >
             <View style={styles.handle} />
             <Text style={styles.modalTitle}>Add item</Text>
 
@@ -157,8 +163,7 @@ export default function AtHm() {
             <TouchableOpacity onPress={() => !busy && setOpen(false)} style={styles.cancel}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       </Modal>
     </SafeAreaView>
   );

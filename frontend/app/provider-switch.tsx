@@ -5,6 +5,7 @@ import {
   ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
@@ -139,43 +140,47 @@ export default function ProviderSwitch() {
       </ScrollView>
 
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <Pressable style={styles.backdrop} onPress={() => !busy && setOpen(false)} />
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
-            <Text style={styles.modalTitle}>Start a provider switch</Text>
-            <Text style={styles.help}>We&apos;ll draft a formal notice letter once you tell us where you&apos;re moving.</Text>
+        <Pressable style={styles.backdrop} onPress={() => !busy && setOpen(false)} />
+        <KeyboardAwareScrollView
+          style={styles.sheet}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={24}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.handle} />
+          <Text style={styles.modalTitle}>Start a provider switch</Text>
+          <Text style={styles.help}>We&apos;ll draft a formal notice letter once you tell us where you&apos;re moving.</Text>
 
-            <Text style={styles.lbl}>New provider</Text>
-            <TextInput style={styles.input} value={newProvider} onChangeText={setNewProvider} placeholder="e.g. SilverCare Plus" placeholderTextColor={Colors.textMuted} testID="provider-new" />
+          <Text style={styles.lbl}>New provider</Text>
+          <TextInput style={styles.input} value={newProvider} onChangeText={setNewProvider} placeholder="e.g. SilverCare Plus" placeholderTextColor={Colors.textMuted} testID="provider-new" />
 
-            <Text style={styles.lbl}>Reason (optional)</Text>
-            <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={reason} onChangeText={setReason} multiline placeholder="Why are you moving? Service quality, billing, location, fit…" placeholderTextColor={Colors.textMuted} testID="provider-reason" />
+          <Text style={styles.lbl}>Reason (optional)</Text>
+          <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={reason} onChangeText={setReason} multiline placeholder="Why are you moving? Service quality, billing, location, fit…" placeholderTextColor={Colors.textMuted} testID="provider-reason" />
 
-            <Text style={styles.lbl}>Target switch date (optional)</Text>
-            {Platform.OS === 'web' ? (
-              React.createElement('input', {
-                type: 'date',
-                value: targetDate || '',
-                onChange: (e: any) => setTargetDate(e?.target?.value || undefined),
-                'data-testid': 'provider-target-date',
-                style: { fontFamily: 'inherit', fontSize: 14, color: Colors.brandPrimary, background: Colors.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${Colors.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
-              })
-            ) : (
-              <TextInput style={styles.input} value={targetDate || ''} onChangeText={setTargetDate} placeholder="YYYY-MM-DD" placeholderTextColor={Colors.textMuted} testID="provider-target-date" />
-            )}
+          <Text style={styles.lbl}>Target switch date (optional)</Text>
+          {Platform.OS === 'web' ? (
+            React.createElement('input', {
+              type: 'date',
+              value: targetDate || '',
+              onChange: (e: any) => setTargetDate(e?.target?.value || undefined),
+              'data-testid': 'provider-target-date',
+              style: { fontFamily: 'inherit', fontSize: 14, color: Colors.brandPrimary, background: Colors.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${Colors.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+            })
+          ) : (
+            <TextInput style={styles.input} value={targetDate || ''} onChangeText={setTargetDate} placeholder="YYYY-MM-DD" placeholderTextColor={Colors.textMuted} testID="provider-target-date" />
+          )}
 
-            <TouchableOpacity onPress={start} disabled={busy} style={[styles.cta, busy && { opacity: 0.6 }]} testID="provider-switch-save">
-              {busy ? <ActivityIndicator color="#FFFFFF" /> : (<>
-                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                <Text style={styles.ctaText}>Start the switch</Text>
-              </>)}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => !busy && setOpen(false)} style={styles.cancelLink}>
-              <Text style={styles.cancelLinkText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+          <TouchableOpacity onPress={start} disabled={busy} style={[styles.cta, busy && { opacity: 0.6 }]} testID="provider-switch-save">
+            {busy ? <ActivityIndicator color="#FFFFFF" /> : (<>
+              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              <Text style={styles.ctaText}>Start the switch</Text>
+            </>)}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => !busy && setOpen(false)} style={styles.cancelLink}>
+            <Text style={styles.cancelLinkText}>Cancel</Text>
+          </TouchableOpacity>
+        </KeyboardAwareScrollView>
       </Modal>
     </SafeAreaView>
   );
