@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { toast } from '../../src/components/Toast';
@@ -56,6 +57,22 @@ function fmtDuration(mins: number) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// `<input type="datetime-local">` expects local-time `YYYY-MM-DDTHH:MM`, not UTC.
+// Convert a stored UTC ISO → local for display, and local → UTC ISO on input.
+function toLocalInput(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch { return ''; }
+}
+function fromLocalInput(local: string): string {
+  if (!local) return new Date().toISOString();
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 export default function Visits() {
   const { participantSig, active } = useParticipants();
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -64,6 +81,8 @@ export default function Visits() {
   // Edit modal
   const [modal, setModal] = useState<null | (Partial<Visit> & { _editing?: boolean })>(null);
   const [saving, setSaving] = useState(false);
+  // Native date/time picker visibility (Android shows one at a time; iOS we render inline conditionally).
+  const [pickerMode, setPickerMode] = useState<null | 'date' | 'time'>(null);
 
   const load = useCallback(async () => {
     try {
@@ -256,9 +275,73 @@ export default function Visits() {
             <Text style={styles.label}>Title</Text>
             <TextInput value={modal?.title || ''} onChangeText={(t) => setModal((m) => m && { ...m, title: t })} placeholder="GP follow-up · Physio · ACAT review" placeholderTextColor={Colors.textMuted} style={styles.input} testID="visit-title" />
 
-            <Text style={styles.label}>When (ISO)</Text>
-            <TextInput value={modal?.starts_at || ''} onChangeText={(t) => setModal((m) => m && { ...m, starts_at: t })} placeholder="2026-06-12T10:00:00Z" placeholderTextColor={Colors.textMuted} autoCapitalize="none" autoCorrect={false} style={styles.input} testID="visit-starts-at" />
-            <Text style={styles.hint}>Use ISO format. Tap on a native build for a date picker.</Text>
+            <Text style={styles.label}>When</Text>
+            {Platform.OS === 'web' ? (
+              <TextInput
+                value={modal?.starts_at ? toLocalInput(modal.starts_at) : ''}
+                onChangeText={(t) => setModal((m) => m && { ...m, starts_at: fromLocalInput(t) })}
+                placeholder="2026-06-12T10:00"
+                placeholderTextColor={Colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.input}
+                // On RN Web TextInput renders as <input>; expose the datetime-local type so
+                // browsers show a native picker. Casting through any to bypass RN typings.
+                {...({ type: 'datetime-local' } as any)}
+                testID="visit-starts-at"
+              />
+            ) : (
+              <View style={styles.dtRow}>
+                <TouchableOpacity
+                  onPress={() => setPickerMode('date')}
+                  style={[styles.dtBtn, { flex: 3 }]}
+                  testID="visit-pick-date"
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="calendar-outline" size={14} color={Colors.brandPrimary} />
+                  <Text style={styles.dtBtnText} numberOfLines={1}>
+                    {modal?.starts_at ? fmtDateLabel(modal.starts_at) : 'Pick date'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setPickerMode('time')}
+                  style={[styles.dtBtn, { flex: 2 }]}
+                  testID="visit-pick-time"
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="time-outline" size={14} color={Colors.brandPrimary} />
+                  <Text style={styles.dtBtnText} numberOfLines={1}>
+                    {modal?.starts_at ? fmtTime(modal.starts_at) : 'Pick time'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {Platform.OS !== 'web' && pickerMode && modal?.starts_at && (
+              <DateTimePicker
+                value={new Date(modal.starts_at)}
+                mode={pickerMode}
+                is24Hour={false}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(_event: DateTimePickerEvent, d?: Date) => {
+                  // Android closes after pick; iOS stays open until tapped away.
+                  if (Platform.OS === 'android') setPickerMode(null);
+                  if (d && modal) {
+                    const cur = new Date(modal.starts_at as string);
+                    if (pickerMode === 'date') {
+                      cur.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
+                    } else {
+                      cur.setHours(d.getHours(), d.getMinutes(), 0, 0);
+                    }
+                    setModal((m) => m && { ...m, starts_at: cur.toISOString() });
+                  }
+                }}
+              />
+            )}
+            {Platform.OS === 'ios' && pickerMode && (
+              <TouchableOpacity onPress={() => setPickerMode(null)} style={styles.dtDone}>
+                <Text style={styles.dtDoneText}>Done</Text>
+              </TouchableOpacity>
+            )}
 
             <Text style={styles.label}>Duration (minutes)</Text>
             <TextInput value={String(modal?.duration_minutes ?? 60)} onChangeText={(t) => setModal((m) => m && { ...m, duration_minutes: parseInt(t || '0', 10) || 0 })} keyboardType="number-pad" style={styles.input} testID="visit-duration" />
@@ -346,4 +429,15 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.danger },
   cancel: { marginTop: 8, alignItems: 'center', paddingVertical: 10 },
   cancelText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.textMuted },
+  // Date/time picker
+  dtRow: { flexDirection: 'row', gap: 8 },
+  dtBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.background, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: Spacing.md, paddingVertical: 12, minHeight: 46,
+  },
+  dtBtnText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: Colors.brandPrimary, flexShrink: 1 },
+  dtDone: { alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
+  dtDoneText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary },
 });

@@ -1,0 +1,66 @@
+{
+  "summary": "Frontend-only UI smoke test for Wayly Expo on http://localhost:3000 (prod backend via PROD override). Logged in as cathy@example.com and exercised 5 features: Amendments, Visits, Family Wall, Audit Log, Dashboard logo. 4 of 5 features pass end-to-end UI checks. 1 functional regression: the Visits 'When' field is rendered as <input type=\"text\"> instead of <input type=\"datetime-local\"> — the `{ type: 'datetime-local' }` spread on react-native TextInput is silently dropped by react-native-web (which always sets its own type), so the native browser date/time picker is NOT shown on web. Otherwise all hero copy, prefills (For: Dorothy, Your name: Cathy), composer affordances, search input, empty states (Quiet here — for now / Clean slate), and the WaylyHeader logo+wordmark render correctly. Toast errors for empty Generate-letter submission work. Add-another-change appends a row. Family-wall composer renders text input + Photo + Dictate + Post (Post button activates with text). Audit search filters without crashing. Dashboard top-left shows the Wayly mark image + 'Wayly' wordmark.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Visits modal 'When' field",
+        "issue": "The <TextInput> for `starts_at` is rendered as <input type=\"text\"> on web. The `{...({ type: 'datetime-local' } as any)}` spread does NOT override react-native-web TextInput's internal type, so users see a plain text input expecting an ISO-like string ('2026-06-19T20:00') instead of the native datetime picker. Confirmed by reading outerHTML: type=\"text\", no `min`/`step`/`datetime-local` attributes. File: /app/frontend/app/visits/index.tsx:280-292. Suggested fix: on Platform.OS === 'web', render a plain `<input type=\"datetime-local\">` (via createElement or a small web shim) instead of relying on spreading `type` onto TextInput. Alternatives: use react-native-web's `dataSet`/`accessibilityState` to inject the attribute is not sufficient — `type` is owned by TextInput. The cleanest path is a Platform.select that returns a raw HTML input on web.",
+        "testID": "visit-starts-at",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Amendments",
+        "issues": [
+          "Dropdown 'For' label renders an unexpected glyph after 'Dorothy' (\\uF232 — an Ionicons private-use character) because the chevron-down icon's `numberOfLines=1` truncation appears to swallow the icon into the selectText measurement when the participant name fits exactly. Cosmetic only; the Pictogram still renders as the dropdown arrow next to the text. Worth double-checking on smaller widths."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "expo-file-system/legacy",
+        "issue": "family-wall.tsx imports `expo-file-system/legacy`. The legacy entry point is deprecated in expo-file-system v18+; consider migrating to the new top-level API. Reference: /app/frontend/app/family-wall.tsx:31"
+      },
+      {
+        "component": "shadow* style props",
+        "issue": "Console warns 'shadow* style props are deprecated. Use boxShadow.' across screens. Multiple StyleSheet entries still use shadowColor/shadowOpacity/shadowRadius/shadowOffset. Not introduced in this iteration but worth tracking."
+      },
+      {
+        "component": "props.pointerEvents",
+        "issue": "Console warns 'props.pointerEvents is deprecated. Use style.pointerEvents'. Surfaces during visits modal open and family-wall transitions."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/tmp/dash_header.png",
+    "/tmp/amendments.png",
+    "/tmp/visits.png",
+    "/tmp/family_wall.png",
+    "/tmp/audit.png"
+  ],
+  "action_items": [
+    "Fix Visits /visits 'When' field on web: render a real <input type=\"datetime-local\"> via Platform.OS==='web' branch (or a small web-only component) — the current spread of `type` onto react-native TextInput is silently dropped, so users get an unfriendly text input with placeholder '2026-06-12T10:00' instead of the native picker.",
+    "Optional polish: replace deprecated `shadow*` style props with `boxShadow`, migrate `props.pointerEvents` to `style.pointerEvents`, and move off `expo-file-system/legacy` in family-wall.tsx."
+  ],
+  "critical_code_review_comments": [
+    "visits/index.tsx:290 — spreading `type: 'datetime-local'` onto react-native TextInput does not work on web; the `type` attribute is controlled by react-native-web internally. Use a platform-specific raw HTML input on web.",
+    "family-wall.tsx — relies on /api/transcribe and /api/family/wall multipart/json fields that don't exist on prod yet; the UI degrades to a toast error on Post. This matches the request's caveats, but consider gating the Photo/Dictate buttons behind a feature flag if the prod rollout is delayed.",
+    "audit.tsx — looks clean and handles empty/search/grouping correctly. No changes needed."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only run)",
+    "frontend": "4/5 features pass (80%); 1 functional bug (Visits datetime-local) confirmed"
+  },
+  "seed_data_creation": "None. Used existing prod account cathy@example.com.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Prod backend hardcoded in /app/frontend/src/lib/api.ts; do not change. Login with cathy@example.com / testpass123. /api/family/wall with attachments and /api/transcribe return 404 on prod — only text posts could in theory succeed. /api/audit returns items:[] on prod, so Audit shows 'Clean slate' empty state. The Visits 'When' datetime-local regression is reproducible by opening /visits → Add your first visit → inspect [data-testid=\\\"visit-starts-at\\\"]; outerHTML shows type=\\\"text\\\" not datetime-local.",
+  "rca_of_issue": "Visits 'When' bug RCA: react-native-web's TextInput component sets `type` internally based on its own props (`keyboardType`, `secureTextEntry`, `inputMode`). External props spread onto TextInput like `{...({ type: 'datetime-local' } as any)}` are forwarded to the underlying <input> as DOM attributes, but TextInput overrides `type` after the spread, so the final rendered element has type=\\\"text\\\". Mitigation: render a raw HTML `<input type=\\\"datetime-local\\\">` element on Platform.OS === 'web' (e.g., using React.createElement('input', { type: 'datetime-local', ... }) wrapped to mimic TextInput styling), or use a community datetime picker that exposes the native web input."
+}

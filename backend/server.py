@@ -897,6 +897,7 @@ from routes.notifications import router as notifications_router  # noqa: E402
 from routes.chat import router as chat_router  # noqa: E402
 from routes.participant import router as participant_router  # noqa: E402
 from routes.public_tools import router as public_tools_router  # noqa: E402
+from routes.transcribe import router as transcribe_router  # noqa: E402
 
 app.include_router(statements_router)
 app.include_router(documents_router)
@@ -908,6 +909,7 @@ app.include_router(notifications_router)
 app.include_router(chat_router)
 app.include_router(participant_router)
 app.include_router(public_tools_router)
+app.include_router(transcribe_router)
 
 
 @app.on_event("startup")

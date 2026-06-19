@@ -173,8 +173,121 @@ async def audit_trail(
     user_id: str = Depends(get_current_user_id),
     limit: int = Query(50, ge=1, le=200),
 ):
-    cursor = db.audit_log.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(limit)
-    return {"items": await cursor.to_list(limit)}
+    """Unified activity log. We don't have a dedicated `audit_log` collection
+    on this backend, so we synthesise the audit trail by pulling recent
+    write events from the existing domain collections and merging them on
+    `created_at`. This mirrors the web app's "every privacy-sensitive
+    action" timeline.
+    """
+    from deps import get_user as _get_user
+
+    user = await _get_user(user_id)
+    user_email = (user or {}).get("email", "")
+    household_id = (user or {}).get("household_id")
+
+    events: List[Dict[str, Any]] = []
+
+    # Statements — upload + decode runs
+    async for s in db.statements.find(
+        {"user_id": user_id}, {"_id": 0, "id": 1, "provider": 1, "period": 1,
+                               "uploaded_at": 1, "status": 1, "decoded_at": 1}
+    ).sort("uploaded_at", -1).limit(50):
+        if s.get("uploaded_at"):
+            events.append({
+                "id": f"stmt-up-{s.get('id')}",
+                "action": "Statement uploaded",
+                "detail": f"{s.get('provider', 'Statement')} · {s.get('period', '')}".strip(' ·'),
+                "kind": "statement",
+                "user_email": user_email,
+                "created_at": s.get("uploaded_at"),
+            })
+        if s.get("decoded_at"):
+            events.append({
+                "id": f"stmt-dec-{s.get('id')}",
+                "action": "Statement decoded",
+                "detail": f"{s.get('provider', 'Statement')} · {s.get('period', '')}".strip(' ·'),
+                "kind": "decoder",
+                "user_email": user_email,
+                "created_at": s.get("decoded_at"),
+            })
+
+    # Amendments — submissions + status updates
+    async for a in db.amendments.find(
+        {"user_id": user_id} if household_id is None else {"$or": [{"user_id": user_id}, {"household_id": household_id}]},
+        {"_id": 0, "id": 1, "subject": 1, "status": 1, "created_at": 1, "updated_at": 1}
+    ).sort("created_at", -1).limit(50):
+        events.append({
+            "id": f"amend-{a.get('id')}",
+            "action": f"Amendment {str(a.get('status', 'created')).lower()}",
+            "detail": a.get("subject") or "Care plan change",
+            "kind": "amendment",
+            "user_email": user_email,
+            "created_at": a.get("updated_at") or a.get("created_at"),
+        })
+
+    # Documents — uploads
+    async for d in db.documents.find(
+        {"user_id": user_id}, {"_id": 0, "id": 1, "filename": 1, "uploaded_at": 1, "kind": 1}
+    ).sort("uploaded_at", -1).limit(40):
+        events.append({
+            "id": f"doc-{d.get('id')}",
+            "action": "Document uploaded",
+            "detail": d.get("filename") or d.get("kind") or "Document",
+            "kind": "document",
+            "user_email": user_email,
+            "created_at": d.get("uploaded_at"),
+        })
+
+    # Visits — created
+    async for v in db.visits.find(
+        {"household_id": household_id} if household_id else {"user_id": user_id},
+        {"_id": 0, "id": 1, "title": 1, "starts_at": 1, "created_at": 1, "kind": 1}
+    ).sort("created_at", -1).limit(40):
+        events.append({
+            "id": f"visit-{v.get('id')}",
+            "action": "Visit added",
+            "detail": v.get("title") or (v.get("kind") or "Visit"),
+            "kind": "visit",
+            "user_email": user_email,
+            "created_at": v.get("created_at"),
+        })
+
+    # Family wall posts (audit who shared what)
+    async for f in db.family_events.find(
+        {"author_id": user_id}, {"_id": 0, "id": 1, "kind": 1, "text": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(40):
+        snippet = (f.get("text") or "").strip()
+        if len(snippet) > 80:
+            snippet = snippet[:77].rstrip() + "…"
+        events.append({
+            "id": f"wall-{f.get('id')}",
+            "action": "Family wall post",
+            "detail": snippet or f"{(f.get('kind') or 'note').title()}",
+            "kind": "wall",
+            "user_email": user_email,
+            "created_at": f.get("created_at"),
+        })
+
+    # Login events from chat_turns (rough proxy) — skipped for now to keep
+    # the feed focused on user-meaningful actions.
+
+    # Merge any rows that may exist in the dedicated audit_log collection
+    # (kept for future when we wire explicit logging hooks).
+    async for row in db.audit_log.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(50):
+        events.append({
+            "id": row.get("id") or f"audit-{row.get('created_at')}",
+            "action": row.get("action") or "Event",
+            "detail": row.get("detail") or row.get("description") or "",
+            "kind": row.get("kind") or "system",
+            "user_email": row.get("user_email") or user_email,
+            "created_at": row.get("created_at"),
+        })
+
+    # Filter out anything without a timestamp and sort newest-first.
+    events = [e for e in events if e.get("created_at")]
+    events.sort(key=lambda e: str(e.get("created_at", "")), reverse=True)
+
+    return {"items": events[:limit]}
 
 
 # ─────────────────────── FAMILY WALL (events feed) ───────────────────────
@@ -192,14 +305,34 @@ async def post_family_event(
     user_id: str = Depends(get_current_user_id),
 ):
     text = (body.get("text") or "").strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text is required")
+    image_b64 = body.get("image_b64") or None
+    audio_b64 = body.get("audio_b64") or None
+    audio_duration_ms = body.get("audio_duration_ms")
+    # Either text, image, or audio must be present.
+    if not text and not image_b64 and not audio_b64:
+        raise HTTPException(status_code=400, detail="text, image_b64 or audio_b64 is required")
+    # Trim out any data-URL prefix so consumers can render uniformly.
+    if isinstance(image_b64, str) and image_b64.startswith("data:"):
+        image_b64 = image_b64.split(",", 1)[-1]
+    if isinstance(audio_b64, str) and audio_b64.startswith("data:"):
+        audio_b64 = audio_b64.split(",", 1)[-1]
+    # Soft caps: ~4MB of base64 ≈ ~3MB raw — enough for a short voice/photo note.
+    MAX_B64 = 6_000_000
+    if image_b64 and len(image_b64) > MAX_B64:
+        raise HTTPException(status_code=413, detail="image too large (max ~4 MB)")
+    if audio_b64 and len(audio_b64) > MAX_B64:
+        raise HTTPException(status_code=413, detail="audio clip too long (max ~4 MB)")
     item = {
         "id": new_id(),
         "participant_id": p["id"],
         "author_id": user_id,
-        "kind": body.get("kind", "note"),
-        "text": text[:2000],
+        "kind": body.get("kind") or ("photo" if image_b64 else ("voice" if audio_b64 else "note")),
+        "text": (text or "")[:2000],
+        "image_b64": image_b64,
+        "audio_b64": audio_b64,
+        "audio_duration_ms": int(audio_duration_ms) if isinstance(audio_duration_ms, (int, float)) and audio_duration_ms else None,
+        "image_mime": body.get("image_mime") or None,
+        "audio_mime": body.get("audio_mime") or None,
         "created_at": now_iso(),
     }
     await db.family_events.insert_one(item)
