@@ -113,16 +113,24 @@ export default function StatementDetail() {
           const s = v == null ? '' : String(v);
           return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
         };
-        const header = ['Date', 'Service', 'Description', 'Qty', 'Unit price', 'Total', 'Contribution paid'];
-        const rows = lis.map((li) => [
-          li.date || li.service_date || '',
-          li.service || li.support_code || '',
-          li.description || '',
-          li.quantity ?? '',
-          li.unit_price ?? '',
-          li.total ?? '',
-          li.contribution_paid ?? '',
-        ]);
+        // Match the web app's decoded PDF column set: Date | Service | Stream | Hrs | Rate | Gross | Contrib. | Gov paid
+        const header = ['Date', 'Service', 'Stream', 'Hrs', 'Rate', 'Gross', 'Contrib.', 'Gov paid'];
+        const rows = lis.map((li: any) => {
+          const gross = Number(li.total) || Number(li.gross) || 0;
+          const part = Number(li.contribution_paid) || Number(li.participant_contribution) || 0;
+          const govRaw = Number(li.government_paid ?? li.gov_paid);
+          const gov = Number.isFinite(govRaw) ? govRaw : Math.max(0, gross - part);
+          return [
+            li.date || li.service_date || '',
+            li.service || li.support_code || li.service_code || '',
+            li.stream || li.budget_stream || '',
+            li.hours ?? li.quantity ?? '',
+            li.unit_price ?? li.rate ?? '',
+            gross,
+            part,
+            gov,
+          ];
+        });
         const csv = [header, ...rows].map((r) => r.map(esc).join(',')).join('\n');
         const filename = `statement-decoded-${today}.csv`;
 
@@ -166,42 +174,134 @@ export default function StatementDetail() {
         };
 
         const lis: any[] = stmt.line_items || [];
-        const totalAll = lis.reduce((acc, li: any) => acc + (li.total || 0), 0);
-        const totalPaid = lis.reduce((acc, li: any) => acc + (li.contribution_paid || 0), 0);
-        const rowsHtml = lis.map((li: any) => `
+        const anomalies: any[] = (stmt as any).anomalies || [];
+        // Aggregate the three KPI totals exactly like the web app's Decoded PDF.
+        const grossTotal = lis.reduce((a: number, li: any) => a + (Number(li.total) || Number(li.gross) || 0), 0);
+        const partContrib = lis.reduce((a: number, li: any) => a + (Number(li.contribution_paid) || Number(li.participant_contribution) || 0), 0);
+        // Government paid = sum if present, else derived (gross − participant contribution).
+        const govPaid = lis.reduce((a: number, li: any) => {
+          const g = Number(li.government_paid ?? li.gov_paid);
+          if (Number.isFinite(g)) return a + g;
+          const gross = Number(li.total) || Number(li.gross) || 0;
+          const part = Number(li.contribution_paid) || Number(li.participant_contribution) || 0;
+          return a + Math.max(0, gross - part);
+        }, 0);
+        const periodLabel = stmt.period_label || stmt.filename || 'Statement';
+        const todayAu = new Date().toLocaleDateString('en-AU');
+
+        const rowsHtml = lis.map((li: any) => {
+          const rowGross = Number(li.total) || Number(li.gross) || 0;
+          const rowPart = Number(li.contribution_paid) || Number(li.participant_contribution) || 0;
+          const rowGov = Number.isFinite(Number(li.government_paid ?? li.gov_paid))
+            ? Number(li.government_paid ?? li.gov_paid)
+            : Math.max(0, rowGross - rowPart);
+          return `
           <tr>
             <td>${_esc(li.date || li.service_date || '')}</td>
-            <td>${_esc(li.service || li.support_code || '')}</td>
-            <td>${_esc(li.description || '')}</td>
-            <td style="text-align:right;">${li.quantity ?? ''}</td>
-            <td style="text-align:right;">${_money(li.total)}</td>
-            <td style="text-align:right;">${_money(li.contribution_paid)}</td>
-          </tr>`).join('');
+            <td>${_esc(li.service || li.support_code || li.service_code || '')}</td>
+            <td>${_esc(li.stream || li.budget_stream || '')}</td>
+            <td style="text-align:right;">${_esc(li.hours ?? li.quantity ?? '')}</td>
+            <td style="text-align:right;">${rowGross && (li.unit_price || li.rate) ? _money(li.unit_price ?? li.rate) : ''}</td>
+            <td style="text-align:right;">${_money(rowGross)}</td>
+            <td style="text-align:right;">${_money(rowPart)}</td>
+            <td style="text-align:right;">${_money(rowGov)}</td>
+          </tr>`;
+        }).join('');
+
+        const sevColor = (sev: string) => {
+          const s = String(sev || '').toLowerCase();
+          if (s === 'alert' || s === 'error') return { bg: '#FDE8E2', fg: '#A54030' };
+          if (s === 'warning' || s === 'warn') return { bg: '#FAEFD4', fg: '#5C3D11' };
+          return { bg: '#E8F0F0', fg: '#0E4D52' }; // info / default
+        };
+        const anomaliesHtml = anomalies.length === 0 ? '' : `
+  <h2 class="section">Anomalies (${anomalies.length})</h2>
+  ${anomalies.map((a: any) => {
+    const p = sevColor(a.severity);
+    return `
+    <div class="anomaly">
+      <div class="anomaly-header">
+        <span class="badge" style="background:${p.bg};color:${p.fg};">${_esc(String(a.severity || 'info').toUpperCase())}</span>
+        <span class="anomaly-title">${_esc(a.title || a.summary || a.message || '')}</span>
+      </div>
+      ${a.detail || a.body ? `<p class="anomaly-body">${_esc(a.detail || a.body)}</p>` : ''}
+      ${a.action || a.next_action ? `<p class="anomaly-action">→ ${_esc(a.action || a.next_action)}</p>` : ''}
+    </div>`;
+  }).join('')}`;
+
         const html = `<!doctype html>
-<html><head><meta charset="utf-8"/><title>${_esc(stmt.period_label || stmt.filename || 'Statement')}</title>
+<html><head><meta charset="utf-8"/><title>Decoded statement - ${_esc(periodLabel)}</title>
 <style>
-  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1A2B3F; margin: 24px; }
-  h1 { font-size: 20px; color: #0E4D52; margin: 0 0 4px; }
-  .sub { color: #6B7C92; font-size: 12px; margin-bottom: 16px; }
-  .summary { background: rgba(183,121,31,.08); border: 1px solid rgba(183,121,31,.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { text-align: left; padding: 6px 6px; border-bottom: 2px solid #0E4D52; color: #0E4D52; }
-  td { padding: 6px 6px; border-bottom: 1px solid #E6E2D6; }
+  @page { size: A4; margin: 18mm 14mm; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1A2B3F; margin: 0; background: #FBF9F3; }
+  .header { border-bottom: 2px solid #0E4D52; padding-bottom: 10px; margin-bottom: 18px; }
+  h1 { font-size: 22px; color: #0E4D52; margin: 0; letter-spacing: -0.3px; }
+  .disclaimer { color: #6B7C92; font-size: 11px; margin-top: 6px; font-style: italic; }
+  h2.section { font-size: 14px; color: #0E4D52; margin: 22px 0 10px; letter-spacing: 0.3px; }
+  .period { font-size: 12px; color: #1A2B3F; margin-bottom: 12px; }
+  .period strong { color: #0E4D52; }
+  .kpis { display: flex; gap: 10px; margin-bottom: 18px; }
+  .kpi { flex: 1; border: 1px solid #E6E2D6; border-radius: 8px; padding: 12px; background: #FFFFFF; }
+  .kpi-label { font-size: 9px; color: #6B7C92; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 4px; }
+  .kpi-value { font-size: 18px; color: #0E4D52; font-weight: 700; }
+  .kpi.gold .kpi-value { color: #A5512B; }
+  .kpi.gov .kpi-value { color: #5B7B5A; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; background: #FFFFFF; border-radius: 6px; overflow: hidden; }
+  th { text-align: left; padding: 8px 6px; background: #F4EFE3; border-bottom: 2px solid #0E4D52; color: #0E4D52; font-weight: 700; font-size: 10px; }
+  td { padding: 7px 6px; border-bottom: 1px solid #E6E2D6; }
   tr:nth-child(even) td { background: #FBF9F3; }
-  .totals { margin-top: 16px; font-size: 12px; }
-  .totals strong { color: #0E4D52; }
-  .footer { margin-top: 24px; font-size: 10px; color: #9AA5B5; text-align: center; }
+  .anomaly { border: 1px solid #E6E2D6; border-left: 3px solid #A5512B; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; background: #FFFFFF; }
+  .anomaly-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.4px; }
+  .anomaly-title { font-size: 12px; color: #1A2B3F; font-weight: 600; }
+  .anomaly-body { font-size: 11px; color: #4A5A70; margin: 4px 0 6px; line-height: 1.5; }
+  .anomaly-action { font-size: 11px; color: #0E4D52; margin: 0; font-weight: 600; }
+  .footer { margin-top: 28px; font-size: 9px; color: #9AA5B5; text-align: center; border-top: 1px solid #E6E2D6; padding-top: 10px; }
+  .container { padding: 24px; }
 </style></head>
 <body>
-  <h1>${_esc(stmt.period_label || stmt.filename || 'Statement')}</h1>
-  <div class="sub">${lis.length} line items · Decoded by Wayly · ${today}</div>
-  ${stmt.summary ? `<div class="summary">${_esc(stmt.summary)}</div>` : ''}
+<div class="container">
+  <div class="header">
+    <h1>Decoded statement - ${_esc(periodLabel)}</h1>
+    <div class="disclaimer">Decoded by Wayly. AI-generated summary — please verify against the original statement before acting.</div>
+  </div>
+
+  <h2 class="section">Summary</h2>
+  <div class="period">Period: <strong>${_esc(periodLabel)}</strong></div>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Gross total</div>
+      <div class="kpi-value">${_money(grossTotal)}</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kpi-label">Participant contribution</div>
+      <div class="kpi-value">${_money(partContrib)}</div>
+    </div>
+    <div class="kpi gov">
+      <div class="kpi-label">Government paid</div>
+      <div class="kpi-value">${_money(govPaid)}</div>
+    </div>
+  </div>
+
+  <h2 class="section">Line items (${lis.length})</h2>
   <table>
-    <thead><tr><th>Date</th><th>Service</th><th>Description</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Total</th><th style="text-align:right;">You paid</th></tr></thead>
-    <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;color:#9AA5B5;padding:18px;">No line items</td></tr>'}</tbody>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Service</th>
+        <th>Stream</th>
+        <th style="text-align:right;">Hrs</th>
+        <th style="text-align:right;">Rate</th>
+        <th style="text-align:right;">Gross</th>
+        <th style="text-align:right;">Contrib.</th>
+        <th style="text-align:right;">Gov paid</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml || '<tr><td colspan="8" style="text-align:center;color:#9AA5B5;padding:18px;">No line items</td></tr>'}</tbody>
   </table>
-  <div class="totals">Total billed: <strong>${_money(totalAll)}</strong> &nbsp;·&nbsp; You paid: <strong>${_money(totalPaid)}</strong></div>
-  <div class="footer">Generated by Wayly · wayly.com.au</div>
+${anomaliesHtml}
+  <div class="footer">Generated by Wayly. ${_esc(todayAu)}. This is an AI summary; the original statement remains the source of truth.</div>
+</div>
 </body></html>`;
 
         if (Platform.OS === 'web') {
