@@ -5,13 +5,21 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
+  Platform,
+  Linking,
+  Alert,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { api } from '../../src/lib/api';
+import { getAccessToken } from '../../src/lib/tokens';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
 import BackHeader from '../../src/components/BackHeader';
+import { toast } from '../../src/components/Toast';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
@@ -34,8 +42,10 @@ type Stmt = {
 
 export default function StatementDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const [stmt, setStmt] = useState<Stmt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingKind, setDownloadingKind] = useState<null | 'original' | 'pdf' | 'csv'>(null);
 
   // Phase 6 hardening: prevent screenshots / screen-recording / task-switcher
   // snapshots while a statement detail (line items, anomalies, dollar amounts) is on screen.
@@ -51,6 +61,80 @@ export default function StatementDetail() {
       }
     })();
   }, [id]);
+
+  // Download a backend-rendered artefact (original PDF / decoded PDF / decoded CSV).
+  // Mirrors the web app's three download buttons. Uses Bearer auth via fetch + blob
+  // on web (so the JWT header is honoured) and FileSystem.downloadAsync + Sharing
+  // on native so the OS share-sheet appears.
+  const download = async (kind: 'original' | 'pdf' | 'csv') => {
+    if (!stmt) return;
+    setDownloadingKind(kind);
+    try {
+      const base = (api.defaults?.baseURL || '').replace(/\/+$/, '');
+      const path =
+        kind === 'original' ? `/statements/${stmt.id}/original`
+        : kind === 'pdf' ? `/statements/${stmt.id}/decoded.pdf`
+        : `/statements/${stmt.id}/decoded.csv`;
+      const url = `${base}${path}`;
+      const token = await getAccessToken();
+      if (!token) throw new Error('Not signed in');
+      const ext = kind === 'csv' ? 'csv' : 'pdf';
+      const mime = kind === 'csv' ? 'text/csv' : 'application/pdf';
+      const baseName = (stmt.period_label || stmt.filename || 'statement').replace(/[^\w.-]+/g, '-');
+      const suffix = kind === 'original' ? 'original' : kind === 'pdf' ? 'decoded' : 'decoded';
+      const filename = `wayly-${baseName}-${suffix}.${ext}`;
+
+      if (Platform.OS === 'web') {
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const objUrl = URL.createObjectURL(blob);
+        // Trigger an actual download anchor (browser handles save dialog).
+        const a = (globalThis as any).document?.createElement?.('a');
+        if (a) {
+          a.href = objUrl;
+          a.download = filename;
+          a.style.display = 'none';
+          (globalThis as any).document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else {
+          Linking.openURL(objUrl);
+        }
+        return;
+      }
+      const dest = (FileSystem.cacheDirectory || '') + filename;
+      const dl = await FileSystem.downloadAsync(url, dest, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (dl.status !== 200) throw new Error(`HTTP ${dl.status}`);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(dl.uri, { mimeType: mime });
+      } else {
+        Alert.alert('Downloaded', `Saved to ${dl.uri}`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || `Could not download ${kind === 'csv' ? 'CSV' : 'PDF'}.`);
+    } finally {
+      setDownloadingKind(null);
+    }
+  };
+
+  const askWayly = () => {
+    if (!stmt) return;
+    // Deep-link to the Ask Wayly tab and seed the conversation with a
+    // statement-scoped prompt. The chat screen reads `?statement_id=` and
+    // `?prompt=` from the URL and prefills the composer (mirror of the web
+    // app's "Ask Wayly about this statement" button on /app/statements/[id]).
+    const period = stmt.period_label || stmt.filename || 'this statement';
+    router.push({
+      pathname: '/(tabs)/chat' as any,
+      params: {
+        statement_id: stmt.id,
+        prompt: `Help me understand ${period}.`,
+      },
+    });
+  };
 
   if (loading) {
     return (
@@ -90,6 +174,68 @@ export default function StatementDetail() {
           {(stmt.line_items || []).length} line items · {formatAUD2(total)} total ·{' '}
           {formatAUD2(totalContribution)} you paid
         </Text>
+
+        {/* Downloads + Ask Wayly — mirrors the web app's three download buttons
+            plus "Ask Wayly about this statement" CTA at the top of the detail. */}
+        <View style={styles.actionsRow} testID="statement-actions-row">
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => download('original')}
+            disabled={!!downloadingKind}
+            testID="statement-download-original"
+            accessibilityRole="button"
+          >
+            {downloadingKind === 'original' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <>
+                <Ionicons name="document-outline" size={16} color={Colors.brandPrimary} />
+                <Text style={styles.actionText}>Original PDF</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => download('pdf')}
+            disabled={!!downloadingKind}
+            testID="statement-download-decoded-pdf"
+            accessibilityRole="button"
+          >
+            {downloadingKind === 'pdf' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <>
+                <Ionicons name="sparkles-outline" size={16} color={Colors.brandPrimary} />
+                <Text style={styles.actionText}>Decoded PDF</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => download('csv')}
+            disabled={!!downloadingKind}
+            testID="statement-download-csv"
+            accessibilityRole="button"
+          >
+            {downloadingKind === 'csv' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <>
+                <Ionicons name="grid-outline" size={16} color={Colors.brandPrimary} />
+                <Text style={styles.actionText}>Decoded CSV</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          style={styles.askBtn}
+          onPress={askWayly}
+          testID="statement-ask-wayly"
+          accessibilityRole="button"
+        >
+          <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
+          <Text style={styles.askBtnText}>Ask Wayly about this statement</Text>
+        </TouchableOpacity>
 
         {stmt.summary && (
           <View style={styles.summaryCard} testID="statement-detail-summary">
