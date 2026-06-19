@@ -29,6 +29,21 @@ const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
   info: { color: Colors.severityInfo, bg: 'rgba(139, 155, 130, 0.08)', icon: 'information-circle' },
 };
 
+// Tiny helpers used by the client-side PDF / CSV builders.
+const escapeHtml = (s: any) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+const fmt$ = (n: any) => {
+  const v = typeof n === 'number' ? n : parseFloat(n);
+  if (!Number.isFinite(v)) return '';
+  return `$${v.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+
 type Stmt = {
   id: string;
   filename: string;
