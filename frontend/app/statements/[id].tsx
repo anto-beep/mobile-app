@@ -68,6 +68,8 @@ export default function StatementDetail() {
   //   • 'pdf'      → GET /api/statements/{id}/decoded.pdf    (server-rendered PDF — identical bytes for every caller)
   // Server endpoints live in /app/backend/routes/statements.py; once deployed
   // the web app will move to the same endpoints so web + mobile share one PDF.
+  // CACHE-BUSTER: pdf-renderer-v2 — if you see "Total billed" or "1970-01-01"
+  // in the downloaded PDF the running bundle is STALE. Force-quit + reinstall.
   const download = async (kind: 'original' | 'pdf' | 'csv') => {
     if (!stmt) return;
     setDownloadingKind(kind);
@@ -156,6 +158,8 @@ export default function StatementDetail() {
 
       // ---------- DECODED PDF — server-rendered ----------
       if (kind === 'pdf') {
+        // eslint-disable-next-line no-console
+        console.log('[wayly] decoded-pdf: server-rendered v2 — statement', stmt.id);
         // Mirror the Original-TXT download path: fetch the server-rendered PDF
         // from GET /api/statements/{id}/decoded.pdf (the same endpoint the web
         // app uses once deployed), then save/share via the OS share sheet on
