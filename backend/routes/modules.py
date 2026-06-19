@@ -305,12 +305,25 @@ async def create_rating(
         "participant_id": p["id"],
         "created_by": user_id,
         "score": score,
+        "provider_name": (body.get("provider_name") or "").strip()[:120],
+        "would_recommend": bool(body.get("would_recommend", True)),
         "comment": (body.get("comment") or "")[:500],
         "created_at": now_iso(),
     }
     await db.provider_ratings.insert_one(item)
     item.pop("_id", None)
     return item
+
+
+@router.delete("/ratings/{rating_id}")
+async def delete_rating(
+    rating_id: str,
+    p: dict = Depends(get_active_participant),
+):
+    res = await db.provider_ratings.delete_one({"id": rating_id, "participant_id": p["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Rating not found")
+    return {"ok": True}
 
 
 # ─────────────────────── REFERRALS ───────────────────────
