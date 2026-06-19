@@ -32,11 +32,18 @@ export default function Referrals() {
   }, [user?.id]);
 
   const copy = async () => {
+    let ok = false;
     try {
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && (navigator as any).clipboard?.writeText) {
-        await (navigator as any).clipboard.writeText(link);
-      } else {
+        try {
+          await (navigator as any).clipboard.writeText(link);
+          ok = true;
+        } catch { /* fall through to legacy/native paths */ }
+      }
+      if (!ok) {
+        // RNClipboard works on web (renders to document.execCommand) and native.
         RNClipboard.setString(link);
+        ok = true;
       }
       setCopied(true);
       toast.success('Link copied');
