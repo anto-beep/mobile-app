@@ -15,9 +15,11 @@ type Props = {
   participantName?: string;
   onClose: () => void;
   onLogged?: (result: any) => void;
+  /** When true, fill the screen instead of rendering as a bottom sheet. */
+  fullScreen?: boolean;
 };
 
-export function LogScenarioSheet({ visible, participantId, participantName, onClose, onLogged }: Props) {
+export function LogScenarioSheet({ visible, participantId, participantName, onClose, onLogged, fullScreen }: Props) {
   const { schema, logEvent } = useScenario();
   const [eventKey, setEventKey] = useState<string | null>(null);
   const [note, setNote] = useState('');
@@ -70,17 +72,24 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={20}>
-            <View style={styles.handle} />
+    <Modal visible={visible} transparent={!fullScreen} animationType={fullScreen ? 'fade' : 'slide'} onRequestClose={onClose}>
+      <Pressable style={fullScreen ? styles.fullBg : styles.backdrop} onPress={fullScreen ? undefined : onClose}>
+        <Pressable style={fullScreen ? styles.fullSheet : styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={20} style={fullScreen ? { flex: 1 } : undefined}>
+            {!fullScreen && <View style={styles.handle} />}
             <View style={styles.head}>
               <Text style={Type.h3 as any}>Log a scenario</Text>
               <TouchableOpacity onPress={() => { reset(); onClose(); }} hitSlop={10}><Ionicons name="close" size={22} color={Colors.textPrimary} /></TouchableOpacity>
             </View>
             {!!participantName && <Text style={styles.sub}>For {participantName}</Text>}
-            <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+            {grouped.length === 0 && !eventKey ? (
+              <View style={styles.emptySchema}>
+                <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
+                <Text style={styles.emptyTitle}>Scenario library unavailable</Text>
+                <Text style={styles.emptyBody}>We couldn&apos;t load the list of scenarios from the server. Please pull to refresh, or try again in a moment.</Text>
+              </View>
+            ) : (
+            <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
               {!eventKey ? (
                 <View style={{ gap: 12 }}>
                   <Text style={styles.lbl}>Event type</Text>
@@ -147,6 +156,7 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
               )}
               <View style={{ height: 40 }} />
             </ScrollView>
+            )}
           </KeyboardAvoidingView>
         </Pressable>
       </Pressable>
@@ -156,7 +166,12 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(14,30,32,0.55)', justifyContent: 'flex-end' },
+  fullBg: { flex: 1, backgroundColor: Colors.bg },
   sheet: { backgroundColor: Colors.cardBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, paddingBottom: 20, maxHeight: '92%' },
+  fullSheet: { flex: 1, backgroundColor: Colors.bg, padding: Spacing.lg, paddingTop: Spacing.md },
+  emptySchema: { alignItems: 'center', gap: 8, paddingVertical: 40, paddingHorizontal: 12 },
+  emptyTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, marginTop: 4 },
+  emptyBody: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 999, backgroundColor: '#D3C9BB' },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   sub: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },

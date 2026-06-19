@@ -24,8 +24,7 @@ export default function LogScenarioRoute() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Log scenario" />
-      <View style={{ flex: 1 }} />
-      <LogScenarioSheet visible={open} participantId={active.id} participantName={active.first_name} onClose={() => { setOpen(false); router.back(); }} onLogged={() => { setOpen(false); router.replace('/timeline' as any); }} />
+      <LogScenarioSheet fullScreen visible={open} participantId={active.id} participantName={active.first_name} onClose={() => { setOpen(false); router.back(); }} onLogged={() => { setOpen(false); router.replace('/timeline' as any); }} />
     </SafeAreaView>
   );
 }
