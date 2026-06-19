@@ -42,41 +42,110 @@ export default function Participants() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Participants" />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.head}>
-          <Text style={styles.headSub}>You’ve used <Text style={{ fontFamily: Fonts.bodySemi }}>{seatBadge}</Text> participant slots on your {summary?.base_plan || 'plan'} plan.</Text>
+        <View style={styles.heroWrap}>
+          <View style={styles.heroRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.titleRow}>
+                <Text style={styles.h1}>Participants</Text>
+                <View style={styles.countPill}>
+                  <Text style={styles.countPillText}>{summary?.participants_active ?? participants.length} active</Text>
+                </View>
+              </View>
+              <Text style={styles.subhero}>
+                Anyone you&apos;re caring for who has their own Support at Home plan. Each gets their own statements, budget and care plan view.
+              </Text>
+            </View>
+            {canAdd ? (
+              <TouchableOpacity testID="add-participant" style={styles.addCta} onPress={() => setShowAdd(true)}>
+                <Ionicons name="add" size={14} color="#FFFFFF" />
+                <Text style={styles.addCtaText}>Add participant</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {participants.map((p) => {
           const sw = swatchForIndex(p.color_index);
           const pending = p.status === 'PENDING_REMOVAL';
+          const fullName = `${p.first_name} ${p.last_name}`.trim();
           return (
-            <View key={p.id} style={[styles.card, { borderLeftColor: sw }]}>
-              <View style={[styles.swatch, { backgroundColor: sw }]}><Text style={styles.initial}>{initialOf(p.first_name)}</Text></View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={styles.name}>{`${p.first_name} ${p.last_name}`.trim()}</Text>
-                  {p.is_primary && <View style={styles.pill}><Text style={styles.pillText}>Primary</Text></View>}
+            <View key={p.id} style={[styles.card, { borderLeftColor: sw }]} testID={`participant-${p.id}`}>
+              <View style={styles.cardHead}>
+                <View style={[styles.swatch, { backgroundColor: sw }]}>
+                  <Text style={styles.initial}>{initialOf(p.first_name)}</Text>
                 </View>
-                <Text style={styles.meta}>L{p.classification} · {p.provider_name}</Text>
-                {pending && <Text style={styles.pending}>Removal scheduled — restorable for 30 days</Text>}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name} numberOfLines={1}>{fullName}</Text>
+                  <Text style={styles.meta}>Classification {p.classification} · {p.provider_name}</Text>
+                  <Text style={styles.coverage}>
+                    Covered by <Text style={styles.coverageBold}>{summary?.base_plan === 'family' ? 'Family' : (summary?.base_plan ? summary.base_plan[0].toUpperCase() + summary.base_plan.slice(1) : 'your')} plan</Text>
+                  </Text>
+                </View>
+                {p.is_primary && (
+                  <View style={styles.primaryPill}>
+                    <Ionicons name="star" size={10} color="#5C3D11" />
+                    <Text style={styles.primaryText}>PRIMARY</Text>
+                  </View>
+                )}
               </View>
-              {pending ? (
-                <TouchableOpacity testID={`participant-restore-${p.id}`} onPress={() => restore(p.id)}><Ionicons name="refresh" size={20} color={Colors.brandPrimary} /></TouchableOpacity>
-              ) : (
-                <TouchableOpacity testID={`participant-remove-${p.id}`} onPress={() => remove(p.id, !!p.is_primary)} hitSlop={6}><Ionicons name="trash-outline" size={18} color={Colors.brandSecondary} /></TouchableOpacity>
-              )}
+
+              <View style={styles.emailPill}>
+                <Ionicons name="mail-outline" size={11} color={Colors.textSecondary} />
+                <Text style={styles.emailText} numberOfLines={1}>{p.contact_email || '—'}</Text>
+              </View>
+
+              {pending && <Text style={styles.pending}>Removal scheduled — restorable for 30 days</Text>}
+
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/timeline?participant=${p.id}` as any)}
+                  testID={`participant-timeline-${p.id}`}
+                >
+                  <Ionicons name="calendar-outline" size={14} color={Colors.brandPrimary} />
+                  <Text style={styles.actionText}>Timeline</Text>
+                </TouchableOpacity>
+                <View style={styles.actionDivider} />
+                {pending ? (
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    testID={`participant-restore-${p.id}`}
+                    onPress={() => restore(p.id)}
+                  >
+                    <Ionicons name="refresh" size={14} color={Colors.brandPrimary} />
+                    <Text style={styles.actionText}>Restore</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => router.push(`/participants/${p.id}` as any)}
+                    testID={`participant-edit-${p.id}`}
+                  >
+                    <Ionicons name="create-outline" size={14} color={Colors.brandPrimary} />
+                    <Text style={styles.actionText}>Edit details</Text>
+                  </TouchableOpacity>
+                )}
+                {!pending && (
+                  <>
+                    <View style={styles.actionDivider} />
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      testID={`participant-remove-${p.id}`}
+                      onPress={() => remove(p.id, !!p.is_primary)}
+                    >
+                      <Ionicons name="trash-outline" size={14} color={Colors.severityAlert} />
+                      <Text style={[styles.actionText, { color: Colors.severityAlert }]}>Remove</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             </View>
           );
         })}
 
-        {canAdd ? (
-          <TouchableOpacity testID="add-participant" style={styles.addBtn} onPress={() => setShowAdd(true)}>
-            <Ionicons name="add" size={18} color={Colors.brandPrimary} />
-            <Text style={styles.addText}>Add a participant</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={[styles.limitCard]}>
-            <Text style={styles.limitText}>You’ve hit the participant cap on your {summary?.base_plan || 'current'} plan.</Text>
+        {!canAdd && (
+          <View style={styles.limitCard}>
+            <Text style={styles.limitText}>You&apos;ve hit the participant cap on your {summary?.base_plan || 'current'} plan.</Text>
             <TouchableOpacity onPress={() => router.push('/settings/plan' as any)}>
               <Text style={styles.limitCta}>Upgrade plan</Text>
             </TouchableOpacity>
@@ -132,18 +201,36 @@ function AddParticipantSheet({ open, onClose, onCreated }: { open: boolean; onCl
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: 6 },
-  headSub: { ...Type.body, color: Colors.textSecondary },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginTop: 8, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3 },
-  swatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  heroWrap: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5, lineHeight: 32 },
+  countPill: { backgroundColor: 'rgba(14, 77, 82, 0.10)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  countPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: Colors.brandPrimary, letterSpacing: 0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, lineHeight: 19 },
+  addCta: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#A5512B', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, minHeight: 34 },
+  addCtaText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: '#FFFFFF' },
+
+  card: { backgroundColor: Colors.cardBg, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginTop: 10, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3 },
+  cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  swatch: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   initial: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700', fontSize: 16 },
-  name: { ...Type.bodySemi, color: Colors.textPrimary, fontSize: 16 },
+  name: { ...Type.bodySemi, color: Colors.textPrimary, fontSize: 17 },
   meta: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },
-  pending: { ...Type.caption, color: Colors.warning, marginTop: 2 },
-  pill: { backgroundColor: '#F9E5C4', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
-  pillText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14, marginHorizontal: Spacing.md, paddingVertical: 14, borderRadius: 9999, borderWidth: 1.5, borderColor: Colors.brandPrimary },
-  addText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  coverage: { fontFamily: Fonts.body, fontSize: 12, color: '#A5512B', marginTop: 4 },
+  coverageBold: { fontFamily: Fonts.bodySemi, color: '#A5512B' },
+  primaryPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F9E5C4', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 3 },
+  primaryText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  pending: { ...Type.caption, color: Colors.warning, marginTop: 6 },
+
+  emailPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: Colors.bg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, marginTop: 10, borderWidth: 1, borderColor: Colors.borderSubtle },
+  emailText: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textSecondary },
+
+  actions: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: Colors.borderSubtle, marginTop: 12, paddingTop: 10 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6, minHeight: 36 },
+  actionDivider: { width: 1, height: 18, backgroundColor: Colors.borderSubtle },
+  actionText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.brandPrimary },
+
   limitCard: { marginTop: 14, marginHorizontal: Spacing.md, padding: Spacing.md, borderRadius: 14, borderWidth: 1, borderColor: Colors.border, backgroundColor: '#FAF1E0', gap: 8 },
   limitText: { ...Type.body, color: Colors.textPrimary },
   limitCta: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700', textDecorationLine: 'underline' },

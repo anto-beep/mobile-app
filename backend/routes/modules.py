@@ -332,6 +332,40 @@ async def list_referrals(p: dict = Depends(get_active_participant)):
     return {"items": await _list("referrals", p), "active_participant_id": p["id"]}
 
 
+@router.post("/referrals")
+async def create_referral(
+    body: Dict[str, Any] = Body(...),
+    p: dict = Depends(get_active_participant),
+    user_id: str = Depends(get_current_user_id),
+):
+    referred_to = (body.get("referred_to") or "").strip()
+    if not referred_to:
+        raise HTTPException(status_code=400, detail="referred_to is required")
+    item = {
+        "id": new_id(),
+        "participant_id": p["id"],
+        "created_by": user_id,
+        "referred_to": referred_to[:200],
+        "referrer_type": (body.get("referrer_type") or "specialist")[:32],
+        "phone_email": (body.get("phone_email") or "")[:200],
+        "referred_at": body.get("referred_at"),
+        "reason": (body.get("reason") or "")[:1000],
+        "status": "ACTIVE",
+        "created_at": now_iso(),
+    }
+    await db.referrals.insert_one(item)
+    item.pop("_id", None)
+    return item
+
+
+@router.delete("/referrals/{referral_id}")
+async def delete_referral(referral_id: str, p: dict = Depends(get_active_participant)):
+    res = await db.referrals.delete_one({"id": referral_id, "participant_id": p["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Referral not found")
+    return {"ok": True}
+
+
 # ─────────────────────── AUDIT TRAIL ───────────────────────
 @router.get("/audit")
 async def audit_trail(

@@ -1,9 +1,8 @@
 // AI Tools index — 8 tools with plan badges
-import React, { useRef } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { TrialCountdownBanner } from '../../src/components/AITools';
@@ -97,13 +96,11 @@ const TOOLS: Tool[] = [
 ];
 
 export default function ToolsIndex() {
-  const scrollRef = useRef<ScrollView>(null);
-  useScrollToTop(scrollRef);
   const router = useRouter();
   const canGoBack = router.canGoBack();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} testID="tools-scroll">
+      <ScrollView contentContainerStyle={styles.scroll} testID="tools-scroll">
         {canGoBack ? (
           <TouchableOpacity onPress={() => router.back()} style={styles.back}>
             <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
@@ -113,6 +110,19 @@ export default function ToolsIndex() {
         <Text style={styles.overline}>Helpful tools</Text>
         <Text style={styles.h1}>AI tools</Text>
         <Text style={styles.sub}>Quick answers when you need them — all included with Solo and Family plans.</Text>
+
+        {/* AI disclaimer — matches the yellow callout on the web app */}
+        <View style={styles.aiBanner}>
+          <View style={styles.aiBannerIcon}>
+            <Ionicons name="information-circle" size={16} color="#8A6D14" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.aiBannerTitle}>AI assistance only — not financial, legal, or medical advice</Text>
+            <Text style={styles.aiBannerBody}>
+              The tools below use Wayly&apos;s AI to surface ideas, draft language, and explain rules. They&apos;re a starting point, not a substitute for a registered tax agent, lawyer, or clinician. Always verify anything that affects your money, plan, or care.
+            </Text>
+          </View>
+        </View>
 
         <TrialCountdownBanner />
 
@@ -154,6 +164,15 @@ const styles = StyleSheet.create({
   overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: Colors.textMuted },
   h1: { fontFamily: Fonts.heading, fontSize: 26, color: Colors.brandPrimary, letterSpacing: -0.5 },
   sub: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg, lineHeight: 20 },
+  aiBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    backgroundColor: '#FFF8E1', borderRadius: Radius.md,
+    borderWidth: 1, borderColor: '#E8C770',
+    padding: Spacing.md, marginBottom: Spacing.lg,
+  },
+  aiBannerIcon: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  aiBannerTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: '#6B5410', lineHeight: 18 },
+  aiBannerBody: { fontFamily: Fonts.body, fontSize: 12, color: '#6B5410', lineHeight: 18, marginTop: 4 },
   card: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md,
     backgroundColor: Colors.cardBg, borderRadius: Radius.md, padding: Spacing.md + 2,
