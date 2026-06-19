@@ -277,19 +277,24 @@ export default function Visits() {
 
             <Text style={styles.label}>When</Text>
             {Platform.OS === 'web' ? (
-              <TextInput
-                value={modal?.starts_at ? toLocalInput(modal.starts_at) : ''}
-                onChangeText={(t) => setModal((m) => m && { ...m, starts_at: fromLocalInput(t) })}
-                placeholder="2026-06-12T10:00"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.input}
-                // On RN Web TextInput renders as <input>; expose the datetime-local type so
-                // browsers show a native picker. Casting through any to bypass RN typings.
-                {...({ type: 'datetime-local' } as any)}
-                testID="visit-starts-at"
-              />
+              // react-native-web's TextInput silently controls the `type`
+              // attr, so a spread `type: 'datetime-local'` doesn't stick.
+              // Render a raw <input> via createElement to get the native
+              // browser picker.
+              React.createElement('input', {
+                type: 'datetime-local',
+                value: modal?.starts_at ? toLocalInput(modal.starts_at) : '',
+                onChange: (e: any) => setModal((m) => m && { ...m, starts_at: fromLocalInput(e?.target?.value || '') }),
+                'data-testid': 'visit-starts-at',
+                style: {
+                  fontFamily: 'inherit', fontSize: 14, color: Colors.brandPrimary,
+                  background: Colors.background,
+                  borderRadius: 8, padding: '12px 14px',
+                  border: `1px solid ${Colors.borderSubtle}`,
+                  outline: 'none', width: '100%',
+                  boxSizing: 'border-box', minHeight: 46,
+                },
+              })
             ) : (
               <View style={styles.dtRow}>
                 <TouchableOpacity
