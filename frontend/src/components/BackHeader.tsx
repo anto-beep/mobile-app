@@ -1,10 +1,16 @@
 // Reusable back button row for screens pushed from a tab.
 // Use this at the very top of screens that don't get a native Stack header.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Fonts, Spacing } from '../lib/theme';
+
+// Wayly mark — shown next to the screen title on every sub-screen so the
+// brand identity is consistent across the app (the tab-level screens use
+// the larger <WaylyHeader />).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const WAYLY_MARK = require('../../assets/branding/wayly-mark.png');
 
 type Props = {
   title?: string;
@@ -38,7 +44,12 @@ export default function BackHeader({ title, label = 'Back', onBack, rightAccesso
         <Ionicons name="chevron-back" size={22} color={Colors.brandPrimary} />
         <Text style={styles.backText}>{label}</Text>
       </TouchableOpacity>
-      {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
+      {title ? (
+        <View style={styles.titleRow}>
+          <Image source={WAYLY_MARK} style={styles.mark} resizeMode="contain" />
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        </View>
+      ) : <View style={{ flex: 1 }} />}
       <View style={styles.right}>{rightAccessory}</View>
     </View>
   );
@@ -66,13 +77,20 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   title: {
-    flex: 1,
     fontFamily: Fonts.bodySemi,
     fontSize: 16,
     color: Colors.brandPrimary,
     textAlign: 'center',
-    marginRight: 44, // visual balance with back button
   },
+  titleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginRight: 44, // visual balance with the back button on the left
+  },
+  mark: { width: 18, height: 18, borderRadius: 4 },
   right: {
     minWidth: 0,
   },

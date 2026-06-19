@@ -31,6 +31,7 @@ import { Platform } from 'react-native';
 export const Colors = {
   // Core
   background: '#FBF8F3',          // warm off-white app shell
+  bg: '#FBF8F3',                  // alias of `background` — keep both keys in sync
   brandPrimary: '#0E4D52',        // teal-ink — primary surfaces, headers, nav
   brandPrimaryDeep: '#073034',    // pressed/active state of teal surfaces
   brandSecondary: '#A5512B',      // clay 500 — CTA fill (always white text)

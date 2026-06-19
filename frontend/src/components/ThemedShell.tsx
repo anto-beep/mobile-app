@@ -21,6 +21,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Text, Platform } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { useTheme } from '../context/ThemeContext';
 
 // Patch Text.render once at module load — multiplies fontSize by the current
 // scale. Works on iOS/Android where Text has a render static; on react-native-
@@ -50,6 +51,26 @@ import { useAccessibility } from '../context/AccessibilityContext';
 
 export function ThemedShell({ children }: { children: React.ReactNode }) {
   const a11y = useAccessibility();
+  const theme = useTheme();
+  // Theme picker (light/dark/system) overrides the a11y darkMode toggle.
+  const isDark = theme.effective === 'dark' || a11y.darkMode;
+
+  // Web-only: apply a CSS `invert + hue-rotate` filter to the document root
+  // when dark mode is on. This is the classic trick that flips light surfaces
+  // to dark and dark text to light without rewriting every StyleSheet. It
+  // preserves brand colours reasonably (teal → warm rust). On native we
+  // fall back to a translucent dark overlay below.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const root = (globalThis as any).document?.documentElement;
+      if (!root) return;
+      const existing = root.style.filter || '';
+      const cleaned = existing.replace(/\s*invert\(1\)\s*hue-rotate\(180deg\)\s*/g, '').trim();
+      root.style.filter = isDark ? `${cleaned} invert(1) hue-rotate(180deg)`.trim() : cleaned;
+      root.style.background = isDark ? '#000' : '';
+    } catch {}
+  }, [isDark]);
 
   // Native: sync scale synchronously so any Text rendered this cycle uses it.
   if (Platform.OS !== 'web') {
@@ -83,18 +104,16 @@ export function ThemedShell({ children }: { children: React.ReactNode }) {
         {children}
       </View>
 
-      {/* Dark mode overlay: tints cream/light surfaces to dark navy without
-          rewriting every StyleSheet. pointerEvents="none" so it never blocks
-          taps. zIndex 100 sits above content but below the AccessibilityWidget
-          pill (zIndex 9999) and any Modal (portaled higher). */}
-      {a11y.darkMode && (
+      {/* Dark mode for NATIVE: use a near-opaque dark overlay with multiply
+          blending so cream surfaces actually turn dark and text reads white.
+          On web we skip this — the `invert + hue-rotate` filter on the root
+          element (see useEffect above) handles it cleanly there. */}
+      {isDark && Platform.OS !== 'web' && (
         <View
           pointerEvents="none"
           style={[
             styles.overlay,
-            Platform.OS === 'web'
-              ? ({ backgroundColor: 'rgba(15, 25, 36, 0.72)', mixBlendMode: 'multiply' } as any)
-              : { backgroundColor: 'rgba(15, 25, 36, 0.55)' },
+            { backgroundColor: 'rgba(0, 0, 0, 0.86)' },
           ]}
           testID="dark-mode-overlay"
         />
