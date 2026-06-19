@@ -175,67 +175,82 @@ export default function StatementDetail() {
           {formatAUD2(totalContribution)} you paid
         </Text>
 
-        {/* Downloads + Ask Wayly — mirrors the web app's three download buttons
-            plus "Ask Wayly about this statement" CTA at the top of the detail. */}
-        <View style={styles.actionsRow} testID="statement-actions-row">
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => download('original')}
-            disabled={!!downloadingKind}
-            testID="statement-download-original"
-            accessibilityRole="button"
-          >
-            {downloadingKind === 'original' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
-            ) : (
-              <>
-                <Ionicons name="document-outline" size={16} color={Colors.brandPrimary} />
-                <Text style={styles.actionText}>Original PDF</Text>
-              </>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => download('pdf')}
-            disabled={!!downloadingKind}
-            testID="statement-download-decoded-pdf"
-            accessibilityRole="button"
-          >
-            {downloadingKind === 'pdf' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
-            ) : (
-              <>
-                <Ionicons name="sparkles-outline" size={16} color={Colors.brandPrimary} />
-                <Text style={styles.actionText}>Decoded PDF</Text>
-              </>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => download('csv')}
-            disabled={!!downloadingKind}
-            testID="statement-download-csv"
-            accessibilityRole="button"
-          >
-            {downloadingKind === 'csv' ? (
-              <ActivityIndicator color={Colors.brandPrimary} size="small" />
-            ) : (
-              <>
-                <Ionicons name="grid-outline" size={16} color={Colors.brandPrimary} />
-                <Text style={styles.actionText}>Decoded CSV</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        {/* Ask Wayly — top primary CTA, mirrors the web app's prominent "Ask
+            Wayly about this statement" button at the top of the page. */}
         <TouchableOpacity
           style={styles.askBtn}
           onPress={askWayly}
           testID="statement-ask-wayly"
           accessibilityRole="button"
+          activeOpacity={0.85}
         >
-          <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
+          <Ionicons name="chatbubbles" size={18} color="#FFFFFF" />
           <Text style={styles.askBtnText}>Ask Wayly about this statement</Text>
         </TouchableOpacity>
+
+        {/* Download tiles — three large, equally-prominent cards matching
+            the web app's download row. Each tile has icon on top, label
+            below, and a clear secondary "Download" hint. */}
+        <Text style={styles.downloadsLabel}>Downloads</Text>
+        <View style={styles.tilesRow} testID="statement-actions-row">
+          <TouchableOpacity
+            style={[styles.tile, downloadingKind === 'original' && styles.tileBusy]}
+            onPress={() => download('original')}
+            disabled={!!downloadingKind}
+            testID="statement-download-original"
+            accessibilityRole="button"
+            accessibilityLabel="Download original PDF"
+            activeOpacity={0.85}
+          >
+            {downloadingKind === 'original' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <View style={styles.tileIconWrap}>
+                <Ionicons name="document-text" size={22} color={Colors.brandPrimary} />
+              </View>
+            )}
+            <Text style={styles.tileLabel}>Original PDF</Text>
+            <Text style={styles.tileHint}>As received</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tile, downloadingKind === 'pdf' && styles.tileBusy]}
+            onPress={() => download('pdf')}
+            disabled={!!downloadingKind}
+            testID="statement-download-decoded-pdf"
+            accessibilityRole="button"
+            accessibilityLabel="Download decoded PDF"
+            activeOpacity={0.85}
+          >
+            {downloadingKind === 'pdf' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <View style={[styles.tileIconWrap, { backgroundColor: 'rgba(183, 121, 31, 0.10)' }]}>
+                <Ionicons name="sparkles" size={22} color={Colors.brandSecondary} />
+              </View>
+            )}
+            <Text style={styles.tileLabel}>Decoded PDF</Text>
+            <Text style={styles.tileHint}>Plain English</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tile, downloadingKind === 'csv' && styles.tileBusy]}
+            onPress={() => download('csv')}
+            disabled={!!downloadingKind}
+            testID="statement-download-csv"
+            accessibilityRole="button"
+            accessibilityLabel="Download decoded CSV"
+            activeOpacity={0.85}
+          >
+            {downloadingKind === 'csv' ? (
+              <ActivityIndicator color={Colors.brandPrimary} size="small" />
+            ) : (
+              <View style={[styles.tileIconWrap, { backgroundColor: 'rgba(139, 155, 130, 0.14)' }]}>
+                <Ionicons name="grid" size={22} color="#5B7B5A" />
+              </View>
+            )}
+            <Text style={styles.tileLabel}>Decoded CSV</Text>
+            <Text style={styles.tileHint}>Spreadsheet</Text>
+          </TouchableOpacity>
+        </View>
 
         {stmt.summary && (
           <View style={styles.summaryCard} testID="statement-detail-summary">
@@ -339,7 +354,34 @@ const styles = StyleSheet.create({
     color: Colors.textMuted, marginBottom: 4,
   },
   h1: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.brandPrimary, letterSpacing: -0.5 },
-  subline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.lg },
+  subline: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, marginTop: 6, marginBottom: Spacing.md },
+  askBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: Colors.brandPrimary, borderRadius: Radius.md,
+    paddingVertical: 14, marginBottom: Spacing.md, minHeight: 50,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
+  },
+  askBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: '#FFFFFF', letterSpacing: 0.2 },
+  downloadsLabel: {
+    fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase',
+    color: Colors.textMuted, marginBottom: 10,
+  },
+  tilesRow: { flexDirection: 'row', gap: 10, marginBottom: Spacing.lg },
+  tile: {
+    flex: 1, alignItems: 'center', justifyContent: 'flex-start',
+    paddingVertical: 14, paddingHorizontal: 8, minHeight: 108,
+    borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.cardBg,
+  },
+  tileBusy: { opacity: 0.55 },
+  tileIconWrap: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(14, 77, 82, 0.08)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
+  },
+  tileLabel: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, textAlign: 'center' },
+  tileHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
   summaryCard: {
     backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.lg, padding: Spacing.md + 4,
     borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.3)', marginBottom: Spacing.lg,
