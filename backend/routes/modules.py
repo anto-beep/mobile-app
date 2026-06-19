@@ -133,6 +133,41 @@ async def provider_switch_status(p: dict = Depends(get_active_participant)):
     return doc
 
 
+@router.post("/provider-switch/start")
+async def provider_switch_start(
+    body: Dict[str, Any] = Body(...),
+    p: dict = Depends(get_active_participant),
+    user_id: str = Depends(get_current_user_id),
+):
+    new_provider = (body.get("new_provider") or "").strip()
+    if not new_provider:
+        raise HTTPException(status_code=400, detail="new_provider is required")
+    doc = {
+        "id": new_id(),
+        "participant_id": p["id"],
+        "created_by": user_id,
+        "in_progress": True,
+        "current_provider": p.get("provider_name", "Your provider"),
+        "new_provider": new_provider,
+        "reason": (body.get("reason") or "")[:500],
+        "target_date": body.get("target_date"),
+        "status": "DRAFT",
+        "created_at": now_iso(),
+    }
+    await db.provider_switches.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.post("/provider-switch/cancel")
+async def provider_switch_cancel(p: dict = Depends(get_active_participant)):
+    await db.provider_switches.update_many(
+        {"participant_id": p["id"], "in_progress": True},
+        {"$set": {"in_progress": False, "status": "CANCELLED", "updated_at": now_iso()}},
+    )
+    return {"ok": True}
+
+
 # ─────────────────────── PROVIDER RATINGS ───────────────────────
 @router.get("/ratings")
 async def list_ratings(p: dict = Depends(get_active_participant)):
