@@ -1,369 +1,357 @@
-// Care-Plan Changes (Amendments) — mirror of /app/amendments on the web app.
-// Lists amendments raised against providers + a "+ New amendment" composer
-// that pre-fills from query params when launched from a statement line item
-// (?statement_id=&line_item=&amount=&service=&provider=).
+// Care Plan Amendments — mirror of /app/amendments on the web app.
+// Layout: inline composer at top (For / Your name / Your role + N change cards
+// with Service / Change type / Why this change?) → Generate letter →
+// Past requests list below.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   TextInput,
-  ScrollView,
   ActivityIndicator,
+  ScrollView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { EmptyState, ListCard, ScreenShell } from '../src/components/Screen';
-import { useApi } from '../src/lib/useApi';
 import { api } from '../src/lib/api';
+import { useApi } from '../src/lib/useApi';
+import { useAuth } from '../src/context/AuthContext';
+import { useParticipants } from '../src/context/ParticipantsContext';
 import { toast } from '../src/components/Toast';
+import BackHeader from '../src/components/BackHeader';
 import { formatAUDate } from '../src/lib/format';
 import { Colors, Fonts, Radius, Spacing } from '../src/lib/theme';
 
-const KIND_OPTIONS = [
-  { value: 'wrong_amount', label: 'Wrong amount' },
-  { value: 'service_not_delivered', label: 'Service not delivered' },
-  { value: 'wrong_date', label: 'Wrong date' },
-  { value: 'duplicate_charge', label: 'Duplicate charge' },
-  { value: 'wrong_service', label: 'Wrong service / support item' },
-  { value: 'other', label: 'Other' },
+const CHANGE_TYPES = [
+  'Increase frequency / hours',
+  'Decrease frequency / hours',
+  'Change service',
+  'Add service',
+  'Remove service',
+  'Change provider',
+  'Other',
 ];
 
 const STATUS_META: Record<string, { bg: string; fg: string; label: string }> = {
-  DRAFT:     { bg: '#E8F0F0', fg: '#0E4D52', label: 'Draft' },
-  OPEN:      { bg: '#FAEFD4', fg: '#5C3D11', label: 'Open' },
-  IN_REVIEW: { bg: '#E8F0F0', fg: '#0E4D52', label: 'In review' },
-  RESOLVED:  { bg: '#E5F0E2', fg: '#3A5F37', label: 'Resolved' },
-  REJECTED:  { bg: '#FDE8E2', fg: '#A54030', label: 'Rejected' },
+  DRAFT:     { bg: '#EDE9DC', fg: '#6B7C92', label: 'DRAFT' },
+  OPEN:      { bg: '#FAEFD4', fg: '#5C3D11', label: 'OPEN' },
+  SENT:      { bg: '#E8F0F0', fg: '#0E4D52', label: 'SENT' },
+  IN_REVIEW: { bg: '#E8F0F0', fg: '#0E4D52', label: 'IN REVIEW' },
+  RESOLVED:  { bg: '#E5F0E2', fg: '#3A5F37', label: 'RESOLVED' },
+  REJECTED:  { bg: '#FDE8E2', fg: '#A54030', label: 'REJECTED' },
 };
 
-const fmtMoney = (v: any) => {
-  const n = typeof v === 'number' ? v : parseFloat(v);
-  if (!Number.isFinite(n)) return '';
-  return `$${n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+type ChangeRow = { service: string; change_type: string; why: string };
 
 export default function Amendments() {
-  const params = useLocalSearchParams<{
-    statement_id?: string;
-    line_item?: string;
-    amount?: string;
-    service?: string;
-    provider?: string;
-    new?: string;
-  }>();
-  const { data, loading, refreshing, refresh } = useApi<{ items: any[] }>('/amendments');
+  const { user } = useAuth();
+  const { active, all } = useParticipants();
+  const { data, refresh } = useApi<{ items: any[] }>('/amendments');
   const items = data?.items || [];
-  const [composerOpen, setComposerOpen] = useState(false);
 
-  // Auto-open the composer if we landed here from a statement deep-link.
+  const [forId, setForId] = useState<string>('');
+  const [yourName, setYourName] = useState('');
+  const [yourRole, setYourRole] = useState('primary caregiver');
+  const [changes, setChanges] = useState<ChangeRow[]>([{ service: '', change_type: CHANGE_TYPES[0], why: '' }]);
+  const [submitting, setSubmitting] = useState(false);
+  const [forPickerOpen, setForPickerOpen] = useState(false);
+  const [typePickerOpenIdx, setTypePickerOpenIdx] = useState<number | null>(null);
+
+  // Prefill "For" with active participant + "Your name" with user's first name.
+  useEffect(() => { if (active?.id) setForId(active.id); }, [active?.id]);
   useEffect(() => {
-    if (params.statement_id || params.new === '1') setComposerOpen(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.statement_id, params.new]);
+    if (!yourName && user?.name) setYourName(user.name.split(' ')[0] || user.name);
+  }, [user?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sorted = useMemo(
     () => [...items].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))),
     [items]
   );
+  const forParticipant = all.find((p: any) => p.id === forId);
+  const forLabel = forParticipant
+    ? `${forParticipant.first_name || ''} ${forParticipant.last_name || ''}`.trim() || 'Select…'
+    : 'Select…';
 
-  return (
-    <ScreenShell
-      useBack
-      title="Care-Plan Changes"
-      subtitle="Statement disputes raised with providers"
-      loading={loading}
-      onRefresh={refresh}
-      refreshing={refreshing}
-    >
-      {sorted.length === 0 ? (
-        <EmptyState
-          icon="create-outline"
-          title="No amendments in flight"
-          body="Raise an amendment from any decoded statement when a charge looks wrong. We'll generate the email to the provider and track the response."
-        />
-      ) : (
-        sorted.map((a) => {
-          const status = STATUS_META[String(a.status || 'OPEN').toUpperCase()] || STATUS_META.OPEN;
-          return (
-            <View key={a.id} style={styles.card} testID={`amendment-card-${a.id}`}>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardTitle} numberOfLines={2}>
-                  {a.subject || a.kind || 'Amendment'}
-                </Text>
-                <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-                  <Text style={[styles.statusPillText, { color: status.fg }]}>{status.label}</Text>
-                </View>
-              </View>
-              {a.provider && <Text style={styles.cardMeta}>{a.provider}</Text>}
-              {(a.original_amount || a.expected_amount) && (
-                <Text style={styles.cardMeta}>
-                  {a.original_amount ? `Charged ${fmtMoney(a.original_amount)}` : ''}
-                  {a.original_amount && a.expected_amount ? ' · ' : ''}
-                  {a.expected_amount ? `Expected ${fmtMoney(a.expected_amount)}` : ''}
-                </Text>
-              )}
-              {a.description && (
-                <Text style={styles.cardBody} numberOfLines={3}>{a.description}</Text>
-              )}
-              <Text style={styles.cardFooter}>Raised {formatAUDate(a.created_at)}</Text>
-            </View>
-          );
-        })
-      )}
+  const setChange = (idx: number, patch: Partial<ChangeRow>) =>
+    setChanges((rows) => rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  const addChange = () => setChanges((rows) => [...rows, { service: '', change_type: CHANGE_TYPES[0], why: '' }]);
+  const removeChange = (idx: number) => setChanges((rows) => rows.length === 1 ? rows : rows.filter((_, i) => i !== idx));
 
-      {/* Floating "+" — opens the composer */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setComposerOpen(true)}
-        testID="amendments-new-btn"
-        accessibilityRole="button"
-        accessibilityLabel="Raise a new amendment"
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <ComposerModal
-        visible={composerOpen}
-        onClose={() => setComposerOpen(false)}
-        onCreated={() => { setComposerOpen(false); refresh(); }}
-        prefill={{
-          statement_id: params.statement_id ? String(params.statement_id) : undefined,
-          line_item: params.line_item ? String(params.line_item) : undefined,
-          amount: params.amount ? String(params.amount) : undefined,
-          service: params.service ? String(params.service) : undefined,
-          provider: params.provider ? String(params.provider) : undefined,
-        }}
-      />
-    </ScreenShell>
-  );
-}
-
-// ── Composer modal ────────────────────────────────────────────────────────
-function ComposerModal({
-  visible,
-  onClose,
-  onCreated,
-  prefill,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-  prefill: { statement_id?: string; line_item?: string; amount?: string; service?: string; provider?: string };
-}) {
-  const [kind, setKind] = useState<string>('wrong_amount');
-  const [subject, setSubject] = useState('');
-  const [provider, setProvider] = useState('');
-  const [originalAmount, setOriginalAmount] = useState('');
-  const [expectedAmount, setExpectedAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  // Re-prefill whenever the composer opens with new params.
-  useEffect(() => {
-    if (!visible) return;
-    setKind('wrong_amount');
-    setSubject(prefill.service ? `${prefill.service} — review` : '');
-    setProvider(prefill.provider || '');
-    setOriginalAmount(prefill.amount || '');
-    setExpectedAmount('');
-    setDescription(
-      prefill.line_item
-        ? `Reviewing line item "${prefill.line_item}" on statement ${prefill.statement_id || ''}. `
-        : ''
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, prefill.statement_id, prefill.line_item, prefill.amount, prefill.service, prefill.provider]);
-
-  const submit = async () => {
-    if (!subject.trim()) {
-      toast.error('Add a short subject for the amendment.');
+  const generate = async () => {
+    const valid = changes.filter((c) => c.service.trim() || c.why.trim());
+    if (valid.length === 0) {
+      toast.error('Add at least one service or reason before generating the letter.');
+      return;
+    }
+    if (!forId) {
+      toast.error('Pick who this amendment is for.');
       return;
     }
     setSubmitting(true);
     try {
+      const first = valid[0];
       await api.post('/amendments', {
-        kind,
-        subject: subject.trim(),
-        provider: provider.trim() || undefined,
-        original_amount: originalAmount ? parseFloat(originalAmount) : undefined,
-        expected_amount: expectedAmount ? parseFloat(expectedAmount) : undefined,
-        description: description.trim() || undefined,
-        statement_id: prefill.statement_id,
-        line_item: prefill.line_item,
-        status: 'OPEN',
+        participant_id: forId,
+        for_name: forLabel,
+        your_name: yourName.trim() || undefined,
+        your_role: yourRole.trim() || undefined,
+        subject: first.service || first.change_type,
+        kind: 'care_plan_change',
+        service: first.service || undefined,
+        change_type: first.change_type,
+        description: valid.map((c, i) => `${i + 1}. ${c.service ? c.service + ' — ' : ''}${c.change_type}\n${c.why}`).join('\n\n'),
+        changes: valid,
+        status: 'SENT',
       });
-      toast.success('Amendment raised. We\u2019ll track the provider response.');
-      onCreated();
+      toast.success('Letter generated and sent.');
+      setChanges([{ service: '', change_type: CHANGE_TYPES[0], why: '' }]);
+      refresh();
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || e?.message || 'Could not raise amendment.');
+      toast.error(e?.response?.data?.detail || e?.message || 'Could not generate letter.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={styles.modalHeader}>
-        <TouchableOpacity onPress={onClose} testID="amendment-composer-close" hitSlop={10}>
-          <Text style={styles.modalCancel}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.modalTitle}>New amendment</Text>
-        <TouchableOpacity onPress={submit} disabled={submitting} testID="amendment-composer-submit" hitSlop={10}>
-          {submitting ? <ActivityIndicator color={Colors.brandPrimary} /> : <Text style={styles.modalSubmit}>Raise</Text>}
-        </TouchableOpacity>
-      </View>
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.modalBody}
-        keyboardShouldPersistTaps="handled"
-        bottomOffset={24}
-      >
-        <Text style={styles.lbl}>Reason</Text>
-        <View style={styles.kindGrid}>
-          {KIND_OPTIONS.map((k) => (
-            <TouchableOpacity
-              key={k.value}
-              style={[styles.kindPill, kind === k.value && styles.kindPillActive]}
-              onPress={() => setKind(k.value)}
-              testID={`amendment-kind-${k.value}`}
-            >
-              <Text style={[styles.kindPillText, kind === k.value && styles.kindPillTextActive]}>{k.label}</Text>
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <BackHeader title="Care Plan Amendments" />
+      <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24}>
+        {/* Hero */}
+        <View style={styles.heroRow}>
+          <Ionicons name="create-outline" size={22} color={Colors.brandPrimary} />
+          <Text style={styles.hero}>Care Plan Amendments</Text>
+        </View>
+        <Text style={styles.subhero}>
+          Build a clear, formal request to change the care plan — provider will receive the changes you actually need, in writing.
+        </Text>
+
+        {/* New amendment request */}
+        <View style={styles.card}>
+          <Text style={styles.cardH1}>New amendment request</Text>
+
+          <View style={styles.row3}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lbl}>For</Text>
+              <TouchableOpacity style={styles.select} onPress={() => setForPickerOpen((v) => !v)} testID="amendment-for-select">
+                <Text style={styles.selectText} numberOfLines={1}>{forLabel}</Text>
+                <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
+              {forPickerOpen && (
+                <View style={styles.dropdown} testID="amendment-for-options">
+                  {all.map((p: any) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={styles.dropdownItem}
+                      onPress={() => { setForId(p.id); setForPickerOpen(false); }}
+                    >
+                      <Text style={styles.dropdownItemText}>{`${p.first_name || ''} ${p.last_name || ''}`.trim()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lbl}>Your name</Text>
+              <TextInput style={styles.input} value={yourName} onChangeText={setYourName} placeholder="Cathy" placeholderTextColor={Colors.textMuted} testID="amendment-your-name" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lbl}>Your role</Text>
+              <TextInput style={styles.input} value={yourRole} onChangeText={setYourRole} placeholder="primary caregiver" placeholderTextColor={Colors.textMuted} testID="amendment-your-role" />
+            </View>
+          </View>
+
+          {/* Change rows */}
+          {changes.map((c, idx) => (
+            <View key={idx} style={styles.changeCard} testID={`amendment-change-${idx}`}>
+              <View style={styles.row2}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.lbl}>Service</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={c.service}
+                    onChangeText={(t) => setChange(idx, { service: t })}
+                    placeholder="e.g. Domestic cleaning"
+                    placeholderTextColor={Colors.textMuted}
+                    testID={`amendment-service-${idx}`}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.lbl}>Change type</Text>
+                  <TouchableOpacity
+                    style={styles.select}
+                    onPress={() => setTypePickerOpenIdx(typePickerOpenIdx === idx ? null : idx)}
+                    testID={`amendment-change-type-${idx}`}
+                  >
+                    <Text style={styles.selectText} numberOfLines={1}>{c.change_type}</Text>
+                    <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                  {typePickerOpenIdx === idx && (
+                    <View style={styles.dropdown}>
+                      {CHANGE_TYPES.map((t) => (
+                        <TouchableOpacity
+                          key={t}
+                          style={styles.dropdownItem}
+                          onPress={() => { setChange(idx, { change_type: t }); setTypePickerOpenIdx(null); }}
+                        >
+                          <Text style={styles.dropdownItemText}>{t}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+              <View style={styles.whyHeader}>
+                <Text style={styles.lbl}>Why this change?</Text>
+                {/* Dictate button is a no-op placeholder on mobile for now —
+                    web uses MediaRecorder + Whisper. Keep visible for parity. */}
+                <TouchableOpacity style={styles.dictateBtn} onPress={() => toast.info('Dictation is coming to mobile soon. Type your reason for now.')} testID={`amendment-dictate-${idx}`}>
+                  <Ionicons name="mic-outline" size={13} color={Colors.brandPrimary} />
+                  <Text style={styles.dictateBtnText}>Dictate</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={[styles.input, styles.textarea]}
+                value={c.why}
+                onChangeText={(t) => setChange(idx, { why: t })}
+                multiline
+                numberOfLines={4}
+                placeholder="e.g. After her fall in May, she cannot manage the heavy cleaning safely on her own."
+                placeholderTextColor={Colors.textMuted}
+                testID={`amendment-why-${idx}`}
+              />
+              {changes.length > 1 && (
+                <TouchableOpacity style={styles.removeChangeBtn} onPress={() => removeChange(idx)} testID={`amendment-remove-${idx}`}>
+                  <Ionicons name="trash-outline" size={14} color={Colors.severityAlert} />
+                  <Text style={styles.removeChangeText}>Remove change</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ))}
+
+          <TouchableOpacity style={styles.addChangeBtn} onPress={addChange} testID="amendment-add-change">
+            <Ionicons name="add" size={16} color={Colors.brandPrimary} />
+            <Text style={styles.addChangeText}>Add another change</Text>
+          </TouchableOpacity>
+
+          <View style={styles.cardDivider} />
+          <TouchableOpacity
+            style={[styles.generateBtn, submitting && { opacity: 0.6 }]}
+            onPress={generate}
+            disabled={submitting}
+            testID="amendment-generate-letter"
+            accessibilityRole="button"
+          >
+            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.generateBtnText}>Generate letter</Text>}
+          </TouchableOpacity>
         </View>
 
-        <Text style={styles.lbl}>Subject</Text>
-        <TextInput
-          style={styles.input}
-          value={subject}
-          onChangeText={setSubject}
-          placeholder="e.g. Wrong rate on community access"
-          placeholderTextColor={Colors.textMuted}
-          testID="amendment-subject"
-        />
-
-        <Text style={styles.lbl}>Provider (optional)</Text>
-        <TextInput
-          style={styles.input}
-          value={provider}
-          onChangeText={setProvider}
-          placeholder="Provider name"
-          placeholderTextColor={Colors.textMuted}
-          testID="amendment-provider"
-        />
-
-        <View style={styles.row2}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.lbl}>Charged</Text>
-            <TextInput
-              style={styles.input}
-              value={originalAmount}
-              onChangeText={setOriginalAmount}
-              placeholder="0.00"
-              keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-              placeholderTextColor={Colors.textMuted}
-              testID="amendment-original-amount"
-            />
+        {/* Past requests */}
+        <Text style={styles.sectionH}>Past requests</Text>
+        {sorted.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No requests yet. Submit the form above and it will appear here.</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.lbl}>Expected</Text>
-            <TextInput
-              style={styles.input}
-              value={expectedAmount}
-              onChangeText={setExpectedAmount}
-              placeholder="0.00"
-              keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-              placeholderTextColor={Colors.textMuted}
-              testID="amendment-expected-amount"
-            />
-          </View>
-        </View>
-
-        <Text style={styles.lbl}>What happened?</Text>
-        <TextInput
-          style={[styles.input, styles.textarea]}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={5}
-          placeholder="Describe the issue so the provider can find and fix it. Include dates and any reference numbers."
-          placeholderTextColor={Colors.textMuted}
-          testID="amendment-description"
-        />
-
-        {prefill.statement_id && (
-          <View style={styles.contextPill}>
-            <Ionicons name="link-outline" size={13} color={Colors.brandPrimary} />
-            <Text style={styles.contextPillText}>Linked to statement {String(prefill.statement_id).slice(0, 8)}…</Text>
-          </View>
-        )}
+        ) : sorted.map((a) => {
+          const st = STATUS_META[String(a.status || 'OPEN').toUpperCase()] || STATUS_META.OPEN;
+          const dt = a.created_at ? new Date(a.created_at) : null;
+          const dtTxt = dt ? `${dt.toLocaleDateString('en-AU')}, ${dt.toLocaleTimeString('en-AU')}` : formatAUDate(a.created_at);
+          return (
+            <View key={a.id} style={styles.pastCard} testID={`amendment-past-${a.id}`}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pastTitle}>{a.subject || a.service || 'Amendment'}</Text>
+                <Text style={styles.pastMeta}>{dtTxt}{a.provider ? ` · to ${a.provider}` : ''}</Text>
+              </View>
+              <View style={[styles.statusPill, { backgroundColor: st.bg }]}>
+                <Text style={[styles.statusPillText, { color: st.fg }]}>{st.label}</Text>
+              </View>
+            </View>
+          );
+        })}
       </KeyboardAwareScrollView>
-    </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.background },
+  scroll: { padding: Spacing.md, paddingBottom: 40 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
+  hero: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.brandPrimary, letterSpacing: -0.3 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+
   card: {
-    backgroundColor: Colors.cardBg,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.cardBg, borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    padding: Spacing.md, marginBottom: Spacing.lg,
   },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  cardTitle: { flex: 1, fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, lineHeight: 20 },
-  cardMeta: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
-  cardBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, marginTop: 6, lineHeight: 18 },
-  cardFooter: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, marginTop: 8 },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, letterSpacing: 0.2 },
+  cardH1: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginBottom: Spacing.md },
 
-  fab: {
-    position: 'absolute',
-    right: Spacing.lg, bottom: Spacing.lg,
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.brandPrimary,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5,
-  },
-
-  modalHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.background, minHeight: 52,
-  },
-  modalTitle: { fontFamily: Fonts.bodySemi, fontSize: 16, color: Colors.brandPrimary },
-  modalCancel: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textMuted, minWidth: 60 },
-  modalSubmit: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary, minWidth: 60, textAlign: 'right' },
-  modalBody: { padding: Spacing.md, paddingBottom: 60, backgroundColor: Colors.background },
-  lbl: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 6, letterSpacing: 0.3 },
+  row3: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },
+  row2: { flexDirection: 'row', gap: 8 },
+  lbl: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.textSecondary, marginBottom: 5, letterSpacing: 0.2 },
   input: {
+    backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, color: Colors.textPrimary,
+    fontFamily: Fonts.body, minHeight: 40,
+  },
+  textarea: { minHeight: 88, paddingTop: 10, textAlignVertical: 'top' },
+  select: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: 10, paddingVertical: 10, minHeight: 40,
+  },
+  selectText: { flex: 1, fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary },
+  dropdown: {
+    marginTop: 4, backgroundColor: '#FFFFFF', borderRadius: Radius.sm,
+    borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden',
+  },
+  dropdownItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
+  dropdownItemText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary },
+
+  changeCard: {
+    backgroundColor: 'rgba(165, 81, 43, 0.06)',
+    borderRadius: Radius.md, padding: Spacing.sm + 2, marginBottom: Spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(165, 81, 43, 0.18)',
+  },
+  whyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.sm, marginBottom: 4 },
+  dictateBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#FFFFFF', borderRadius: 999,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  dictateBtnText: { fontFamily: Fonts.bodyMed, fontSize: 11, color: Colors.brandPrimary },
+  removeChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' },
+  removeChangeText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.severityAlert },
+
+  addChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingVertical: 8 },
+  addChangeText: { fontFamily: Fonts.bodyMed, fontSize: 14, color: Colors.brandPrimary },
+
+  cardDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: Spacing.md },
+  generateBtn: {
+    alignSelf: 'flex-end', backgroundColor: Colors.brandPrimary,
+    paddingHorizontal: 18, paddingVertical: 11, borderRadius: Radius.md, minHeight: 42, minWidth: 130,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  generateBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF', letterSpacing: 0.2 },
+
+  sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.brandPrimary, marginBottom: Spacing.sm },
+  emptyCard: { padding: Spacing.md, backgroundColor: Colors.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderSubtle },
+  emptyText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  pastCard: {
     backgroundColor: Colors.cardBg, borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 12, paddingVertical: 11, fontSize: 15, color: Colors.textPrimary,
-    fontFamily: Fonts.body, minHeight: 44,
+    padding: Spacing.md, marginBottom: Spacing.sm,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
   },
-  textarea: { minHeight: 100, paddingTop: 11, textAlignVertical: 'top' },
-  row2: { flexDirection: 'row', gap: 10 },
-  kindGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  kindPill: {
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-    backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  kindPillActive: { backgroundColor: Colors.brandPrimary, borderColor: Colors.brandPrimary },
-  kindPillText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: Colors.textSecondary },
-  kindPillTextActive: { color: '#FFFFFF', fontFamily: Fonts.bodySemi },
-  contextPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: Spacing.md, paddingHorizontal: 10, paddingVertical: 8,
-    backgroundColor: 'rgba(14, 77, 82, 0.06)', borderRadius: Radius.md,
-    alignSelf: 'flex-start',
-  },
-  contextPillText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.brandPrimary },
+  pastTitle: { fontFamily: Fonts.bodySemi, fontSize: 15, color: Colors.brandPrimary },
+  pastMeta: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, marginTop: 3 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+  statusPillText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.6 },
 });
