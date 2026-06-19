@@ -13,8 +13,9 @@ import { getActiveParticipantId, isImpersonating } from './activeParticipant';
 // `/api/public/contribution-estimator`, `/api/scenario/*`, etc.).
 //
 // This mobile app is the renderer for production Wayly, so we always need
-// to talk to `https://wayly.com.au`. To survive the entrypoint rewrite we
-// detect the preview-pod pattern at runtime and substitute the prod URL.
+// to talk to the prod Wayly API host (`aged-care-os.emergent.host`). To
+// survive the entrypoint rewrite we detect the preview-pod pattern at
+// runtime and substitute the prod URL.
 //
 // Override order:
 //   1. `EXPO_PUBLIC_API_BASE_OVERRIDE`  — explicit escape hatch for staging
@@ -24,7 +25,12 @@ import { getActiveParticipantId, isImpersonating } from './activeParticipant';
 // To point at a different backend (staging, local), set
 // `EXPO_PUBLIC_API_BASE_OVERRIDE=https://your-host` in `frontend/.env`.
 // ─────────────────────────────────────────────────────────────────────────
-const PROD_BACKEND = 'https://wayly.com.au';
+// The real production Wayly API host (confirmed via web-app DevTools).
+// wayly.com.au only serves the marketing site + web app shell; the API itself
+// is at aged-care-os.emergent.host. If you ever move the API back to
+// wayly.com.au, update this constant and the EXPO_PUBLIC_API_BASE_OVERRIDE
+// instruction in the comment block above.
+const PROD_BACKEND = 'https://aged-care-os.emergent.host';
 const PREVIEW_HOST_PATTERN = /\.preview\.emergentagent\.com/i;
 
 function resolveBackend(): string {
