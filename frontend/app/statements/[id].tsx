@@ -170,10 +170,14 @@ export default function StatementDetail() {
         const token = await getAccessToken();
         if (!token) throw new Error('Not signed in');
         const filename = `wayly-${baseName}-decoded.pdf`;
+        // eslint-disable-next-line no-console
+        console.log('[wayly] decoded-pdf: GET', url);
 
         if (Platform.OS === 'web') {
           const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          // eslint-disable-next-line no-console
+          console.log('[wayly] decoded-pdf: web response', res.status, res.headers.get('content-type'));
+          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
           const blob = await res.blob();
           const objUrl = URL.createObjectURL(blob);
           const a = (globalThis as any).document?.createElement?.('a');
@@ -183,13 +187,50 @@ export default function StatementDetail() {
           } else { Linking.openURL(objUrl); }
           return;
         }
-        const dest = (FileSystem.cacheDirectory || '') + filename;
-        const dl = await FileSystem.downloadAsync(url, dest, { headers: { Authorization: `Bearer ${token}` } });
-        if (dl.status !== 200) throw new Error(`HTTP ${dl.status}`);
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(dl.uri, { mimeType: 'application/pdf' });
-        } else {
-          Alert.alert('Downloaded', `Saved to ${dl.uri}`);
+
+        // ---- NATIVE (Expo Go / dev / standalone) ----
+        // Defensive flow — every step logs, and we never let an exception
+        // bubble out of this branch (would crash the React tree → white screen).
+        try {
+          const cacheDir = FileSystem.cacheDirectory || (FileSystem as any).documentDirectory || '';
+          if (!cacheDir) {
+            toast.error('Storage is not available on this device.');
+            return;
+          }
+          const dest = cacheDir + filename;
+          // eslint-disable-next-line no-console
+          console.log('[wayly] decoded-pdf: downloading to', dest);
+          const dl = await FileSystem.downloadAsync(url, dest, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          // eslint-disable-next-line no-console
+          console.log('[wayly] decoded-pdf: download result', dl?.status, dl?.uri);
+          if (!dl || dl.status !== 200) {
+            toast.error(`Couldn’t download the PDF (HTTP ${dl?.status || 'unknown'}).`);
+            return;
+          }
+          const canShare = await Sharing.isAvailableAsync().catch(() => false);
+          // eslint-disable-next-line no-console
+          console.log('[wayly] decoded-pdf: sharing available?', canShare);
+          if (canShare) {
+            try {
+              await Sharing.shareAsync(dl.uri, {
+                mimeType: 'application/pdf',
+                UTI: 'com.adobe.pdf',
+                dialogTitle: `${stmt.period_label || 'Statement'} — Decoded PDF`,
+              });
+            } catch (shareErr: any) {
+              // User cancelling the share sheet often throws — that's fine.
+              // eslint-disable-next-line no-console
+              console.log('[wayly] decoded-pdf: share dismissed or failed', shareErr?.message);
+            }
+          } else {
+            toast.info(`Saved to ${dl.uri}`);
+          }
+        } catch (nativeErr: any) {
+          // eslint-disable-next-line no-console
+          console.log('[wayly] decoded-pdf: native error', nativeErr?.message, nativeErr?.stack);
+          toast.error(nativeErr?.message || 'Could not download the PDF.');
         }
         return;
       }
