@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { api } from '../../src/lib/api';
 import { getAccessToken } from '../../src/lib/tokens';
 import { Colors, Fonts, formatAUD2, Radius, Spacing } from '../../src/lib/theme';
@@ -62,59 +63,152 @@ export default function StatementDetail() {
     })();
   }, [id]);
 
-  // Download a backend-rendered artefact (original PDF / decoded PDF / decoded CSV).
-  // Mirrors the web app's three download buttons. Uses Bearer auth via fetch + blob
-  // on web (so the JWT header is honoured) and FileSystem.downloadAsync + Sharing
-  // on native so the OS share-sheet appears.
+  // Download mirrors the web app's three download buttons exactly:
+  //   • 'original' → GET /api/statements/{id}/download (server-rendered TXT)
+  //   • 'csv'      → built CLIENT-SIDE from stmt.line_items (no API call)
+  //   • 'pdf'      → built CLIENT-SIDE: HTML printed via expo-print on native /
+  //                  print window on web (no API call)
   const download = async (kind: 'original' | 'pdf' | 'csv') => {
     if (!stmt) return;
     setDownloadingKind(kind);
     try {
-      const base = (api.defaults?.baseURL || '').replace(/\/+$/, '');
-      const path =
-        kind === 'original' ? `/statements/${stmt.id}/original`
-        : kind === 'pdf' ? `/statements/${stmt.id}/decoded.pdf`
-        : `/statements/${stmt.id}/decoded.csv`;
-      const url = `${base}${path}`;
-      const token = await getAccessToken();
-      if (!token) throw new Error('Not signed in');
-      const ext = kind === 'csv' ? 'csv' : 'pdf';
-      const mime = kind === 'csv' ? 'text/csv' : 'application/pdf';
       const baseName = (stmt.period_label || stmt.filename || 'statement').replace(/[^\w.-]+/g, '-');
-      const suffix = kind === 'original' ? 'original' : kind === 'pdf' ? 'decoded' : 'decoded';
-      const filename = `wayly-${baseName}-${suffix}.${ext}`;
+      const today = new Date().toISOString().slice(0, 10);
 
-      if (Platform.OS === 'web') {
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        const objUrl = URL.createObjectURL(blob);
-        // Trigger an actual download anchor (browser handles save dialog).
-        const a = (globalThis as any).document?.createElement?.('a');
-        if (a) {
-          a.href = objUrl;
-          a.download = filename;
-          a.style.display = 'none';
-          (globalThis as any).document.body.appendChild(a);
-          a.click();
-          a.remove();
+      // ---------- ORIGINAL (TXT) — server fetch ----------
+      if (kind === 'original') {
+        const base = (api.defaults?.baseURL || '').replace(/\/+$/, '');
+        const url = `${base}/statements/${stmt.id}/download`;
+        const token = await getAccessToken();
+        if (!token) throw new Error('Not signed in');
+        const filename = `wayly-${baseName}-original.txt`;
+
+        if (Platform.OS === 'web') {
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          const objUrl = URL.createObjectURL(blob);
+          const a = (globalThis as any).document?.createElement?.('a');
+          if (a) {
+            a.href = objUrl; a.download = filename; a.style.display = 'none';
+            (globalThis as any).document.body.appendChild(a); a.click(); a.remove();
+          } else { Linking.openURL(objUrl); }
+          return;
+        }
+        const dest = (FileSystem.cacheDirectory || '') + filename;
+        const dl = await FileSystem.downloadAsync(url, dest, { headers: { Authorization: `Bearer ${token}` } });
+        if (dl.status !== 200) throw new Error(`HTTP ${dl.status}`);
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(dl.uri, { mimeType: 'text/plain' });
         } else {
-          Linking.openURL(objUrl);
+          Alert.alert('Downloaded', `Saved to ${dl.uri}`);
         }
         return;
       }
-      const dest = (FileSystem.cacheDirectory || '') + filename;
-      const dl = await FileSystem.downloadAsync(url, dest, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (dl.status !== 200) throw new Error(`HTTP ${dl.status}`);
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(dl.uri, { mimeType: mime });
-      } else {
-        Alert.alert('Downloaded', `Saved to ${dl.uri}`);
+
+      // ---------- DECODED CSV — client-side ----------
+      if (kind === 'csv') {
+        const lis: any[] = stmt.line_items || [];
+        const esc = (v: any) => {
+          const s = v == null ? '' : String(v);
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const header = ['Date', 'Service', 'Description', 'Qty', 'Unit price', 'Total', 'Contribution paid'];
+        const rows = lis.map((li) => [
+          li.date || li.service_date || '',
+          li.service || li.support_code || '',
+          li.description || '',
+          li.quantity ?? '',
+          li.unit_price ?? '',
+          li.total ?? '',
+          li.contribution_paid ?? '',
+        ]);
+        const csv = [header, ...rows].map((r) => r.map(esc).join(',')).join('\n');
+        const filename = `statement-decoded-${today}.csv`;
+
+        if (Platform.OS === 'web') {
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+          const objUrl = URL.createObjectURL(blob);
+          const a = (globalThis as any).document?.createElement?.('a');
+          if (a) {
+            a.href = objUrl; a.download = filename; a.style.display = 'none';
+            (globalThis as any).document.body.appendChild(a); a.click(); a.remove();
+          }
+          return;
+        }
+        const dest = (FileSystem.cacheDirectory || '') + filename;
+        await FileSystem.writeAsStringAsync(dest, csv, { encoding: FileSystem.EncodingType.UTF8 });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(dest, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' });
+        } else {
+          Alert.alert('Downloaded', `Saved to ${dest}`);
+        }
+        return;
+      }
+
+      // ---------- DECODED PDF — client-side ----------
+      if (kind === 'pdf') {
+        const lis: any[] = stmt.line_items || [];
+        const totalAll = lis.reduce((acc, li: any) => acc + (li.total || 0), 0);
+        const totalPaid = lis.reduce((acc, li: any) => acc + (li.contribution_paid || 0), 0);
+        const rowsHtml = lis.map((li: any) => `
+          <tr>
+            <td>${escapeHtml(li.date || li.service_date || '')}</td>
+            <td>${escapeHtml(li.service || li.support_code || '')}</td>
+            <td>${escapeHtml(li.description || '')}</td>
+            <td style="text-align:right;">${li.quantity ?? ''}</td>
+            <td style="text-align:right;">${fmt$(li.total)}</td>
+            <td style="text-align:right;">${fmt$(li.contribution_paid)}</td>
+          </tr>`).join('');
+        const html = `<!doctype html>
+<html><head><meta charset="utf-8"/><title>${escapeHtml(stmt.period_label || stmt.filename || 'Statement')}</title>
+<style>
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1A2B3F; margin: 24px; }
+  h1 { font-size: 20px; color: #0E4D52; margin: 0 0 4px; }
+  .sub { color: #6B7C92; font-size: 12px; margin-bottom: 16px; }
+  .summary { background: rgba(183,121,31,.08); border: 1px solid rgba(183,121,31,.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { text-align: left; padding: 6px 6px; border-bottom: 2px solid #0E4D52; color: #0E4D52; }
+  td { padding: 6px 6px; border-bottom: 1px solid #E6E2D6; }
+  tr:nth-child(even) td { background: #FBF9F3; }
+  .totals { margin-top: 16px; font-size: 12px; }
+  .totals strong { color: #0E4D52; }
+  .footer { margin-top: 24px; font-size: 10px; color: #9AA5B5; text-align: center; }
+</style></head>
+<body>
+  <h1>${escapeHtml(stmt.period_label || stmt.filename || 'Statement')}</h1>
+  <div class="sub">${lis.length} line items · Decoded by Wayly · ${today}</div>
+  ${stmt.summary ? `<div class="summary">${escapeHtml(stmt.summary)}</div>` : ''}
+  <table>
+    <thead><tr><th>Date</th><th>Service</th><th>Description</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Total</th><th style="text-align:right;">You paid</th></tr></thead>
+    <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;color:#9AA5B5;padding:18px;">No line items</td></tr>'}</tbody>
+  </table>
+  <div class="totals">Total billed: <strong>${fmt$(totalAll)}</strong> &nbsp;·&nbsp; You paid: <strong>${fmt$(totalPaid)}</strong></div>
+  <div class="footer">Generated by Wayly · wayly.com.au</div>
+</body></html>`;
+
+        if (Platform.OS === 'web') {
+          // Mirror the web app: open a popup with the HTML and let the user
+          // print/save as PDF from the print dialog.
+          const w = (globalThis as any).window?.open?.('', '_blank');
+          if (!w) throw new Error('Popup blocked');
+          w.document.write(html);
+          w.document.close();
+          w.focus();
+          setTimeout(() => { try { w.print(); } catch {} }, 250);
+          return;
+        }
+        // Native: expo-print renders to a real PDF file we can share via the OS sheet.
+        const { uri } = await Print.printToFileAsync({ html, base64: false });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+        } else {
+          Alert.alert('Downloaded', `Saved to ${uri}`);
+        }
+        return;
       }
     } catch (e: any) {
-      toast.error(e?.message || `Could not download ${kind === 'csv' ? 'CSV' : 'PDF'}.`);
+      toast.error(e?.message || `Could not download ${kind === 'csv' ? 'CSV' : kind === 'pdf' ? 'PDF' : 'file'}.`);
     } finally {
       setDownloadingKind(null);
     }
@@ -199,7 +293,7 @@ export default function StatementDetail() {
             disabled={!!downloadingKind}
             testID="statement-download-original"
             accessibilityRole="button"
-            accessibilityLabel="Download original PDF"
+            accessibilityLabel="Download original file"
             activeOpacity={0.85}
           >
             {downloadingKind === 'original' ? (
@@ -209,7 +303,7 @@ export default function StatementDetail() {
                 <Ionicons name="document-text" size={22} color={Colors.brandPrimary} />
               </View>
             )}
-            <Text style={styles.tileLabel}>Original PDF</Text>
+            <Text style={styles.tileLabel}>Original (TXT)</Text>
             <Text style={styles.tileHint}>As received</Text>
           </TouchableOpacity>
           <TouchableOpacity
