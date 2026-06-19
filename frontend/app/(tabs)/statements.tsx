@@ -30,6 +30,12 @@ export default function StatementsList() {
   const router = useRouter();
   const { participantSig, active } = useParticipants();
   const scrollRef = React.useRef<ScrollView>(null);
+  React.useEffect(() => {
+    const { TabScrollBus } = require('../../src/lib/tabScrollBus');
+    return TabScrollBus.subscribe('statements', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+  }, []);
   const [statements, setStatements] = useState<Statement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

@@ -1,8 +1,9 @@
 // AI Tools index — 8 tools with plan badges
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TabScrollBus } from '../../src/lib/tabScrollBus';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import { TrialCountdownBanner } from '../../src/components/AITools';
@@ -98,9 +99,15 @@ const TOOLS: Tool[] = [
 export default function ToolsIndex() {
   const router = useRouter();
   const canGoBack = router.canGoBack();
+  const scrollRef = useRef<ScrollView>(null);
+  React.useEffect(() => {
+    return TabScrollBus.subscribe('tools', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+  }, []);
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} testID="tools-scroll">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} testID="tools-scroll">
         {canGoBack ? (
           <TouchableOpacity onPress={() => router.back()} style={styles.back}>
             <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />

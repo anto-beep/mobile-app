@@ -181,28 +181,30 @@ export default function Chat() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
+      <View style={styles.tealBar}>
         <TouchableOpacity
           onPress={() => router.back()}
-          style={styles.backBtn}
-          hitSlop={10}
+          style={styles.backPill}
+          hitSlop={12}
           testID="chat-back-btn"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={20} color={Colors.brandPrimary} />
+          <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
+          <Text style={styles.backPillText}>Back</Text>
         </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.overline}>Help</Text>
-          <Text style={styles.h1}>Ask Wayly</Text>
-          <Text style={styles.sub}>I know about your statements, your budget, and the Support at Home rules.</Text>
+        <View style={styles.tealTitleWrap}>
+          <Text style={styles.tealTitle}>Ask Wayly</Text>
         </View>
         {turns.length > 0 ? (
-          <TouchableOpacity onPress={startFresh} style={styles.newBtn} testID="chat-new-btn" accessibilityRole="button" accessibilityLabel="Start new chat">
-            <Ionicons name="add" size={16} color={Colors.brandPrimary} />
-            <Text style={styles.newBtnText}>New</Text>
+          <TouchableOpacity onPress={startFresh} style={styles.newPill} testID="chat-new-btn" accessibilityRole="button" accessibilityLabel="Start new chat">
+            <Ionicons name="add" size={14} color="#FFFFFF" />
+            <Text style={styles.newPillText}>New</Text>
           </TouchableOpacity>
-        ) : null}
+        ) : <View style={{ width: 60 }} />}
+      </View>
+      <View style={styles.subHeader}>
+        <Text style={styles.sub}>I know about your statements, your budget, and the Support at Home rules.</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -312,6 +314,35 @@ export default function Chat() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
+  // New teal banner header
+  tealBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.brandPrimary,
+    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    minHeight: 52, gap: 8,
+  },
+  backPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 7,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    minHeight: 34,
+  },
+  backPillText: { color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 13 },
+  tealTitleWrap: { flex: 1, alignItems: 'center' },
+  tealTitle: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 18, letterSpacing: -0.2 },
+  newPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 7,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    minHeight: 34,
+  },
+  newPillText: { color: '#FFFFFF', fontFamily: Fonts.bodySemi, fontSize: 12 },
+  subHeader: {
+    paddingHorizontal: Spacing.lg, paddingVertical: 10,
+    backgroundColor: Colors.cardBg, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
+  },
   header: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.borderSubtle, marginTop: 2 },
   newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, minHeight: 36 },

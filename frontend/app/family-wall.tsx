@@ -74,10 +74,13 @@ async function fileToBase64(uri: string): Promise<string | null> {
 export default function FamilyWall() {
   const { user } = useAuth();
   const { active, participantSig } = useParticipants();
-  // Note: useScrollToTop not wired because family-wall.tsx is also a top-
-  // level route (/family-wall) and useRoute() throws there. Tab scroll-to-
-  // top is still active for the other tabs (today/statements/tools/more).
   const scrollRef = useRef<any>(null);
+  React.useEffect(() => {
+    const { TabScrollBus } = require('../src/lib/tabScrollBus');
+    return TabScrollBus.subscribe('family', () => {
+      scrollRef.current?.scrollTo?.({ y: 0, animated: true });
+    });
+  }, []);
 
   // Composer state
   const [text, setText] = useState('');

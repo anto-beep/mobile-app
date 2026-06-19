@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TabScrollBus } from '../src/lib/tabScrollBus';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
 import { useParticipants } from '../src/context/ParticipantsContext';
@@ -23,7 +24,11 @@ type Group = { title: string; items: Item[] };
 
 export default function More() {
   const scrollRef = useRef<ScrollView>(null);
-  // Tab scroll-to-top — wired in (tabs)/more.tsx wrapper if needed.
+  React.useEffect(() => {
+    return TabScrollBus.subscribe('more', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+  }, []);
   const router = useRouter();
   const { user, logout } = useAuth();
   const { summary } = useParticipants();

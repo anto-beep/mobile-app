@@ -92,6 +92,12 @@ const num = (v: any, fallback = 0): number => {
 
 export default function Today() {
   const scrollRef = React.useRef<ScrollView>(null);
+  React.useEffect(() => {
+    const { TabScrollBus } = require('../../src/lib/tabScrollBus');
+    return TabScrollBus.subscribe('today', () => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+  }, []);
   const router = useRouter();
   const { user } = useAuth();
   const { participantSig, active: activeParticipant } = useParticipants();

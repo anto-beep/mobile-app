@@ -123,7 +123,7 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ backgroundColor: Colors.brandPrimary }}>
       <KeyboardProvider>
         <AccessibilityProvider>
           <ToastProvider>
@@ -132,7 +132,7 @@ export default function RootLayout() {
                 <AuthProvider>
                   <ParticipantsProvider>
                     <ScenarioProvider>
-                      <StatusBar style="light" backgroundColor={Colors.brandPrimary} />
+                      <StatusBar style="light" backgroundColor={Colors.brandPrimary} translucent={false} />
                       <OnboardingGate />
                       <SchemaBanner />
                       <PushDeepLinkListener />

@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../src/lib/theme';
+import { TabScrollBus } from '../../src/lib/tabScrollBus';
 
 // Phase B \u2014 5-tab bottom nav.
 // Dashboard \u00b7 Family wall \u00b7 Statements \u00b7 Tools \u00b7 More
@@ -25,6 +26,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="today"
+        listeners={{ tabPress: () => TabScrollBus.publish('today') }}
         options={{
           title: 'Dashboard',
           tabBarTestID: 'tabbar-dashboard',
@@ -33,6 +35,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="family"
+        listeners={{ tabPress: () => TabScrollBus.publish('family') }}
         options={{
           title: 'Family wall',
           tabBarTestID: 'tabbar-family-wall',
@@ -41,6 +44,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="statements"
+        listeners={{ tabPress: () => TabScrollBus.publish('statements') }}
         options={{
           title: 'Statements',
           tabBarTestID: 'tabbar-statements',
@@ -49,6 +53,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="tools"
+        listeners={{ tabPress: () => TabScrollBus.publish('tools') }}
         options={{
           title: 'Tools',
           tabBarTestID: 'tabbar-tools',
@@ -57,6 +62,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="more"
+        listeners={{ tabPress: () => TabScrollBus.publish('more') }}
         options={{
           title: 'More',
           tabBarTestID: 'tabbar-more',
