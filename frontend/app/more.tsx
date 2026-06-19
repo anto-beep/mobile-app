@@ -25,43 +25,43 @@ export default function More() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { summary } = useParticipants();
+  const isAdmin = !!user?.is_admin;
   const groups: Group[] = [
     { title: 'Today', items: [
       { label: 'Dashboard', icon: 'sunny-outline', href: '/(tabs)/today', testID: 'more-link-dashboard' },
-      { label: 'Timeline', icon: 'time-outline', href: '/timeline', testID: 'more-link-timeline' },
-      { label: 'Log scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },
-      { label: 'Guided workflows', icon: 'compass-outline', href: '/workflows', testID: 'more-link-workflows' },
-      { label: 'Alerts', icon: 'alert-circle-outline', href: '/alerts', testID: 'more-link-alerts' },
-      { label: 'Family wall', icon: 'people-circle-outline', href: '/family-wall', testID: 'more-link-family-wall' },
-      { label: 'Visits', icon: 'calendar-outline', href: '/visits' },
-      { label: 'Documents', icon: 'folder-outline', href: '/documents' },
-      { label: 'Notifications', icon: 'notifications-outline', href: '/(tabs)/notifications' },
+      { label: 'Family Wall', icon: 'people-circle-outline', href: '/family-wall', testID: 'more-link-family-wall' },
+      { label: 'Ask Wayly', icon: 'chatbubbles-outline', href: '/(tabs)/chat', testID: 'more-link-ask-wayly' },
     ]},
-    { title: 'Money', items: [
-      { label: 'Statements', icon: 'document-text-outline', href: '/(tabs)/statements' },
-      { label: 'Budget alerts', icon: 'alert-circle-outline', href: '/budget-alerts', testID: 'more-link-budget-alerts' },
-      { label: 'Statement decoder', icon: 'scan-outline', href: '/tools/statement-decoder' },
+    { title: 'Money & Statements', items: [
+      { label: 'Statements', icon: 'document-text-outline', href: '/(tabs)/statements', testID: 'more-link-statements' },
+      { label: 'Budget Alerts', icon: 'alert-circle-outline', href: '/budget-alerts', testID: 'more-link-budget-alerts' },
       { label: 'Reports', icon: 'bar-chart-outline', href: '/reports', testID: 'more-link-reports' },
     ]},
     { title: 'Their Care', items: [
-      { label: 'Hospital handover', icon: 'medkit-outline', href: '/hospital', testID: 'more-link-hospital' },
-      { label: 'AT & home modifications', icon: 'construct-outline', href: '/at-hm', testID: 'more-link-at-hm' },
-      { label: 'Amendments', icon: 'create-outline', href: '/amendments', testID: 'more-link-amendments' },
+      { label: 'Care Team', icon: 'people-outline', href: '/(tabs)/family', testID: 'more-link-care-team' },
+      { label: 'Calendar', icon: 'calendar-outline', href: '/visits', testID: 'more-link-calendar' },
+      { label: 'Hospital Mode', icon: 'medkit-outline', href: '/hospital', testID: 'more-link-hospital' },
+      { label: 'AT & HM', icon: 'construct-outline', href: '/at-hm', testID: 'more-link-at-hm' },
+      { label: 'Care-Plan Changes', icon: 'create-outline', href: '/amendments', testID: 'more-link-amendments' },
+      { label: 'Log a scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },
+      { label: 'Timeline', icon: 'time-outline', href: '/timeline', testID: 'more-link-timeline' },
+    ]},
+    { title: 'Providers & Paperwork', items: [
+      { label: 'Documents', icon: 'folder-outline', href: '/documents', testID: 'more-link-documents' },
       { label: 'Correspondence', icon: 'mail-outline', href: '/correspondence', testID: 'more-link-correspondence' },
+      { label: 'Switch Provider', icon: 'swap-horizontal-outline', href: '/provider-switch', testID: 'more-link-provider-switch' },
+      { label: 'Ratings', icon: 'star-outline', href: '/ratings', testID: 'more-link-ratings' },
     ]},
-    { title: 'Providers', items: [
-      { label: 'Switch provider', icon: 'swap-horizontal-outline', href: '/provider-switch', testID: 'more-link-provider-switch' },
-      { label: 'Provider ratings', icon: 'star-outline', href: '/ratings', testID: 'more-link-ratings' },
-    ]},
-    { title: 'Account', items: [
+    { title: 'Your Account', items: [
       { label: 'Participants', icon: 'people-outline', href: '/participants', testID: 'more-link-participants', badge: summary ? `${summary.participants_active}/${summary.participants_max}` : undefined },
-      { label: 'Plan & billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
-      { label: 'Settings', icon: 'settings-outline', href: '/settings' },
       { label: 'Referrals', icon: 'gift-outline', href: '/referrals', testID: 'more-link-referrals' },
-      { label: 'Audit log', icon: 'shield-checkmark-outline', href: '/audit', testID: 'more-link-audit' },
-      { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat' },
+      { label: 'Audit Log', icon: 'shield-checkmark-outline', href: '/audit', testID: 'more-link-audit' },
+      { label: 'Plan & Billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
+      { label: 'Settings', icon: 'settings-outline', href: '/settings', testID: 'more-link-settings' },
+      { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat', testID: 'more-link-help' },
       { label: 'Search', icon: 'search-outline', href: '/search', testID: 'more-link-search' },
-      { label: 'Diagnostics', icon: 'pulse-outline', href: '/diagnostics', testID: 'more-link-diagnostics' },
+      // Diagnostics: admin-only — non-admin users should never see this row.
+      ...(isAdmin ? [{ label: 'Diagnostics', icon: 'pulse-outline' as const, href: '/diagnostics', testID: 'more-link-diagnostics' }] : []),
     ]},
   ];
 

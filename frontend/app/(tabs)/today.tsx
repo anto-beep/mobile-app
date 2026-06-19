@@ -225,6 +225,13 @@ export default function Today() {
     }
   };
 
+  // Clear stale dashboard data the instant the active participant changes so
+  // the greeting/streams never show the previous participant while the new
+  // /budget/current fetch is in flight.
+  useEffect(() => {
+    setData(null);
+  }, [participantSig, activeParticipant?.id]);
+
   useFocusEffect(
     useCallback(() => {
       load();
@@ -285,10 +292,11 @@ export default function Today() {
             <Text style={styles.overline}>Wellbeing summary</Text>
             <Text style={styles.greeting} testID="today-greeting">
               {(() => {
-                // Prefer backend payload, then the active-participant name
-                // from ParticipantsContext so the greeting flips instantly on
-                // switch (before /budget/current finishes refetching).
-                const pname = data?.participant_name || activeParticipant?.first_name;
+                // The ACTIVE-PARTICIPANT name from ParticipantsContext wins
+                // over the dashboard payload — the payload can be stale for
+                // a few hundred ms after switching, and the greeting must
+                // flip instantly to match the new pill.
+                const pname = activeParticipant?.first_name || data?.participant_name;
                 if (pname) return `${pname}, this quarter`;
                 return `Hello, ${user?.name?.split(' ')[0] || ''}`;
               })()}

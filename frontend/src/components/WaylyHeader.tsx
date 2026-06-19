@@ -10,7 +10,7 @@
 // screen layouts don't need restructuring. Pass `transparent` to drop the
 // teal background for hero screens (e.g. Decoder result).
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -46,13 +46,20 @@ export function WaylyHeader({ transparent = false }: Props) {
 
   return (
     <View style={[styles.bar, transparent && styles.transparent]}>
-      {/* Brand mark */}
+      {/* Brand mark — logo + "Wayly" wordmark (matches web app top-left). */}
       <TouchableOpacity
         testID="brand-link"
         hitSlop={8}
         onPress={() => router.push('/(tabs)/today' as any)}
         accessibilityRole="link"
+        style={styles.brandRow}
       >
+        <Image
+          source={require('../../assets/branding/wayly-mark.png')}
+          style={styles.brandMark}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
         <Text style={styles.brand}>Wayly</Text>
       </TouchableOpacity>
 
@@ -102,6 +109,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brandPrimary,
   },
   transparent: { backgroundColor: 'transparent' },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  brandMark: { width: 22, height: 22, borderRadius: 4 },
   brand: {
     color: Colors.textInverse,
     fontFamily: Fonts.heading,
