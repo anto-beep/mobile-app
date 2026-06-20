@@ -1,3 +1,4 @@
-// (tabs)/family.tsx \u2014 the family-wall stream is the new 2nd tab. Keep the
-// existing `/family-wall` route as the canonical screen; this is a re-export.
+// "Family wall" tab — now renders the actual Family Wall feed so users keep
+// the bottom tab bar instead of jumping to a route outside the (tabs) group.
+// (Previously this re-exported the More screen, which was confusing.)
 export { default } from '../family-wall';

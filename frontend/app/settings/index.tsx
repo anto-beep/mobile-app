@@ -105,15 +105,16 @@ export default function Settings() {
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
   group: { marginTop: Spacing.lg },
-  // Category heading — prominent serif label matching the More-screen hierarchy.
+  // Category heading — slightly compact serif, sits comfortably above its
+  // list without dominating each row.
   groupTitle: {
     fontFamily: Fonts.heading,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 18,
+    lineHeight: 24,
     fontWeight: '600',
     color: c.textPrimary,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 10,
+    paddingBottom: 8,
     letterSpacing: -0.2,
   },
   list: { backgroundColor: c.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },

@@ -116,8 +116,15 @@ export default function FamilyWall() {
     try {
       const { data } = await api.get<{ items: WallPost[] }>('/family/wall');
       setPosts(data?.items || []);
-    } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't load family wall."));
+    } catch (e: any) {
+      // 404 typically means: no active participant on this account, or the
+      // production backend doesn't expose /family/wall yet. Degrade silently
+      // to the empty-state card instead of flashing a "Not found" toast.
+      const status = e?.response?.status;
+      if (status !== 404 && status !== 403) {
+        toast.error(extractErrorMessage(e, "Couldn't load family wall."));
+      }
+      setPosts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

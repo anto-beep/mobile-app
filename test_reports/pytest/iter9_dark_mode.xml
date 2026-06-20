@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="1" tests="7" time="3.960" timestamp="2026-06-20T02:38:01.901738+00:00" hostname="agent-env-fb208c8a-d397-4418-b796-6a8cfd12cb88"><testcase classname="backend.tests.test_dark_mode_iter9.TestPreferences" name="test_get_preferences" time="2.754"><failure message="AssertionError: GET preferences failed: 404 {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:66: in test_get_preferences
+    assert r.status_code == 200, f"GET preferences failed: {r.status_code} {r.text[:200]}"
+E   AssertionError: GET preferences failed: 404 {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestPreferences" name="test_patch_then_get_dark" time="0.167"><failure message="AssertionError: PATCH dark failed: 404 {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:80: in test_patch_then_get_dark
+    assert r.status_code == 200, f"PATCH dark failed: {r.status_code} {r.text[:200]}"
+E   AssertionError: PATCH dark failed: 404 {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestPreferences" name="test_patch_light" time="0.245"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:95: in test_patch_light
+    assert r.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestPreferences" name="test_patch_invalid_rejected" time="0.241"><failure message="AssertionError: Invalid appearance must be rejected, got 404&#10;assert 404 in (400, 422)&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:108: in test_patch_invalid_rejected
+    assert r.status_code in (400, 422), f"Invalid appearance must be rejected, got {r.status_code}"
+E   AssertionError: Invalid appearance must be rejected, got 404
+E   assert 404 in (400, 422)
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestPreferences" name="test_restore_dark_for_frontend_tests" time="0.058"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:118: in test_restore_dark_for_frontend_tests
+    assert r.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestFamilyWall" name="test_get_wall_returns_items_and_active_participant" time="0.186"><failure message="AssertionError: GET /family/wall failed: 404 {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_dark_mode_iter9.py:128: in test_get_wall_returns_items_and_active_participant
+    assert r.status_code == 200, f"GET /family/wall failed: {r.status_code} {r.text[:200]}"
+E   AssertionError: GET /family/wall failed: 404 {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_dark_mode_iter9.TestFamilyWall" name="test_post_text_message_and_verify" time="0.246"><skipped type="pytest.skip" message="POST /family/wall not available on prod (404); frontend swallows this silently as expected">/app/backend/tests/test_dark_mode_iter9.py:146: POST /family/wall not available on prod (404); frontend swallows this silently as expected</skipped></testcase></testsuite></testsuites>

@@ -1,0 +1,118 @@
+{
+  "summary": "Iteration 9 — Dark Mode rollout for Wayly Expo app. Backend code (account.py preferences + modules.py family/wall) is correct: all 8 local pytest cases pass (GET/PATCH /api/users/me/preferences round-trip light/dark/system + invalid rejection; /api/family/wall GET returns {items, active_participant_id}, POST round-trips, empty body 400). HOWEVER the PRODUCTION backend at aged-care-os.emergent.host (which the mobile app actually talks to via PROD override in src/lib/api.ts) returns 404 for BOTH /api/users/me/preferences and /api/family/wall — these endpoints have not been deployed yet. The frontend handles this correctly: ThemeContext silently catches the GET preferences error and falls back to AsyncStorage; family-wall.tsx swallows 404/403 without showing a 'Not Found' toast. Frontend: comprehensive checks against http://localhost:3000 in mobile viewport (390x844) — login with cathy@example.com/testpass123 succeeds, /settings/appearance picker testIDs (theme-system/light/dark) all render, dark mode persists across reload, every audited screen renders heading + body text in white (rgb(255,255,255)) on dark surfaces. WaylyHeader (brand + Dorothy chip + FAMILY badge + bell) appears on ALL 14 tested screens including sub-screens, and the slim '← Back' chip appears on sub-screens (e.g. /settings/appearance, /amendments). Dashboard has exactly 1 notif-bell (no duplicate). /family route now renders the Family Wall content (not More), bottom tabs remain visible, Share-with-the-family button is full-width (x=33, w=324, vw=390), no Not-Found toast appears. Light-mode regression confirmed via screenshot after toggle.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "https://aged-care-os.emergent.host/api/users/me/preferences",
+        "issue": "Endpoint returns 404 on production backend. Local FastAPI has the route working (8/8 pytest pass), but production hasn't been deployed yet. Cross-device sync of appearance choice will NOT work until prod is updated. Frontend tolerates this (silent catch), so dark-mode picker still works via AsyncStorage on the device.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "https://aged-care-os.emergent.host/api/family/wall",
+        "issue": "Both GET and POST return 404 on production. Local FastAPI works (verified). Frontend degrades silently to empty state (no 'Not Found' toast) per design.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Dark mode cross-device sync",
+        "issue": "ThemeContext.tsx server hydrate POSTs PATCH /users/me/preferences on every toggle. On prod this 404s, so the appearance choice ONLY persists in AsyncStorage on the current device. Same user on another device won't pick it up until prod backend is deployed.",
+        "affected_testIDs": ["theme-system", "theme-light", "theme-dark"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "shadow* style props",
+        "issue": "Console warns 'shadow* style props are deprecated. Use boxShadow.' across multiple screens. Pre-existing issue, not introduced by this iteration. Reference: noted in iteration_7."
+      },
+      {
+        "component": "props.pointerEvents",
+        "issue": "Console warns 'props.pointerEvents is deprecated. Use style.pointerEvents'. Pre-existing."
+      }
+    ]
+  },
+  "test_results": {
+    "login": "PASS — auth-email-input/auth-password-input/auth-login-button work; redirects to /today",
+    "appearance_picker": {
+      "testIDs_present": ["theme-system", "theme-light", "theme-dark"],
+      "light_toggle": "PASS",
+      "dark_toggle": "PASS",
+      "reload_persistence": "PASS — dark choice survives full page reload (screenshot confirms)"
+    },
+    "dark_mode_text_colors": {
+      "/today: 'Dorothy' chip text": "rgb(255,255,255) on rgba(255,255,255,0.1)",
+      "/today: 'Recent activity'": "rgb(255,255,255)",
+      "/family-wall: 'Share with'": "rgb(255,255,255) on rgb(35,32,28)",
+      "/more: 'More' / 'Today' / 'Account' / 'Their Care'": "all rgb(255,255,255)",
+      "/settings: 'Account' / 'Notifications' / 'Experience' / 'Danger zone'": "all rgb(255,255,255)",
+      "/audit: 'Audit' heading": "rgb(255,255,255)",
+      "/alerts: 'Alerts' heading": "rgb(255,255,255)"
+    },
+    "wayly_banner_persistence": {
+      "screens_with_banner_AND_back_chip": [
+        "/today", "/family-wall", "/more", "/settings", "/audit", "/alerts",
+        "/timeline", "/budget-alerts", "/tools", "/statements", "/notifications",
+        "/chat", "/settings/appearance", "/amendments"
+      ],
+      "brand_link_present": true,
+      "plan_badge_value": "FAMILY",
+      "notif_bell_present": true,
+      "back_chip_on_subscreens": true
+    },
+    "dashboard_dedup_bell": {
+      "notif_bell_count_on_/today": 1,
+      "expected": 1,
+      "status": "PASS"
+    },
+    "family_wall_route_fix": {
+      "/family_renders_FamilyWall": true,
+      "/family_renders_More": false,
+      "not_found_toast": false,
+      "bottom_tabs_visible": true,
+      "share_button": {"found": true, "x": 33, "y": 332, "w": 324, "h": 41, "viewport_width": 390, "full_width_row": true}
+    },
+    "light_mode_regression": "PASS via screenshot — /settings/appearance after toggling Light shows white card BG with dark text; Wayly banner unchanged"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_dark_mode_iter9.py (prod target — 6 failures + 1 skip due to prod 404)",
+    "/app/backend/tests/test_dark_mode_iter9_local.py (local target — 8/8 PASS)",
+    "/app/test_reports/pytest/iter9_dark_mode.xml",
+    "/app/test_reports/pytest/iter9_dark_mode_local.xml",
+    "/tmp/iter9_appearance.png",
+    "/tmp/iter9_dark_appearance.png",
+    "/tmp/iter9_today_dark.png",
+    "/tmp/iter9_familywall_dark.png",
+    "/tmp/iter9_more_dark.png",
+    "/tmp/iter9_settings_dark.png",
+    "/tmp/iter9_family_route.png"
+  ],
+  "action_items": [
+    "Deploy backend changes (account.py preferences + modules.py family/wall endpoints) to production aged-care-os.emergent.host — local code is correct and pytest-verified, but prod returns 404 for both. Until deployed: (a) appearance preference won't sync cross-device, (b) Family Wall always renders empty state.",
+    "Frontend gracefully handles the 404s as designed; no frontend fix needed.",
+    "Optional polish: migrate shadow* style props to boxShadow and props.pointerEvents to style.pointerEvents (pre-existing warnings, not regressions)."
+  ],
+  "critical_code_review_comments": [
+    "ThemeContext.tsx: server hydrate fires on EVERY mount via useEffect dependencies=[], which means every screen mount triggers an API call. Acceptable, but consider memoising in a top-level provider instead so we don't pile up requests if a user navigates between (tabs) often.",
+    "BackHeader.tsx correctly composes WaylyHeader + back chip; nothing to flag.",
+    "family-wall.tsx:124 — the `if (status !== 404 && status !== 403)` branch correctly suppresses the 'Not Found' toast. Confirmed via test (no toast on prod even though prod returns 404).",
+    "(tabs)/family.tsx re-exports family-wall — clean one-liner; bottom tabs stay because the route lives inside the (tabs) group."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_dark_mode_iter9.py (new)",
+    "/app/backend/tests/test_dark_mode_iter9_local.py (new)"
+  ],
+  "success_rate": {
+    "backend": "Local 8/8 (100%); Prod 0/6 (endpoints not deployed)",
+    "frontend": "100% — every requirement in the review_request verified"
+  },
+  "seed_data_creation": "Created one TEST_iter9_dark_mode_post family_event on local Mongo; not on prod.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Frontend talks to PROD backend (aged-care-os.emergent.host) via override in src/lib/api.ts — the new dark-mode preference + family/wall endpoints are NOT yet on prod. Login: cathy@example.com / testpass123. Appearance testIDs: theme-system, theme-light, theme-dark at /settings/appearance. WaylyHeader testIDs: brand-link, layout-plan-badge, notif-bell. BackHeader chip testID: back-header-back. The /family route now re-exports /family-wall so tapping 'Family wall' bottom-tab keeps the tab bar. All dark mode work appears correct end-to-end; the only outstanding work is a backend prod deploy.",
+  "rca_of_issue": "Backend prod 404 RCA: /app/backend/routes/account.py @router.get('/users/me/preferences') and /app/backend/routes/modules.py @router.get('/family/wall') exist locally and work (pytest passes), but the production Wayly deployment at aged-care-os.emergent.host has not been updated with these routes yet. Frontend code (ThemeContext.tsx line 53 .catch(()=>{}), family-wall.tsx line 124 status filter) correctly degrades silently, so user-facing experience is intact — appearance still persists in AsyncStorage on device, Family Wall shows empty state instead of error toast. Mitigation: push the backend changes to prod."
+}
