@@ -83,7 +83,7 @@ export default function More() {
       <TrialCountdownBanner />
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.head}>
-          <Text style={Type.h1 as any}>More</Text>
+          <Text style={styles.title}>More</Text>
           {!!user && <Text style={styles.meta}>Signed in as {user.name}</Text>}
         </View>
         {groups.map((g) => (
@@ -121,15 +121,29 @@ export default function More() {
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: 6, gap: 4 },
+  // Screen title — explicit themed color (was inheriting black).
+  title: { ...(Type.h1 as any), color: c.textPrimary },
   meta: { ...Type.caption, color: c.textSecondary },
-  group: { marginTop: 18 },
-  groupTitle: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
+  group: { marginTop: Spacing.lg },
+  // Category title — bumped up to feel like a section header in Wayly serif.
+  // Was a tiny uppercase 12px caption; now a confident 20px Fraunces heading.
+  groupTitle: {
+    fontFamily: Fonts.heading,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '600',
+    color: c.textPrimary,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 10,
+    letterSpacing: -0.2,
+  },
   list: { backgroundColor: c.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
   rowLast: { borderBottomWidth: 0 },
-  iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(14,77,82,0.07)', alignItems: 'center', justifyContent: 'center' },
-  rowLabel: { flex: 1, ...Type.bodySemi, color: c.textPrimary },
-  badge: { backgroundColor: 'rgba(14,77,82,0.08)', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
+  iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: c.surfaceTint, alignItems: 'center', justifyContent: 'center' },
+  // Item label — slightly smaller than category, body sans for clear hierarchy.
+  rowLabel: { flex: 1, fontFamily: Fonts.bodySemi, fontSize: 15, lineHeight: 20, fontWeight: '600', color: c.textPrimary },
+  badge: { backgroundColor: c.surfaceTint, borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 11, fontWeight: '700' },
   signout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 26, paddingVertical: 14 },
   signoutText: { color: c.brandSecondary, fontFamily: Fonts.bodySemi, fontWeight: '700' },

@@ -41,7 +41,7 @@ export default function AlertsInbox() {
       <BackHeader title="Alerts" />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.head}>
-          <Text style={Type.h1 as any}>Active alerts</Text>
+          <Text style={[Type.h1 as any, { color: c.textPrimary }]}>Active alerts</Text>
           {!!active && <Text style={styles.sub}>For {active.first_name}</Text>}
         </View>
         {loading ? <ListSkeleton rows={4} /> : items.length === 0 ? (

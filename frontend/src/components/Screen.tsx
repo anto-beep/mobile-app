@@ -42,7 +42,7 @@ export function ScreenShell({
       >
         {!useBack && (
           <View style={styles.heading}>
-            <Text style={Type.h1 as any}>{title}</Text>
+            <Text style={[Type.h1 as any, { color: Colors.textPrimary }]}>{title}</Text>
             {!!subtitle && <Text style={styles.sub}>{subtitle}</Text>}
           </View>
         )}

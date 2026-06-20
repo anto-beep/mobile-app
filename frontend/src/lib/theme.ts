@@ -72,38 +72,39 @@ export const Colors = {
 } as const;
 
 // ─────────────────── DARK PALETTE (Phase 1) ───────────────────
-// Warm near-black surfaces + warm off-white text. Lifted brand colours
-// for AAA contrast on the dark background. See acceptance spec.
+// Warm near-black surfaces + crisp WHITE-FORWARD text. Per user request the
+// dark mode leans heavily on white/near-white primaries so dark surfaces
+// really contrast. Teal and clay remain accent colours.
 export const DarkColors = {
-  background: '#1A1815',
-  bg: '#1A1815',
-  brandPrimary: '#5FA9AF',
-  brandPrimaryDeep: '#0E4D52',
-  brandSecondary: '#D89C7A',
+  background: '#141210',
+  bg: '#141210',
+  brandPrimary: '#6FB7BD',          // lifted teal accent (text/icons on dark)
+  brandPrimaryDeep: '#0E4D52',      // banner surface (still deep teal)
+  brandSecondary: '#E5A382',        // clay 400 — CTA accent on dark
   brandSecondaryDeep: '#A5512B',
-  focusRing: '#E5B492',
-  cream: '#F0EBE0',
+  focusRing: '#EBC3A2',
+  cream: '#FFFFFF',
   streams: {
-    Clinical: '#8BB392',
-    Independence: '#A9C8AE',
-    'Everyday Living': '#D89C7A',
+    Clinical: '#9CC3A2',
+    Independence: '#B8D3BB',
+    'Everyday Living': '#E5A382',
   } as Record<string, string>,
-  severityAlert: '#F08A7E',
-  severityWarning: '#E5B36A',
-  severityInfo: '#A9C8AE',
-  textPrimary: '#F0EBE0',
-  textSecondary: '#C8C1B3',
-  textMuted: '#8E867A',
-  textInverse: '#1A1815',
-  cardBg: '#26231F',
-  cardBgWarm: '#2E2A25',
-  inputBg: '#1F1D1A',
-  border: 'rgba(240, 235, 224, 0.14)',
-  borderSubtle: 'rgba(240, 235, 224, 0.08)',
-  surfaceTint: 'rgba(240, 235, 224, 0.05)',
-  success: '#7FB58E',
-  warning: '#E5B36A',
-  danger: '#F08A7E',
+  severityAlert: '#F4988D',
+  severityWarning: '#F0BE76',
+  severityInfo: '#B8D3BB',
+  textPrimary: '#FFFFFF',           // crisp white for headings/labels
+  textSecondary: '#E6E2D8',         // off-white for body copy
+  textMuted: '#A39C8E',              // softer muted for chevrons / meta
+  textInverse: '#141210',
+  cardBg: '#23201C',
+  cardBgWarm: '#2C2823',
+  inputBg: '#1C1A17',
+  border: 'rgba(255, 255, 255, 0.16)',
+  borderSubtle: 'rgba(255, 255, 255, 0.09)',
+  surfaceTint: 'rgba(255, 255, 255, 0.06)',
+  success: '#8FC79E',
+  warning: '#F0BE76',
+  danger: '#F4988D',
 } as const;
 
 export type ColorPalette = typeof Colors;

@@ -35,6 +35,7 @@ import { useAuth } from '../src/context/AuthContext';
 import { useParticipants } from '../src/context/ParticipantsContext';
 import { toast } from '../src/components/Toast';
 import BackHeader from '../src/components/BackHeader';
+import { WaylyHeader } from '../src/components/WaylyHeader';
 import { formatAUDate } from '../src/lib/format';
 import { Fonts, Radius, Spacing  } from '../src/lib/theme';
 import type { ColorPalette } from '../src/lib/theme';
@@ -301,6 +302,7 @@ export default function FamilyWall() {
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <WaylyHeader />
       <KeyboardAwareScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scroll}
@@ -411,26 +413,25 @@ export default function FamilyWall() {
                 </>
               )}
             </TouchableOpacity>
-
-            <View style={{ flex: 1 }} />
-
-            <TouchableOpacity
-              style={[styles.postBtn, (submitting || (!text.trim() && !imageB64 && !audioB64)) && { opacity: 0.55 }]}
-              onPress={onPost}
-              disabled={submitting || (!text.trim() && !imageB64 && !audioB64)}
-              testID="wall-post"
-              accessibilityRole="button"
-            >
-              {submitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons name="send-outline" size={14} color="#FFFFFF" />
-                  <Text style={styles.postBtnText}>Share</Text>
-                </>
-              )}
-            </TouchableOpacity>
           </View>
+
+          {/* Share button on its own full-width row so it can never be pushed off-screen. */}
+          <TouchableOpacity
+            style={[styles.postBtnFull, (submitting || (!text.trim() && !imageB64 && !audioB64)) && { opacity: 0.55 }]}
+            onPress={onPost}
+            disabled={submitting || (!text.trim() && !imageB64 && !audioB64)}
+            testID="wall-post"
+            accessibilityRole="button"
+          >
+            {submitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="send-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.postBtnText}>Share with the family</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionH}>Recent activity</Text>
@@ -554,7 +555,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   audioPreviewText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.brandPrimary, flex: 1 },
   audioRemove: { padding: 4 },
 
-  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
+  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md, flexWrap: 'wrap' },
   toolBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 10, paddingVertical: 8,
@@ -567,12 +568,12 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   toolBtnTextRec: { color: '#C0392B' },
   recDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#C0392B' },
 
-  postBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: c.brandPrimary, paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: Radius.md, minHeight: 36,
+  postBtnFull: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: c.brandPrimary, paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: Radius.md, marginTop: Spacing.md,
   },
-  postBtnText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: '#FFFFFF' },
+  postBtnText: { fontFamily: Fonts.bodySemi, fontSize: 14, color: '#FFFFFF' },
 
   sectionH: { fontFamily: Fonts.heading, fontSize: 18, color: c.brandPrimary, marginBottom: Spacing.sm },
   emptyCard: {

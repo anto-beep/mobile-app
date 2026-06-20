@@ -42,7 +42,7 @@ export default function ParticipantTimeline() {
       <BackHeader title="Timeline" />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={styles.head}>
-          <Text style={Type.h1 as any}>{firstName || 'Participant'}</Text>
+          <Text style={[Type.h1 as any, { color: c.textPrimary }]}>{firstName || 'Participant'}</Text>
           {!!lifecycle && <StatusBadge state={lifecycle} />}
         </View>
         {loading ? <ListSkeleton rows={5} /> : items.length === 0 ? (

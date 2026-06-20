@@ -104,12 +104,23 @@ export default function Settings() {
 
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  group: { marginTop: 18 },
-  groupTitle: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: Spacing.lg, paddingBottom: 6 },
+  group: { marginTop: Spacing.lg },
+  // Category heading — prominent serif label matching the More-screen hierarchy.
+  groupTitle: {
+    fontFamily: Fonts.heading,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '600',
+    color: c.textPrimary,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 10,
+    letterSpacing: -0.2,
+  },
   list: { backgroundColor: c.cardBg, borderRadius: Radius.lg, marginHorizontal: Spacing.md, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
   rowLast: { borderBottomWidth: 0 },
-  iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(14,77,82,0.07)', alignItems: 'center', justifyContent: 'center' },
-  title: { ...Type.bodySemi, color: c.textPrimary },
+  iconWrap: { width: 32, height: 32, borderRadius: 8, backgroundColor: c.surfaceTint, alignItems: 'center', justifyContent: 'center' },
+  // Item title — sans body, slightly smaller than the category serif heading.
+  title: { fontFamily: Fonts.bodySemi, fontSize: 15, lineHeight: 20, fontWeight: '600', color: c.textPrimary },
   sub: { ...Type.caption, color: c.textSecondary, marginTop: 3, lineHeight: 17 },
 }); }

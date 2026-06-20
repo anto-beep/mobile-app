@@ -78,7 +78,7 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={20} style={fullScreen ? { flex: 1 } : undefined}>
             {!fullScreen && <View style={styles.handle} />}
             <View style={styles.head}>
-              <Text style={Type.h3 as any}>Log a scenario</Text>
+              <Text style={[Type.h3 as any, { color: Colors.textPrimary }]}>Log a scenario</Text>
               <TouchableOpacity onPress={() => { reset(); onClose(); }} hitSlop={10}><Ionicons name="close" size={22} color={Colors.textPrimary} /></TouchableOpacity>
             </View>
             {!!participantName && <Text style={styles.sub}>For {participantName}</Text>}
@@ -112,7 +112,7 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
                     <Ionicons name="arrow-back" size={16} color={Colors.brandPrimary} />
                     <Text style={styles.backText}>Change event type</Text>
                   </TouchableOpacity>
-                  <Text style={Type.h3 as any}>{selected?.label}</Text>
+                  <Text style={[Type.h3 as any, { color: Colors.textPrimary }]}>{selected?.label}</Text>
                   <Text style={styles.lbl}>Effective date</Text>
                   <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={Colors.textMuted} style={styles.input} testID="effective-date" />
                   {(selected?.payload_keys || []).map((k: any) => {

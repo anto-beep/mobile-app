@@ -325,14 +325,6 @@ export default function Today() {
               </Text>
             )}
           </View>
-          <TouchableOpacity
-            testID="header-notification-bell"
-            onPress={() => router.push('/(tabs)/notifications' as any)}
-            style={styles.bell}
-          >
-            <Ionicons name="notifications-outline" size={22} color={c.brandPrimary} />
-            {unread > 0 && <View style={styles.bellDot} />}
-          </TouchableOpacity>
         </View>
 
         {error && !data && (

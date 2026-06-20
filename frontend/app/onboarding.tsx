@@ -71,7 +71,7 @@ export default function Onboarding() {
         </View>
 
         <View style={styles.iconWrap}><Ionicons name={s.icon} size={32} color={c.brandPrimary} /></View>
-        <Text style={Type.h1 as any}>{s.title}</Text>
+        <Text style={[Type.h1 as any, { color: c.textPrimary }]}>{s.title}</Text>
         <Text style={styles.body}>{s.body}</Text>
 
         {step === 1 && (

@@ -6,9 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { TimelineCell } from './Timeline';
 import { useScenario } from '../context/ScenarioContext';
 import { useParticipants } from '../context/ParticipantsContext';
-import { Colors, Fonts, Spacing, Type } from '../lib/theme';
+import { Fonts, Spacing, Type } from '../lib/theme';
+import type { ColorPalette } from '../lib/theme';
+import { useColors } from '../hooks/useColors';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 
 export function RecentActivityPanel() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { active, participantSig } = useParticipants();
   const { getTimeline, schema } = useScenario();
@@ -38,7 +43,7 @@ export function RecentActivityPanel() {
   return (
     <View style={styles.wrap} testID="dashboard-recent-activity">
       <View style={styles.head}>
-        <Text style={Type.h3 as any}>Recent activity</Text>
+        <Text style={styles.title}>Recent activity</Text>
         <TouchableOpacity onPress={() => router.push('/timeline' as any)} testID="recent-activity-see-all" hitSlop={6}>
           <Text style={styles.link}>Open timeline</Text>
         </TouchableOpacity>
@@ -47,7 +52,7 @@ export function RecentActivityPanel() {
         <Text style={styles.empty}>Loading…</Text>
       ) : items.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Ionicons name="sparkles-outline" size={20} color={Colors.brandPrimary} />
+          <Ionicons name="sparkles-outline" size={20} color={c.brandPrimary} />
           <Text style={styles.emptyTitle}>Nothing here yet</Text>
           <Text style={styles.emptyBody}>Events, status changes and alerts for {active.first_name} will appear here as they happen.</Text>
           <TouchableOpacity onPress={() => router.push('/log-scenario' as any)} testID="recent-activity-log-event">
@@ -61,12 +66,14 @@ export function RecentActivityPanel() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c: ColorPalette) { return StyleSheet.create({
   wrap: { marginTop: Spacing.md },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, marginBottom: 6 },
-  link: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
-  empty: { ...Type.caption, color: Colors.textMuted, paddingHorizontal: Spacing.md },
-  emptyCard: { marginHorizontal: Spacing.md, padding: Spacing.md, backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, borderRadius: 14, gap: 6, alignItems: 'flex-start' },
-  emptyTitle: { ...Type.bodySemi, color: Colors.textPrimary },
-  emptyBody: { ...Type.body, color: Colors.textSecondary, lineHeight: 21 },
-});
+  // Section title — explicit themed color so it never stays black in dark mode.
+  title: { ...(Type.h3 as any), color: c.textPrimary },
+  link: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  empty: { ...Type.caption, color: c.textMuted, paddingHorizontal: Spacing.md },
+  emptyCard: { marginHorizontal: Spacing.md, padding: Spacing.md, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, borderRadius: 14, gap: 6, alignItems: 'flex-start' },
+  emptyTitle: { ...Type.bodySemi, color: c.textPrimary },
+  emptyBody: { ...Type.body, color: c.textSecondary, lineHeight: 21 },
+}); }
