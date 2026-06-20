@@ -50,15 +50,15 @@ type ReportRow = {
   status: string;
 };
 
-const TYPES: { key: ReportKey; label: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap; tint: string }[] = [
-  { key: 'household_summary',    label: 'Household summary',       subtitle: 'Snapshot of plan, classification & recent activity', icon: 'home-outline',           tint: Colors.brandPrimary },
-  { key: 'quarterly_budget',     label: 'Quarterly budget',        subtitle: 'Spend by service for the current quarter',           icon: 'pie-chart-outline',      tint: Colors.warning },
-  { key: 'annual_financial',     label: 'Annual financial summary',subtitle: 'Year view, monthly totals, anomaly tally',           icon: 'calendar-outline',       tint: Colors.severityInfo },
-  { key: 'anomaly_savings',      label: 'Anomaly & savings',       subtitle: 'Flagged items + estimated overcharges',              icon: 'warning-outline',        tint: Colors.danger },
-  { key: 'provider_performance', label: 'Provider performance',    subtitle: 'Provider scorecard across all statements',           icon: 'business-outline',       tint: Colors.brandPrimary },
-  { key: 'complaint_dossier',    label: 'Complaint dossier',       subtitle: 'Evidence pack for a complaint or appeal',            icon: 'document-attach-outline',tint: Colors.danger },
-  { key: 'care_timeline',        label: 'Care timeline',           subtitle: 'Visits + statements + events in chronological order',icon: 'time-outline',           tint: Colors.severityInfo },
-  { key: 'statement_digest',     label: 'Statement digest',        subtitle: 'Plain-English summary of the latest statement',      icon: 'document-text-outline',  tint: Colors.warning },
+const TYPES: { key: ReportKey; label: string; subtitle: string; bestFor: string; icon: keyof typeof Ionicons.glyphMap; tint: string }[] = [
+  { key: 'household_summary',    label: 'Household summary',        subtitle: 'Plan, classification & recent activity at a glance.',                bestFor: 'Family catch-ups & onboarding new carers',     icon: 'home-outline',           tint: Colors.brandPrimary },
+  { key: 'quarterly_budget',     label: 'Quarterly budget',         subtitle: 'Spend by service across the current quarter.',                       bestFor: 'Quarterly reviews with your provider',         icon: 'pie-chart-outline',      tint: Colors.warning },
+  { key: 'annual_financial',     label: 'Annual financial summary', subtitle: 'Twelve-month view with monthly totals and anomaly tally.',           bestFor: 'Tax time and end-of-year care planning',       icon: 'calendar-outline',       tint: Colors.severityInfo },
+  { key: 'anomaly_savings',      label: 'Anomaly & savings',        subtitle: 'Flagged items plus estimated overcharges.',                          bestFor: 'Spotting double-charges and missed credits',   icon: 'warning-outline',        tint: Colors.danger },
+  { key: 'provider_performance', label: 'Provider performance',     subtitle: 'Provider scorecard across every statement.',                         bestFor: 'Deciding whether to switch providers',         icon: 'business-outline',       tint: Colors.brandPrimary },
+  { key: 'complaint_dossier',    label: 'Complaint dossier',        subtitle: 'Evidence pack assembled for a complaint or appeal.',                 bestFor: 'Raising a formal complaint or AAT review',     icon: 'document-attach-outline',tint: Colors.danger },
+  { key: 'care_timeline',        label: 'Care timeline',            subtitle: 'Visits, statements and events in chronological order.',              bestFor: 'Sharing the full story with a GP or hospital', icon: 'time-outline',           tint: Colors.severityInfo },
+  { key: 'statement_digest',     label: 'Statement digest',         subtitle: 'Plain-English summary of the latest statement.',                     bestFor: 'A 60-second monthly check-in',                 icon: 'document-text-outline',  tint: Colors.warning },
 ];
 
 export default function Reports() {
@@ -188,6 +188,9 @@ export default function Reports() {
               </View>
               <Text style={styles.tileLabel}>{t.label}</Text>
               <Text style={styles.tileSub} numberOfLines={2}>{t.subtitle}</Text>
+              <Text style={styles.tileBest} numberOfLines={2}>
+                <Text style={styles.tileBestLbl}>BEST FOR  </Text>{t.bestFor}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -283,6 +286,17 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   tileIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   tileLabel: { ...Type.bodySemi, color: c.textPrimary, fontSize: 14 },
   tileSub: { ...Type.caption, color: c.textSecondary, fontSize: 11, lineHeight: 14 },
+  tileBest: {
+    ...Type.caption,
+    color: c.textPrimary,
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: c.borderSubtle,
+  },
+  tileBestLbl: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.brandPrimary, letterSpacing: 0.6 },
   empty: { alignItems: 'center', paddingVertical: Spacing.xl, gap: 6 },
   emptyTitle: { ...Type.bodySemi, color: c.textPrimary, marginTop: 4 },
   emptyBody: { ...Type.caption, color: c.textSecondary, textAlign: 'center', paddingHorizontal: Spacing.lg },
