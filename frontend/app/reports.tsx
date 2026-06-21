@@ -220,16 +220,29 @@ export default function Reports() {
     const primaryUrl = `${API_BASE_URL}/api/reports/${reportId}/download`;
 
     // Resolve the JSON envelope → real PDF URL or base64 payload.
-    const resolveJsonEnvelope = async (raw: string): Promise<{ pdfUrl?: string; bytes?: Uint8Array }> => {
+    //
+    // Production backends commonly return one of:
+    //   { download_url: "/api/reports/file/{id}" }           — relative path on same host (needs Bearer)
+    //   { download_url: "https://s3.../signed?…" }            — absolute presigned URL (no auth)
+    //   { pdf_data_b64: "JVBERi0xLjQ…" }                      — inline base64
+    //   { error / detail / message: "..." }                   — surfaced error
+    const resolveJsonEnvelope = async (raw: string): Promise<{ pdfUrl?: string; pdfUrlIsAbsolute?: boolean; bytes?: Uint8Array }> => {
       let body: any;
       try { body = JSON.parse(raw); } catch { return {}; }
-      const pdfUrl: string | undefined =
-        body?.download_url || body?.url || body?.file_url || body?.pdf_url || body?.presigned_url;
-      if (pdfUrl) return { pdfUrl };
+      let pdfUrl: string | undefined =
+        body?.download_url || body?.url || body?.file_url || body?.pdf_url || body?.presigned_url || body?.signed_url;
+      if (pdfUrl) {
+        const isAbsolute = /^https?:\/\//i.test(pdfUrl);
+        if (!isAbsolute) {
+          // Relative path — prepend backend host so FileSystem doesn't try
+          // to interpret it as a local file path.
+          pdfUrl = `${API_BASE_URL}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
+        }
+        return { pdfUrl, pdfUrlIsAbsolute: isAbsolute };
+      }
       const b64: string | undefined =
         body?.pdf_data_b64 || body?.pdf_b64 || body?.base64 || body?.pdf_base64;
       if (b64) {
-        // Convert base64 → Uint8Array (works on web + native via atob polyfill).
         const bin = (globalThis as any).atob ? (globalThis as any).atob(b64) : Buffer.from(b64, 'base64').toString('binary');
         const bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -310,9 +323,11 @@ export default function Reports() {
       const envelope = await resolveJsonEnvelope(text);
 
       if (envelope.pdfUrl) {
-        // Second leg — follow the signed URL.
-        const dl2 = await FileSystem.downloadAsync(envelope.pdfUrl, dest);
-        if (dl2.status !== 200) throw new Error(`Server returned ${dl2.status} fetching signed URL`);
+        // Second leg — relative URLs are on the same backend (Bearer auth needed),
+        // absolute URLs are typically presigned (no auth).
+        const headers2 = envelope.pdfUrlIsAbsolute ? undefined : { Authorization: `Bearer ${token}` };
+        const dl2 = await FileSystem.downloadAsync(envelope.pdfUrl, dest, headers2 ? { headers: headers2 } : undefined);
+        if (dl2.status !== 200) throw new Error(`Server returned ${dl2.status} fetching ${envelope.pdfUrl}`);
         await shareLocal(dl2.uri, reportName);
         return;
       }
