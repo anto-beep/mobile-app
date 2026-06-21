@@ -54,6 +54,11 @@ function resolveBackend(): string {
 
 const BASE = resolveBackend();
 
+// Exposed so non-axios callers (e.g. `expo-file-system` PDF downloads) can
+// build absolute URLs to the same backend without re-running the override
+// resolver. NEVER hardcode the URL in screens — import this instead.
+export const API_BASE_URL = BASE;
+
 // Re-exported for legacy callers (AuthContext, secureStorage clear flow).
 export const TOKEN_KEY = 'wayly:token';
 
