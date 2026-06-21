@@ -204,6 +204,12 @@ export default function Reports() {
   };
 
   // ── Download helper (Expo / RN Web) ────────────────────────────────
+  // The backend may respond in one of three shapes:
+  //   A. Direct PDF bytes (Content-Type: application/pdf) — what we want.
+  //   B. JSON envelope { download_url, url, file_url, pdf_url, base64 } —
+  //      common when production sits behind S3/CloudFront presigned URLs.
+  //   C. JSON envelope { pdf_data_b64 } — fallback for some legacy reports.
+  // We handle all three transparently so the user just gets a PDF.
   const downloadReportPdf = async (reportId: string, reportName: string) => {
     const token = await getAccessToken();
     if (!token) throw new Error('Not signed in');
@@ -211,23 +217,68 @@ export default function Reports() {
     const safeName = (reportName || 'report')
       .replace(/[^\w-]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'report';
-    const url = `${API_BASE_URL}/api/reports/${reportId}/download`;
+    const primaryUrl = `${API_BASE_URL}/api/reports/${reportId}/download`;
+
+    // Resolve the JSON envelope → real PDF URL or base64 payload.
+    const resolveJsonEnvelope = async (raw: string): Promise<{ pdfUrl?: string; bytes?: Uint8Array }> => {
+      let body: any;
+      try { body = JSON.parse(raw); } catch { return {}; }
+      const pdfUrl: string | undefined =
+        body?.download_url || body?.url || body?.file_url || body?.pdf_url || body?.presigned_url;
+      if (pdfUrl) return { pdfUrl };
+      const b64: string | undefined =
+        body?.pdf_data_b64 || body?.pdf_b64 || body?.base64 || body?.pdf_base64;
+      if (b64) {
+        // Convert base64 → Uint8Array (works on web + native via atob polyfill).
+        const bin = (globalThis as any).atob ? (globalThis as any).atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { bytes };
+      }
+      if (body?.error || body?.detail || body?.message) {
+        throw new Error(body.error || body.detail || body.message);
+      }
+      return {};
+    };
 
     if (Platform.OS === 'web') {
-      // Web: fetch as blob so the Bearer header is honoured, then open / save.
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+      // ── Web path ──
+      let res = await fetch(primaryUrl, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf, application/json' },
         cache: 'no-store',
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const ctype = res.headers.get('content-type') || '';
-      if (!ctype.startsWith('application/pdf')) {
-        throw new Error(`Expected PDF, got ${ctype}`);
+      let ctype = (res.headers.get('content-type') || '').toLowerCase();
+      let blob: Blob;
+
+      if (ctype.startsWith('application/pdf')) {
+        blob = await res.blob();
+      } else if (ctype.startsWith('application/json')) {
+        // Envelope — extract real URL or base64.
+        const text = await res.text();
+        const envelope = await resolveJsonEnvelope(text);
+        if (envelope.pdfUrl) {
+          // Follow the presigned URL (no auth header — it's signed).
+          res = await fetch(envelope.pdfUrl, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`Server returned ${res.status} fetching signed URL`);
+          ctype = (res.headers.get('content-type') || '').toLowerCase();
+          blob = await res.blob();
+        } else if (envelope.bytes) {
+          blob = new Blob([envelope.bytes], { type: 'application/pdf' });
+        } else {
+          throw new Error('Server returned JSON without a PDF URL or payload.');
+        }
+      } else {
+        // Some CDNs strip Content-Type but still serve PDF bytes — sniff %PDF-.
+        const buf = new Uint8Array(await res.arrayBuffer());
+        if (buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+          blob = new Blob([buf], { type: 'application/pdf' });
+        } else {
+          throw new Error(`Expected PDF, got ${ctype || 'unknown content-type'}`);
+        }
       }
-      const blob = await res.blob();
+
       const objUrl = URL.createObjectURL(blob);
-      // Best UX: trigger a download AND open in a new tab so the user can
-      // preview before saving.
       const a = document.createElement('a');
       a.href = objUrl;
       a.download = `${safeName}.pdf`;
@@ -240,28 +291,72 @@ export default function Reports() {
       return;
     }
 
-    // Native: download to cache, then hand off to the share sheet.
+    // ── Native path (iOS / Android) ──
     const dest = `${FileSystem.cacheDirectory || ''}${safeName}.pdf`;
-    const dl = await FileSystem.downloadAsync(url, dest, {
-      headers: { Authorization: `Bearer ${token}` },
+    const dl = await FileSystem.downloadAsync(primaryUrl, dest, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf, application/json' },
     });
     if (dl.status !== 200) throw new Error(`Server returned ${dl.status}`);
-    const ctype = (dl.headers?.['Content-Type'] || dl.headers?.['content-type'] || '') as string;
-    if (ctype && !ctype.startsWith('application/pdf')) {
-      throw new Error(`Expected PDF, got ${ctype}`);
+    const rawCtype = (dl.headers?.['Content-Type'] || dl.headers?.['content-type'] || '') as string;
+    const ctype = rawCtype.toLowerCase();
+
+    if (ctype.startsWith('application/pdf')) {
+      await shareLocal(dl.uri, reportName);
+      return;
     }
+
+    if (ctype.startsWith('application/json')) {
+      const text = await FileSystem.readAsStringAsync(dl.uri);
+      const envelope = await resolveJsonEnvelope(text);
+
+      if (envelope.pdfUrl) {
+        // Second leg — follow the signed URL.
+        const dl2 = await FileSystem.downloadAsync(envelope.pdfUrl, dest);
+        if (dl2.status !== 200) throw new Error(`Server returned ${dl2.status} fetching signed URL`);
+        await shareLocal(dl2.uri, reportName);
+        return;
+      }
+      if (envelope.bytes) {
+        // Write base64 directly to the cache file.
+        const b64 = arrayBufferToBase64(envelope.bytes);
+        await FileSystem.writeAsStringAsync(dest, b64, { encoding: FileSystem.EncodingType.Base64 });
+        await shareLocal(dest, reportName);
+        return;
+      }
+      throw new Error('Server returned JSON without a PDF URL or payload.');
+    }
+
+    // Unknown content-type — sniff the file header for %PDF-.
+    const head = await FileSystem.readAsStringAsync(dl.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+      length: 8,
+      position: 0,
+    } as any).catch(() => '');
+    // %PDF- in base64 is JVBERi (decode first 4 bytes).
+    if (typeof head === 'string' && head.startsWith('JVBERi')) {
+      await shareLocal(dl.uri, reportName);
+      return;
+    }
+    throw new Error(`Expected PDF, got ${ctype || 'unknown content-type'}`);
+  };
+
+  const shareLocal = async (uri: string, reportName: string) => {
     if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(dl.uri, {
+      await Sharing.shareAsync(uri, {
         UTI: 'com.adobe.pdf',
         mimeType: 'application/pdf',
         dialogTitle: reportName,
       });
     } else {
-      // Some platforms (e.g. RN Web Tunnel on dev) lack Sharing. Fall back
-      // to opening the file URI directly.
-      Linking.openURL(dl.uri);
+      Linking.openURL(uri);
     }
   };
+
+  function arrayBufferToBase64(bytes: Uint8Array): string {
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return (globalThis as any).btoa ? (globalThis as any).btoa(binary) : Buffer.from(binary, 'binary').toString('base64');
+  }
 
   const openReport = async (row: ReportRow) => {
     try {
