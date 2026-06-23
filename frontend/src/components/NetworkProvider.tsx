@@ -59,8 +59,21 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const applyFromState = (state: NetInfoState) => {
-      // `isInternetReachable` can be null on slow boot — fall back to isConnected only.
-      const next = state.isConnected !== false && state.isInternetReachable !== false;
+      // Trust `isConnected` (link-layer Wi-Fi/cellular) as the source of truth.
+      //
+      // `isInternetReachable` is unreliable in the wild — it performs a
+      // pull-the-string ping against Apple/Google captive-portal endpoints
+      // which is routinely blocked by corporate proxies, hotel Wi-Fi
+      // portals, IPv6-only networks, and some carrier APNs. In those cases
+      // it returns `false` even though the user clearly has internet
+      // (the rest of the app loads fine). Marking the app offline in that
+      // scenario gives a false-positive "Offline" banner, which is what
+      // the user reported.
+      //
+      // Policy: offline ONLY when the device has no network link at all
+      // (`isConnected === false`). Until proven otherwise via real-world
+      // request failures we keep the user online.
+      const next = state.isConnected !== false;
       apply(next);
     };
 
