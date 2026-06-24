@@ -16,6 +16,22 @@ export type UploadProgressPhase =
 
 export type UploadProgress = (phase: UploadProgressPhase, message: string) => void;
 
+/** Result of an upload — preserves backwards-compat with the original `string`
+ *  return shape while also carrying the duplicate-detection signals the
+ *  Phase 1–4 lifecycle UI needs. Callers that don't care can keep using
+ *  `result.statementId`; the duplicate modals read the optional fields. */
+export type UploadResult = {
+  statementId: string;
+  /** Set when the backend reports the parsed content was logically identical
+   *  (same line items / totals / dates) to a prior statement, or when the
+   *  upload triggered a versioning revision. */
+  duplicateKind?: 'DUPLICATE_LOGICAL_SAME_CONTENT' | 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT';
+  /** Convenience pointer to the existing statement for the SAME_CONTENT case. */
+  existingStatementId?: string;
+  /** Convenience pointer to the prior (now-superseded) version for DIFFERENT_CONTENT. */
+  supersedesVersionId?: string;
+};
+
 const FRIENDLY_PHRASES: Record<UploadProgressPhase, string> = {
   picking: 'Getting your photo ready…',
   uploading: 'Sending it to Wayly…',
@@ -25,7 +41,7 @@ const FRIENDLY_PHRASES: Record<UploadProgressPhase, string> = {
   error: 'Something went wrong.',
 };
 
-async function postFile(uri: string, name: string, mime: string, onProgress: UploadProgress): Promise<string> {
+async function postFile(uri: string, name: string, mime: string, onProgress: UploadProgress): Promise<UploadResult> {
   onProgress('uploading', FRIENDLY_PHRASES.uploading);
 
   // Build form-data
@@ -37,10 +53,30 @@ async function postFile(uri: string, name: string, mime: string, onProgress: Upl
     type: mime,
   } as any);
 
-  const { data } = await api.post('/statements/upload', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 90_000,
-  });
+  // Idempotency-Key — the backend replays the same response for 24 h if the
+  // user accidentally double-taps Upload. Generated per attempt.
+  const idempotencyKey = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  let res;
+  try {
+    res = await api.post('/statements/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey },
+      timeout: 90_000,
+    });
+  } catch (e: any) {
+    // 409 — backend detected a byte-identical duplicate before parsing.
+    if (e?.response?.status === 409) {
+      const detail = e.response.data?.detail || e.response.data;
+      if (detail?.error === 'DUPLICATE_EXACT') {
+        const err: any = new Error(detail.message || 'Duplicate statement');
+        err.code = 'DUPLICATE_EXACT';
+        err.existing = detail;
+        throw err;
+      }
+    }
+    throw e;
+  }
+  const data = res?.data;
   const jobId = data?.job_id;
   if (!jobId) throw new Error('No job id returned');
 
@@ -58,9 +94,26 @@ async function postFile(uri: string, name: string, mime: string, onProgress: Upl
     if (st?.phase === 'parsing' && i > 5) {
       onProgress('parsing', FRIENDLY_PHRASES.parsing);
     }
+    // Logical duplicate (same content, different file). Status === 'duplicate'.
+    if (st?.status === 'duplicate' && st?.duplicate_kind === 'DUPLICATE_LOGICAL_SAME_CONTENT') {
+      onProgress('done', FRIENDLY_PHRASES.done);
+      return {
+        statementId: st.existing_statement_id,
+        duplicateKind: 'DUPLICATE_LOGICAL_SAME_CONTENT',
+        existingStatementId: st.existing_statement_id,
+      };
+    }
     if (st?.status === 'done') {
       onProgress('done', FRIENDLY_PHRASES.done);
-      return st.statement_id;
+      // Revised statement — auto-superseded a prior version.
+      if (st?.duplicate_kind === 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT') {
+        return {
+          statementId: st.statement_id,
+          duplicateKind: 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT',
+          supersedesVersionId: st.supersedes_version_id,
+        };
+      }
+      return { statementId: st.statement_id };
     }
     if (st?.status === 'error') {
       throw new Error(st.error || 'Decode failed');
@@ -82,7 +135,7 @@ async function compressImage(uri: string): Promise<string> {
   }
 }
 
-export async function uploadFromCamera(onProgress: UploadProgress): Promise<string> {
+export async function uploadFromCamera(onProgress: UploadProgress): Promise<UploadResult> {
   onProgress('picking', FRIENDLY_PHRASES.picking);
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) throw new Error('Wayly needs camera access to scan the statement.');
@@ -97,7 +150,7 @@ export async function uploadFromCamera(onProgress: UploadProgress): Promise<stri
   return postFile(compressed, name, 'image/jpeg', onProgress);
 }
 
-export async function uploadFromLibrary(onProgress: UploadProgress): Promise<string> {
+export async function uploadFromLibrary(onProgress: UploadProgress): Promise<UploadResult> {
   onProgress('picking', FRIENDLY_PHRASES.picking);
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) throw new Error('Wayly needs photo-library access.');
@@ -126,7 +179,7 @@ export async function uploadFromDocument(onProgress: UploadProgress): Promise<st
 /** Submit a pasted statement (no file). Goes through the same job pipeline as
  *  /statements/upload so the resulting Statement appears in the user's history
  *  with summary, line items and anomalies. */
-export async function uploadFromText(text: string, onProgress: UploadProgress): Promise<string> {
+export async function uploadFromText(text: string, onProgress: UploadProgress): Promise<UploadResult> {
   const trimmed = (text || '').trim();
   if (trimmed.length < 10) throw new Error('Paste a bit more text — at least 10 characters.');
   onProgress('uploading', FRIENDLY_PHRASES.uploading);
@@ -146,9 +199,24 @@ export async function uploadFromText(text: string, onProgress: UploadProgress): 
     } catch {
       continue;
     }
+    if (st?.status === 'duplicate' && st?.duplicate_kind === 'DUPLICATE_LOGICAL_SAME_CONTENT') {
+      onProgress('done', FRIENDLY_PHRASES.done);
+      return {
+        statementId: st.existing_statement_id,
+        duplicateKind: 'DUPLICATE_LOGICAL_SAME_CONTENT',
+        existingStatementId: st.existing_statement_id,
+      };
+    }
     if (st?.status === 'done') {
       onProgress('done', FRIENDLY_PHRASES.done);
-      return st.statement_id;
+      if (st?.duplicate_kind === 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT') {
+        return {
+          statementId: st.statement_id,
+          duplicateKind: 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT',
+          supersedesVersionId: st.supersedes_version_id,
+        };
+      }
+      return { statementId: st.statement_id };
     }
     if (st?.status === 'error') {
       throw new Error(st.error || 'Decode failed');

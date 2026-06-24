@@ -94,6 +94,40 @@ export default function Security() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <BackHeader title="Security" />
       <ScrollView contentContainerStyle={styles.scroll} testID="security-scroll">
+        <View style={styles.card} testID="security-audit-trail-card">
+          <View style={styles.cardHead}>
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>
+              <Ionicons name="time-outline" size={20} color={c.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Statement audit trail</Text>
+              <Text style={styles.cardSub}>
+                Every upload, archive, restore and deletion is logged for at least seven years. Tap to view your latest statement's audit log.
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                const { data } = await api.get('/statements');
+                const items = Array.isArray(data) ? data : (data?.items || []);
+                const latest = items[0];
+                if (latest?.id) {
+                  router.push({ pathname: '/statements/[id]/audit-log' as any, params: { id: latest.id } });
+                } else {
+                  Alert.alert('No statements yet', 'Upload your first statement to start building an audit trail.');
+                }
+              } catch (e) {
+                Alert.alert("Couldn't load", extractErrorMessage(e));
+              }
+            }}
+            style={[styles.btn, styles.btnPrimary]}
+            testID="security-view-audit-log"
+            accessibilityRole="button"
+          >
+            <Text style={styles.btnPrimaryText}>See your audit trail</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.card} testID="security-biometric-card">
           <View style={styles.cardHead}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 77, 82, 0.08)' }]}>

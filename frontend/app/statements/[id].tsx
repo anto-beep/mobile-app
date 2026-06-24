@@ -24,6 +24,12 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 import { toast } from '../../src/components/Toast';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
+import {
+  ArchiveConfirmModal,
+  PermanentDeleteModal,
+  NeedsReviewBanner,
+  ArchivedBanner,
+} from '../../src/components/StatementLifecycleModals';
 
 const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
   alert: { color: Colors.severityAlert, bg: 'rgba(192, 57, 43, 0.08)', icon: 'alert-circle' },
@@ -41,6 +47,9 @@ type Stmt = {
   anomalies: { id: string; severity: 'alert' | 'warning' | 'info'; title: string; detail: string; suggested_action?: string | null; rule?: string | null; dollar_impact?: number | null; evidence?: string[] | null }[];
   anomaly_dollar_impact_total?: number | null;
   informational_notes?: { kind?: string; title?: string; detail?: string }[];
+  state?: 'active' | 'archived' | 'superseded' | 'deleted';
+  parsing_confidence?: number;
+  has_original_file?: boolean;
 };
 
 export default function StatementDetail() {
@@ -294,6 +303,10 @@ export default function StatementDetail() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <BackHeader title="Statement" />
       <ScrollView contentContainerStyle={styles.scroll}>
+        {stmt.state === 'archived' && <ArchivedBanner />}
+        {typeof stmt.parsing_confidence === 'number' && stmt.parsing_confidence < 0.85 && (
+          <NeedsReviewBanner confidence={stmt.parsing_confidence} />
+        )}
         <Text style={styles.overline}>Statement</Text>
         <Text style={styles.h1}>{stmt.period_label || stmt.filename}</Text>
         <Text style={styles.subline}>
@@ -313,6 +326,31 @@ export default function StatementDetail() {
           <Ionicons name="chatbubbles" size={18} color="#FFFFFF" />
           <Text style={styles.askBtnText}>Ask Wayly about this statement</Text>
         </TouchableOpacity>
+
+        {/* Lifecycle action row — Archive / Restore / Permanent delete /
+            Audit log. Surfaces only the actions valid for the current state. */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+          {stmt.state !== 'archived' && (
+            <TouchableOpacity onPress={openArchive} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} testID="statement-archive-btn">
+              <Ionicons name="archive-outline" size={14} color={c.brandPrimary} />
+              <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary }}>Archive</Text>
+            </TouchableOpacity>
+          )}
+          {stmt.state === 'archived' && (
+            <TouchableOpacity onPress={() => setDelOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} testID="statement-permanent-delete-btn">
+              <Ionicons name="trash-outline" size={14} color={c.brandSecondary} />
+              <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandSecondary }}>Permanently delete</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: '/statements/[id]/audit-log' as any, params: { id: stmt.id } })}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            testID="statement-audit-log-link"
+          >
+            <Ionicons name="time-outline" size={14} color={c.textSecondary} />
+            <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.textSecondary }}>Audit log</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Download tiles — three large, equally-prominent cards matching
             the web app's download row. Each tile has icon on top, label
@@ -466,6 +504,21 @@ export default function StatementDetail() {
           })}
         </View>
       </ScrollView>
+      <ArchiveConfirmModal
+        visible={archiveOpen}
+        onClose={() => !archiveSubmitting && setArchiveOpen(false)}
+        preview={archivePreview}
+        onConfirm={doArchive}
+        submitting={archiveSubmitting}
+      />
+      <PermanentDeleteModal
+        visible={delOpen}
+        onClose={() => !delSubmitting && setDelOpen(false)}
+        periodLabel={stmt?.period_label || stmt?.filename || ''}
+        hasOriginalFile={!!stmt?.has_original_file}
+        onConfirm={doPermanentDelete}
+        submitting={delSubmitting}
+      />
     </SafeAreaView>
   );
 }
@@ -530,6 +583,27 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   anomalyDollar: { fontFamily: Fonts.bodySemi, fontSize: 13 },
   anomaliesHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md, gap: 8, flexWrap: 'wrap' },
   impactPill: { backgroundColor: 'rgba(192, 57, 43, 0.10)', borderRadius: 100, paddingHorizontal: 10, paddingVertical: 5 },
+  impactPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert, letterSpacing: 0.3 },
+  evidenceBox: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' },
+  evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },
+  evidenceLine: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
+  anomalyRule: { fontFamily: 'Courier', fontSize: 10, color: c.textMuted, marginTop: 8, letterSpacing: 0.3 },
+  lineItem: {
+    backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md,
+    marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,
+  },
+  lineItemHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  lineDate: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted },
+  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary },
+  lineService: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.brandPrimary, marginTop: 6 },
+  lineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' },
+  streamChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
+  streamDot: { width: 8, height: 8, borderRadius: 4 },
+  streamChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+  lineMetaText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
+  lineYouPaid: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textSecondary, marginTop: 6 },
+}); }
+, paddingHorizontal: 10, paddingVertical: 5 },
   impactPillText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert, letterSpacing: 0.3 },
   evidenceBox: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' },
   evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },

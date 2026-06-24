@@ -89,7 +89,19 @@ export default function StatementsList() {
         testID="statements-scroll-view"
       >
         <Text style={styles.overline}>All statements</Text>
-        <Text style={styles.h1}>Your statement history</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={styles.h1}>Your statement history</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/statements/archived' as any)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: c.surfaceTint, borderWidth: 1, borderColor: c.borderSubtle }}
+            testID="statements-archived-link"
+            accessibilityRole="link"
+            accessibilityLabel="Archived statements"
+          >
+            <Ionicons name="archive-outline" size={12} color={c.brandPrimary} />
+            <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary }}>Archived</Text>
+          </TouchableOpacity>
+        </View>
 
         {loading ? (
           <View style={styles.loadingFill}>

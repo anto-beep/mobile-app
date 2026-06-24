@@ -28,6 +28,7 @@ import { Fonts, Radius, Spacing } from '../lib/theme';
 import type { ColorPalette } from '../lib/theme';
 import { useColors } from '../hooks/useColors';
 import { useThemedStyles } from '../hooks/useThemedStyles';
+import { DupExactModal, DupLogicalSameModal, DupLogicalDiffModal } from './StatementLifecycleModals';
 
 type Props = {
   visible: boolean;
@@ -57,16 +58,40 @@ export default function UploadSheet({ visible, onClose }: Props) {
     onClose();
   };
 
+  const [dupExact, setDupExact] = useState<any | null>(null);
+  const [dupLogicalSame, setDupLogicalSame] = useState<{ existingId: string } | null>(null);
+  const [dupLogicalDiff, setDupLogicalDiff] = useState<{ newId: string } | null>(null);
+
   const run = async (fn: typeof uploadFromCamera) => {
     setBusy(true);
     setPhase('picking');
     try {
-      const statementId = await fn((p) => setPhase(p));
+      const result = await fn((p) => setPhase(p));
+      // Logical SAME content — file differs but parsed payload is identical.
+      // Stash the existing-statement pointer and surface Modal 2a; navigation
+      // happens when the user taps "View existing statement".
+      if (result.duplicateKind === 'DUPLICATE_LOGICAL_SAME_CONTENT' && result.existingStatementId) {
+        setBusy(false);
+        setDupLogicalSame({ existingId: result.existingStatementId });
+        return;
+      }
+      // Logical DIFFERENT content — a revision was saved as a new active
+      // version. Surface Modal 2b before navigating.
+      if (result.duplicateKind === 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT') {
+        setBusy(false);
+        setDupLogicalDiff({ newId: result.statementId });
+        return;
+      }
       handleClose();
-      router.push(`/statements/${statementId}` as any);
+      router.push(`/statements/${result.statementId}` as any);
     } catch (e: any) {
       setBusy(false);
       if (e?.message === 'cancelled') return;
+      // Byte-identical duplicate — surface Modal 1.
+      if (e?.code === 'DUPLICATE_EXACT') {
+        setDupExact(e.existing || {});
+        return;
+      }
       Alert.alert('Upload failed', e?.message || 'Please try again.');
     }
   };
@@ -81,16 +106,58 @@ export default function UploadSheet({ visible, onClose }: Props) {
     setBusy(true);
     setPhase('uploading');
     try {
-      const statementId = await uploadFromText(trimmed, (p) => setPhase(p));
+      const result = await uploadFromText(trimmed, (p) => setPhase(p));
+      if (result.duplicateKind === 'DUPLICATE_LOGICAL_SAME_CONTENT' && result.existingStatementId) {
+        setBusy(false);
+        setDupLogicalSame({ existingId: result.existingStatementId });
+        return;
+      }
+      if (result.duplicateKind === 'DUPLICATE_LOGICAL_DIFFERENT_CONTENT') {
+        setBusy(false);
+        setDupLogicalDiff({ newId: result.statementId });
+        return;
+      }
       handleClose();
-      router.push(`/statements/${statementId}` as any);
+      router.push(`/statements/${result.statementId}` as any);
     } catch (e: any) {
       setBusy(false);
+      if (e?.code === 'DUPLICATE_EXACT') {
+        setDupExact(e.existing || {});
+        return;
+      }
       Alert.alert("Couldn't decode", e?.message || 'Please try again.');
     }
   };
 
+  const closeAllDupModals = () => { setDupExact(null); setDupLogicalSame(null); setDupLogicalDiff(null); };
+
+  const onDupExactView = () => {
+    const id = dupExact?.existing_statement_id;
+    closeAllDupModals();
+    handleClose();
+    if (id) router.push(`/statements/${id}` as any);
+  };
+  const onDupLogicalSameView = () => {
+    const id = dupLogicalSame?.existingId;
+    closeAllDupModals();
+    handleClose();
+    if (id) router.push(`/statements/${id}` as any);
+  };
+  const onDupLogicalDiffViewNew = () => {
+    const id = dupLogicalDiff?.newId;
+    closeAllDupModals();
+    handleClose();
+    if (id) router.push(`/statements/${id}` as any);
+  };
+  const onDupLogicalDiffViewAudit = () => {
+    const id = dupLogicalDiff?.newId;
+    closeAllDupModals();
+    handleClose();
+    if (id) router.push({ pathname: '/statements/[id]/audit-log' as any, params: { id } });
+  };
+
   return (
+    <>
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <Pressable style={styles.backdrop} onPress={handleClose} />
       <KeyboardAvoidingView
@@ -223,6 +290,26 @@ export default function UploadSheet({ visible, onClose }: Props) {
         </View>
       </KeyboardAvoidingView>
     </Modal>
+    <DupExactModal
+      visible={!!dupExact}
+      onClose={closeAllDupModals}
+      existing={dupExact || undefined}
+      onViewExisting={onDupExactView}
+    />
+    <DupLogicalSameModal
+      visible={!!dupLogicalSame}
+      onClose={closeAllDupModals}
+      existingId={dupLogicalSame?.existingId}
+      onViewExisting={onDupLogicalSameView}
+    />
+    <DupLogicalDiffModal
+      visible={!!dupLogicalDiff}
+      onClose={closeAllDupModals}
+      newId={dupLogicalDiff?.newId}
+      onViewNew={onDupLogicalDiffViewNew}
+      onViewAudit={onDupLogicalDiffViewAudit}
+    />
+    </>
   );
 }
 
