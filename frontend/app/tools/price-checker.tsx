@@ -79,11 +79,13 @@ export default function PriceChecker() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
-          <Text style={styles.sub}>We'll compare against the network median. National price caps were deferred indefinitely in May 2026 — providers price competitively below this median.</Text>
+          <Text style={styles.sub}>We compare your provider's rate against the official indicative range published by the Department of Health (October 2025) — not a government cap. National price caps were deferred indefinitely in May 2026.</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <View style={styles.capsNote} testID="pc-caps-note">
             <Ionicons name="information-circle-outline" size={14} color={c.brandSecondary} />
-            <Text style={styles.capsNoteText}>National price caps were deferred indefinitely in May 2026 — the verdict below is median-only.</Text>
+            <Text style={styles.capsNoteText}>
+              Price caps deferred. The Australian Government announced in May 2026 that the planned 1 July 2026 national provider price caps under Support at Home are deferred indefinitely. Providers continue to set their own prices. This tool compares against the official indicative range published by the Department of Health (October 2025) — not a government cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.
+            </Text>
           </View>
 
           <Text style={styles.label}>Service</Text>

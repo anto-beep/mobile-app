@@ -30,7 +30,7 @@ export const canStartTrial = (u: any) => {
 const TOOL_DISCLAIMERS: Record<string, string> = {
   'statement-decoder': "Wayly's AI reads your statement and flags possible issues. It may misread figures or miss anomalies — always check against the original statement and your provider before disputing anything.",
   'budget-calculator': "These figures use the published Support at Home budget tables. They're a guide — the official quarterly amount on your statement is the source of truth.",
-  'provider-price-checker': "Rate comparisons use Wayly's network median and the 1 July 2026 published caps. Some providers legitimately charge more for specialised services. Always read your service agreement.",
+  'provider-price-checker': "Rate comparisons use the Department of Health's official indicative range (October 2025). Price caps were deferred indefinitely in May 2026 — this tool does not show a cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.",
   'classification-self-check': "This is informational only. Only My Aged Care's Independent Assessment Tool (IAT) determines your actual classification.",
   'reassessment-letter': "AI drafts can get details wrong. Review carefully, check the date, and add your address before sending.",
   'contribution-estimator': "Contribution rates are based on the published Support at Home schedule. Your actual contribution depends on Services Australia's means assessment.",
