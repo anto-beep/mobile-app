@@ -61,6 +61,54 @@ export default function StatementDetail() {
   const [loading, setLoading] = useState(true);
   const [downloadingKind, setDownloadingKind] = useState<null | 'original' | 'pdf' | 'csv'>(null);
 
+  // ── Lifecycle UI state (Archive / Permanent-delete modals) ─────────
+  const [archivePreview, setArchivePreview] = useState<any | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveSubmitting, setArchiveSubmitting] = useState(false);
+  const [delOpen, setDelOpen] = useState(false);
+  const [delSubmitting, setDelSubmitting] = useState(false);
+
+  const idem = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const openArchive = async () => {
+    if (!stmt) return;
+    try {
+      const { data } = await api.delete(`/statements/${stmt.id}/archive`, { params: { preview: true } });
+      setArchivePreview(data);
+      setArchiveOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not load archive preview.');
+    }
+  };
+  const doArchive = async () => {
+    if (!stmt) return;
+    setArchiveSubmitting(true);
+    try {
+      await api.delete(`/statements/${stmt.id}/archive`, { headers: { 'Idempotency-Key': idem('archive') } });
+      setArchiveOpen(false);
+      toast.success('Statement archived.');
+      router.replace('/statements/archived' as any);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not archive that statement.');
+    } finally {
+      setArchiveSubmitting(false);
+    }
+  };
+  const doPermanentDelete = async () => {
+    if (!stmt) return;
+    setDelSubmitting(true);
+    try {
+      await api.delete(`/statements/${stmt.id}/permanent`, { headers: { 'Idempotency-Key': idem('hard') } });
+      setDelOpen(false);
+      toast.success('Statement permanently deleted.');
+      router.replace('/statements/archived' as any);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not delete that statement.');
+    } finally {
+      setDelSubmitting(false);
+    }
+  };
+
   // Phase 6 hardening: prevent screenshots / screen-recording / task-switcher
   // snapshots while a statement detail (line items, anomalies, dollar amounts) is on screen.
   useSensitiveScreen();
