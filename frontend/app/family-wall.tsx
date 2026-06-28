@@ -463,6 +463,7 @@ export default function FamilyWall() {
 
 // ──────────────────────────────────────────────────────────────────────
 function PostCard({ post, self }: { post: WallPost; self: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   // useAudioPlayer must be called unconditionally — pass an empty source if no audio.
   const player = useAudioPlayer(
     post.audio_b64

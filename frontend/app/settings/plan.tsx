@@ -210,6 +210,8 @@ export default function PlanSettings() {
 }
 
 function Tile({ label, value, icon }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.tile}>
       <Ionicons name={icon} size={16} color={c.brandPrimary} />

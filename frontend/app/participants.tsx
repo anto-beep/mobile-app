@@ -164,6 +164,8 @@ export default function Participants() {
 }
 
 function AddParticipantSheet({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [provider, setProvider] = useState('Your provider');

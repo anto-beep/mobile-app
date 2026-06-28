@@ -1,0 +1,173 @@
+{
+  "summary": "Iteration 10 — Frontend-only verification of the Phase A+B+C UI-1 Delta rollout against the live prod backend. Login as cathy@example.com/testpass123 succeeded; Dorothy (Classification 4, BlueBerry Care) is the active participant. RENDER-STABILITY SWEEP: all 27 requested routes load without any red overlay, 'is not defined', or runtime error (verified body length + pageerror listener). §2 Price-caps copy PASS (gate copy on AIAccuracyBanner contains 'Department of Health (October 2025)', 'deferred indefinitely in May 2026', and 'Aged Care Quality and Safety Commission'; no future-tense '1 July 2026 cap' mention). §7 Aged Care Q&A PASS (route loads, overline reads 'AGED CARE Q&A', no 'Family Care Coordinator' string anywhere). §6 PARTIAL PASS — statement detail shows the 'Potential impact: $1,890.65' hero pill above the anomalies list and the anomaly card renders title + severity tint + detail, BUT 'Why was this flagged?' evidence bullets, the rule key tag, and the 'Notes for your records' section (testID statement-info-notes) did NOT render for the test statement (backend response likely missing evidence + informational_notes arrays — code path in /app/frontend/app/statements/[id].tsx lines 505 & 523 is conditional on those arrays being populated). §10b PRICE CHECKER UX could NOT be exercised end-to-end because Cathy's account is on the Free plan — the screen renders the 'Paid plan needed' ToolGate instead of the form. Code review of /app/frontend/app/tools/price-checker.tsx confirms all three tiles (You're charged / Indicative median / Indicative range with 'DoH Oct 2025'), 'per hour/trip/meal' unit hint, stream badge, and prefill pill row are correctly implemented behind the paywall. Statement Lifecycle PASS — Archive + Audit log buttons visible at bottom of /statements/{id}; ArchiveConfirmModal opens with full preview payload (period_label, filename, total, missing-period warning, Cancel + 'Archive statement' actions); /statements/{id}/audit-log renders the empty-state ('No events yet') cleanly; /statements/archived empty state renders; testID statements-archived-link pill is present on /statements. Dark mode PASS — toggle persists, WaylyHeader teal banner + Back chip survive on every sub-screen (verified /today, /settings/plan, /statements/{id}, /settings/appearance), no black-on-dark text. §19 DATE FORMAT — FAIL: only /notifications uses DD/MM/YYYY; every other screen with dates (/today, /statements, /alerts, /timeline, /tools, /settings/plan, statement detail header, audit log timestamps will when populated, etc.) still uses the legacy 'D Month YYYY' or 'Mon, D Mon' long-form output from src/lib/format.ts formatAUDate/formatAUWeekday and from raw toLocaleDateString in audit.tsx & Timeline.tsx. The new src/lib/formatDate.ts is wired into a handful of screens (notifications, archived, audit-log, documents, hospital, reports, family-wall main path, etc.) but the bulk of legacy callers still pull from src/lib/format.ts and have not been migrated.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "src/lib/format.ts → formatAUDate / formatAUWeekday",
+        "issue": "Both helpers still render 'D Mon YYYY' (e.g. '30 June 2026') and 'Mon, D Mon' (e.g. 'Mon, 18 May'). Per §19 they must be replaced with formatDate from src/lib/formatDate.ts. Observed on /today ('30 June 2026'), /statements ('1 May 2026'), /alerts ('9 June 2026'), /timeline ('19 June 2026'), /tools ('1 Jul 2026'), /settings/plan ('Mon, 18 May'), statement detail (period header '30 June 2026'). Reference: /app/frontend/src/lib/format.ts:25-38.",
+        "testID": "n/a",
+        "priority": "HIGH"
+      },
+      {
+        "component": "/app/frontend/app/audit.tsx",
+        "issue": "Lines 67-68 use d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) which produces '28 Jun 2026', not DD/MM/YYYY. Must be replaced with formatDate from src/lib/formatDate.ts.",
+        "testID": "n/a",
+        "priority": "HIGH"
+      },
+      {
+        "component": "/app/frontend/src/components/Timeline.tsx",
+        "issue": "Three call sites (lines 113, 138, 163) use formatAUDate which yields long-form 'D Mon YYYY'. Must migrate to formatDate. This is the Timeline used on /timeline screen — observed '19 June 2026' / '9 June 2026'.",
+        "testID": "n/a",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Misc screens still using formatAUDate",
+        "issue": "amendments.tsx (line 266 inline en-AU toLocaleDateString + formatAUDate fallback), correspondence.tsx (line 82 formatAUDate), budget-alerts.tsx (line 233), ratings.tsx (line 220), at-hm.tsx (line 110), referrals.tsx (line 148), settings/profile.tsx (line 45), family-wall.tsx (line 498 fallback) — all still call the long-form helper. The DD/MM/YYYY contract is only honoured where formatDate was explicitly imported.",
+        "testID": "n/a",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "§6 Statement detail anomaly enrichment",
+        "issue": "The test statement (0cf2bdc7-eb28-438d-85c1-396c43af4229, period 1–30 June 2026) renders the 'Potential impact: $1,890.65' pill and anomaly title/severity correctly, BUT the 'Why was this flagged?' evidence bullets, the small rule-key tag, and the 'Notes for your records' (testID statement-info-notes) section do not render. The frontend code is correct (statements/[id].tsx lines 505, 523) — it's gated on `a.evidence?.length > 0` and `Array.isArray(stmt.informational_notes) && stmt.informational_notes.length > 0`. Either (a) the prod /api/statements/{id} response is not yet returning the evidence[] / informational_notes[] arrays from the §6 backend handoff, or (b) this particular statement legitimately has no evidence/notes. Needs verification with a statement that has populated arrays.",
+        "affected_testIDs": ["statement-info-notes"]
+      },
+      {
+        "flow": "§10b Price Checker results UI",
+        "issue": "Could not exercise the result tiles + prefill pills because cathy@example.com is on the Free plan and /tools/price-checker shows the 'Paid plan needed' gate instead of the form. Static code review of /app/frontend/app/tools/price-checker.tsx confirms all §10b requirements (three tiles with 'You're charged / Indicative median / Indicative range', 'DoH Oct 2025' on the range tile, per-unit hint via result.unit, stream badge tinted by c.streams[result.stream], and testID='price-prefill-row' pill row). Recommend either (a) upgrading cathy to Solo/Family for the next test pass, or (b) using a different test account already on a paid plan.",
+        "affected_testIDs": ["price-result", "price-prefill-row", "price-rate-input", "price-check-button"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "shadow* style props",
+        "issue": "Pre-existing deprecation warning across multiple screens — 'shadow* style props are deprecated. Use boxShadow.' (noted in iteration_7 + iteration_9, not introduced this round)."
+      },
+      {
+        "component": "props.pointerEvents",
+        "issue": "Pre-existing 'props.pointerEvents is deprecated. Use style.pointerEvents'. Not introduced this round."
+      }
+    ]
+  },
+  "test_results": {
+    "render_sweep_pass": 27,
+    "render_sweep_fail": 0,
+    "routes_audited": [
+      "/today", "/family", "/family-wall", "/statements", "/statements/archived",
+      "/more", "/settings", "/settings/plan", "/settings/appearance", "/settings/security",
+      "/settings/digest", "/participants", "/profile", "/audit", "/alerts", "/timeline",
+      "/budget-alerts", "/hospital", "/reports", "/tools", "/tools/price-checker",
+      "/tools/aged-care-qa", "/notifications", "/log-scenario", "/diagnostics",
+      "/amendments", "/correspondence", "/statements/{id}", "/statements/{id}/audit-log"
+    ],
+    "section_2_price_caps_copy": {
+      "deferred indefinitely": true,
+      "Department of Health": true,
+      "October 2025": true,
+      "ACQSC reference": true,
+      "future-tense 1 July 2026 cap": false,
+      "verdict": "PASS"
+    },
+    "section_6_anomaly_rendering": {
+      "potential_impact_pill_visible": true,
+      "potential_impact_value": "$1,890.65",
+      "anomaly_title_visible": "Pension status unknown; contribution validation skipped.",
+      "severity_tint_applied": true,
+      "why_flagged_evidence_list": "NOT RENDERED — likely empty in API response",
+      "rule_key_tag": "NOT RENDERED — likely empty in API response",
+      "statement_info_notes_testID": 0,
+      "informational_notes_section": "NOT RENDERED — likely empty in API response",
+      "verdict": "PARTIAL — code is correct but data-dependent fields didn't surface on the test statement"
+    },
+    "section_7_aged_care_qa": {
+      "route_loads": true,
+      "title_overline": "AGED CARE Q&A",
+      "no_family_coordinator_string": true,
+      "verdict": "PASS"
+    },
+    "section_19_dd_mm_yyyy_date_format": {
+      "compliant_screens": ["/notifications (06/05/2026, 04/05/2026, ...)"],
+      "non_compliant_screens": {
+        "/today": "30 June 2026",
+        "/statements list": "1 May 2026 / 31 May 2026 / 30 June 2026",
+        "/alerts": "9 June 2026",
+        "/timeline": "19 June 2026 / 9 June 2026",
+        "/tools": "1 Jul 2026",
+        "/settings/plan": "Mon, 18 May",
+        "/statements/{id} header": "30 June 2026"
+      },
+      "root_cause": "src/lib/format.ts formatAUDate/formatAUWeekday + audit.tsx + Timeline.tsx + multiple screens still use long-form D Mon YYYY rather than the new src/lib/formatDate.ts formatDate (DD/MM/YYYY).",
+      "verdict": "FAIL"
+    },
+    "section_10b_price_checker_ux": {
+      "route_loads": true,
+      "form_visible": false,
+      "tool_gate_reason": "ToolGate variant='free-plan' — cathy@example.com is on Free plan, so the price-checker form is paywalled and the result tiles + prefill pills cannot be exercised at runtime.",
+      "code_review": "/app/frontend/app/tools/price-checker.tsx lines 149-192 correctly implement the three tiles (You're charged / Indicative median / Indicative range with $lower – $upper + 'DoH Oct 2025'), the per-unit hint (line 164/169 'per {result.unit}'), the stream badge (line 153-156, tinted via c.streams[result.stream]), and the prefill pill row (lines 125-143 with testID='price-prefill-row' + testID='price-prefill-{i}').",
+      "verdict": "UNVERIFIED at runtime, PASS on static code review"
+    },
+    "statement_lifecycle": {
+      "archive_button_visible": true,
+      "audit_log_button_visible": true,
+      "archive_confirm_modal": "Opens with preview payload — '1–30 June 2026', filename, Total $1775.65 AUD, 'missing period' warning, Cancel + 'Archive statement' actions",
+      "audit_log_page": "/statements/{id}/audit-log renders 'No events yet' empty state cleanly",
+      "archived_page": "/statements/archived renders empty state cleanly",
+      "archived_pill_on_statements": "testID statements-archived-link present (count=1)",
+      "verdict": "PASS"
+    },
+    "dark_mode": {
+      "appearance_picker_testIDs": "theme-system / theme-light / theme-dark all present and tappable",
+      "dark_dashboard": "PASS — dark surface, white text, teal WaylyHeader banner, plan badge legible",
+      "dark_statement_detail": "PASS — anomaly card, 'Potential impact' pill, period header all legible on dark",
+      "dark_settings_plan": "PASS — plan tiles legible, 'Trial ended · Mon, 18 May' visible (note: that date string is long-form — see §19 finding)",
+      "back_chip_persistence": "PASS on every sub-screen (Back + WaylyHeader banner)",
+      "verdict": "PASS"
+    }
+  },
+  "test_report_links": [
+    "/tmp/iter10_after_login.png",
+    "/tmp/iter10_pc_top.png",
+    "/tmp/iter10_pc_result.png",
+    "/tmp/iter10_stmt_full.png",
+    "/tmp/iter10_archive_modal.png",
+    "/tmp/iter10_audit_log.png",
+    "/tmp/iter10_dark_appearance.png",
+    "/tmp/iter10_today_dark.png",
+    "/tmp/iter10_stmt_dark.png",
+    "/tmp/iter10_plan_dark.png",
+    "/tmp/iter10_routesweep.json"
+  ],
+  "action_items": [
+    "§19 (HIGH): Migrate src/lib/format.ts formatAUDate + formatAUWeekday callers to src/lib/formatDate.ts formatDate (DD/MM/YYYY). The simplest patch is to rewrite formatAUDate in format.ts to delegate to formatDate (which already handles all the same inputs) — that single change will fix /today, /statements, /alerts, /timeline, /tools, /settings/plan, statement detail header, /amendments, /correspondence, /budget-alerts, /ratings, /at-hm, /referrals, /settings/profile, /family-wall and Timeline.tsx in one shot.",
+    "§19 (HIGH): audit.tsx lines 67-68 still build their own '28 Jun 2026' via toLocaleDateString — replace with `formatDate(t)` from src/lib/formatDate.",
+    "§19 (MEDIUM): /settings/plan 'Mon, 18 May' (formatAUWeekday) — either replace with DD/MM/YYYY via formatDate or, if the weekday-prefix is intentional for trial-end labels, document the exception in the §19 spec.",
+    "§6 verification (LOW priority for mobile, web/backend owns it): seed or capture a statement whose /api/statements/{id} response contains populated evidence[] arrays and an informational_notes[] array so we can runtime-verify the 'Why was this flagged?' bullet list, rule key tag, and the testID statement-info-notes section. Frontend code is correct; this is a data-availability check on the prod backend.",
+    "§10b verification: upgrade cathy@example.com to Solo or Family plan (or supply a second test account already on a paid plan) so the price-checker form, result tiles, and prefill pills can be exercised at runtime. Static code review confirms implementation matches spec.",
+    "Optional polish (NOT a regression): migrate shadow* style props → boxShadow and props.pointerEvents → style.pointerEvents (pre-existing warnings)."
+  ],
+  "critical_code_review_comments": [
+    "src/lib/format.ts:25 formatAUDate is the single biggest §19 leak. Recommend delegating to formatDate so all existing call sites get the DD/MM/YYYY contract without a sweeping import change.",
+    "src/components/Timeline.tsx imports formatAUDate from '../lib/format' (line 9) — same fix as above will pick it up.",
+    "audit.tsx:67-68 hand-rolls its own date format — should call formatDate / formatRelative from src/lib/formatDate.ts instead of toLocaleDateString.",
+    "tools/price-checker.tsx is correctly structured: caps note is non-alarming, only AIAccuracyBanner short form is shown on the gate, and all §10b tile/badge/prefill code is behind hasPaidAccess(user).",
+    "statements/[id].tsx:480 'Potential impact' pill is only rendered when stmt.anomaly_dollar_impact_total is truthy AND anomalies.length > 0 — confirmed showing $1,890.65 on the test statement.",
+    "statements/[id].tsx:505 evidence bullets and :523 informational_notes section are correctly guarded — they will render the moment the API returns those arrays.",
+    "StatementLifecycleModals.tsx ArchiveConfirmModal preview UX is excellent — period label, filename, total, missing-period warning, Cancel/Archive CTAs all rendered."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a — not tested this round (frontend-only per review request)",
+    "frontend": "Render sweep 27/27 (100%); §2 PASS; §6 PARTIAL (data-dependent fields didn't surface); §7 PASS; §10b code-review PASS, runtime UNVERIFIED due to paywall; §19 FAIL (only 1 of ~10 audited surfaces honour DD/MM/YYYY); Statement Lifecycle PASS; Dark mode PASS."
+  },
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login cathy@example.com / testpass123. The mobile app routes API calls to the production Wayly backend via the PROD override in src/lib/api.ts. To exercise §10b end-to-end you need a paid-plan account (Solo/Family) — cathy is currently Free. To verify §6 evidence + informational_notes you need a statement whose API response actually returns those arrays populated; the test statement 0cf2bdc7-eb28-438d-85c1-396c43af4229 has neither. The §19 DD/MM/YYYY contract is only honoured on /notifications today — almost every other date display still emits the long-form 'D Mon YYYY' from src/lib/format.ts formatAUDate. testIDs: statements-archived-link (pill on /statements), statement-info-notes (the §6 notes block, currently 0 on the test statement), price-prefill-row + price-prefill-{i} (§10b pills, blocked by paywall), theme-system/light/dark (/settings/appearance). The new helper at /app/frontend/src/lib/formatDate.ts is correct and ready — main agent just needs to swap call sites.",
+  "rca_of_issue": "§19 RCA — Two parallel date-format helpers exist: the legacy src/lib/format.ts (formatAUDate, formatAUWeekday — long-form 'D Mon YYYY' / 'Mon, D Mon') and the new src/lib/formatDate.ts (formatDate, formatDateTime, formatRelative — DD/MM/YYYY). The §19 delta only migrated a handful of screens to the new helper (notifications, archived, audit-log, documents, hospital, reports, family-wall primary path, plus admin screens). The bulk of legacy screens still import from format.ts and therefore emit long-form. Recommended fix: either (a) inside src/lib/format.ts rewrite formatAUDate to `return formatDate(input)` so every legacy caller picks up DD/MM/YYYY automatically, or (b) sweep all 'import { formatAUDate' lines across app/* and src/components/* and re-import formatDate. Option (a) is one-line, zero-risk."
+}

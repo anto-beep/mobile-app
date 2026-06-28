@@ -118,6 +118,7 @@ export default function Diagnostics() {
 }
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
@@ -127,6 +128,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.k}>{k}</Text>

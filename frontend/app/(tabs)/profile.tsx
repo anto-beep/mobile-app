@@ -226,6 +226,8 @@ export default function Profile() {
 }
 
 function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [emails, setEmails] = useState('');
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);

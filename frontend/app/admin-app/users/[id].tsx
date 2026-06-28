@@ -232,6 +232,7 @@ export default function AdminUserProfile() {
 }
 
 function Stat({ label, value, fullWidth }: { label: string; value: string; fullWidth?: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.statCell, fullWidth && { flexBasis: '100%' }]}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -241,6 +242,8 @@ function Stat({ label, value, fullWidth }: { label: string; value: string; fullW
 }
 
 function ActionRow({ icon, label, hint, onPress, loading, tone, last, testID }: { icon: any; label: string; hint?: string; onPress: () => void; loading?: boolean; tone?: 'warning' | 'danger'; last?: boolean; testID?: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const color = tone === 'danger' ? c.danger : tone === 'warning' ? c.severityAlert : c.brandPrimary;
   const iconBg = tone === 'danger' ? 'rgba(192, 57, 43, 0.12)' : tone === 'warning' ? 'rgba(183, 121, 31, 0.15)' : 'rgba(14, 77, 82, 0.08)';
   return (
@@ -256,6 +259,7 @@ function ActionRow({ icon, label, hint, onPress, loading, tone, last, testID }: 
 }
 
 function KvRow({ k, v, last }: { k: string; v: string; last?: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.kvRow, !last && styles.kvRowBorder]}>
       <Text style={styles.kvKey}>{k}</Text>
