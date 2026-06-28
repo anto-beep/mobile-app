@@ -11,6 +11,7 @@
 // author/time, the text, an inline photo (if any) and a play button for
 // audio (if any).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { formatDateTime } from '../src/lib/formatDate';
 import {
   View,
   Text,
@@ -492,9 +493,7 @@ function PostCard({ post, self }: { post: WallPost; self: boolean }) {
 
   const when = (() => {
     try {
-      return new Date(post.created_at).toLocaleString('en-AU', {
-        day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
-      });
+      return formatDateTime(post.created_at);
     } catch { return formatAUDate(post.created_at); }
   })();
 

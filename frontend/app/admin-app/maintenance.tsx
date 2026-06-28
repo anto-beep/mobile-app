@@ -1,6 +1,7 @@
 // Admin · Maintenance toggle (Milestone 3)
 // super_admin only. Biometric (Face ID / Touch ID) confirmation required to flip state.
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '../../src/lib/formatDate';
 import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, TextInput, Switch, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -143,7 +144,7 @@ export default function AdminMaintenance() {
                 <Text style={styles.statusOverline}>Current status</Text>
                 <Text style={styles.statusValue}>{enabled ? 'MAINTENANCE MODE ON' : 'LIVE'}</Text>
                 {updatedAt ? (
-                  <Text style={styles.statusMeta}>Last change · {new Date(updatedAt).toLocaleString()} · {updatedBy || '—'}</Text>
+                  <Text style={styles.statusMeta}>Last change · {formatDateTime(updatedAt)} · {updatedBy || '—'}</Text>
                 ) : (
                   <Text style={styles.statusMeta}>Never toggled.</Text>
                 )}
@@ -201,7 +202,7 @@ export default function AdminMaintenance() {
                   <View style={[styles.histDot, { backgroundColor: h.enabled ? c.danger : c.success }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.histTitle}>{h.enabled ? 'Enabled' : 'Disabled'}{h.message ? ` — “${h.message}”` : ''}</Text>
-                    <Text style={styles.histMeta}>{new Date(h.at).toLocaleString()} · {h.actor_email}</Text>
+                    <Text style={styles.histMeta}>{formatDateTime(h.at)} · {h.actor_email}</Text>
                   </View>
                 </View>
               ))}

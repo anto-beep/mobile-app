@@ -2,6 +2,7 @@
 // Captures summary, meds, allergies, emergency contact — saves via
 // upsert at POST /api/hospital/handover so the data is one tap to recall.
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '../src/lib/formatDate';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal,
@@ -212,7 +213,7 @@ export default function Hospital() {
               </>)}
             </TouchableOpacity>
             {data?.last_updated && (
-              <Text style={styles.lastSaved}>Last saved {new Date(data.last_updated).toLocaleString('en-AU')}</Text>
+              <Text style={styles.lastSaved}>Last saved {formatDateTime(data.last_updated)}</Text>
             )}
           </>
         )}

@@ -1,5 +1,6 @@
 // Correspondence — letters/emails from the provider, grouped by month.
 import React, { useMemo } from 'react';
+import { formatDate } from '../src/lib/formatDate';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +29,7 @@ const KIND_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 function monthLabel(iso?: string): string {
   if (!iso) return 'Earlier';
-  try { return new Date(iso).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }); }
+  try { return formatDate(iso); }
   catch { return 'Earlier'; }
 }
 

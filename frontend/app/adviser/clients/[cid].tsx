@@ -1,5 +1,6 @@
 // Adviser — client snapshot detail screen.
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDate } from '../../../src/lib/formatDate';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -124,7 +125,7 @@ export default function ClientSnapshot() {
       ) : snap.recent_statements.map((s) => (
         <View key={s.id} style={styles.stmtRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.stmtTitle}>{s.period_label || (s.uploaded_at ? new Date(s.uploaded_at).toLocaleDateString() : 'Statement')}</Text>
+            <Text style={styles.stmtTitle}>{s.period_label || (s.uploaded_at ? formatDate(s.uploaded_at) : 'Statement')}</Text>
             <Text style={styles.stmtSub}>Gross {formatAUD(s.gross || 0)} · {s.anomaly_count ?? 0} anomalies</Text>
           </View>
           <Ionicons name="chevron-forward" size={14} color={c.textMuted} />

@@ -1,5 +1,6 @@
 // Document Vault — list + upload + per-doc actions (rename, delete, decode-statement).
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDate } from '../../src/lib/formatDate';
 import {
   View,
   Text,
@@ -264,7 +265,7 @@ export default function Documents() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.docTitle} numberOfLines={1}>{d.title || d.filename}</Text>
                   <Text style={styles.docMeta}>
-                    {CATEGORY_LABEL[d.category] || d.category} · {fmtBytes(d.size_bytes)} · {new Date(d.uploaded_at).toLocaleDateString()}
+                    {CATEGORY_LABEL[d.category] || d.category} · {fmtBytes(d.size_bytes)} · {formatDate(d.uploaded_at)}
                   </Text>
                   {d.notes ? <Text style={styles.docNotes} numberOfLines={2}>{d.notes}</Text> : null}
                 </View>

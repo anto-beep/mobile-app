@@ -1,6 +1,7 @@
 // Per-statement audit-log timeline (vertical).
 // Web parity: /app/frontend/src/pages/statements/StatementAuditLog.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '../../../src/lib/formatDate';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,7 +108,7 @@ export default function StatementAuditLog() {
                   <View style={styles.body}>
                     <Text style={styles.label}>{meta.label}</Text>
                     <Text style={styles.when}>
-                      {new Date(e.event_at).toLocaleString()}  ·  {actorLabel(e.actor_kind)}
+                      {formatDateTime(e.event_at)}  ·  {actorLabel(e.actor_kind)}
                     </Text>
                     {!!(e.prior_state || e.new_state) && (
                       <Text style={styles.transition}>

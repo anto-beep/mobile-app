@@ -1,6 +1,7 @@
 // Visits / Calendar — Feature 4 (iter30). List + add/edit + delete.
 // Sectioned into Today / Upcoming / Past so the daily-use case is one glance.
 import React, { useCallback, useMemo, useState } from 'react';
+import { formatDate } from '../../src/lib/formatDate';
 import {
   View,
   Text,
@@ -53,7 +54,7 @@ const KIND_MAP = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<Vi
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
 function fmtTime(iso: string) { try { return new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }); } catch { return ''; } }
-function fmtDateLabel(iso: string) { try { return new Date(iso).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); } catch { return ''; } }
+function fmtDateLabel(iso: string) { try { return formatDate(iso); } catch { return ''; } }
 function fmtDuration(mins: number) {
   if (mins < 60) return `${mins} min`;
   const h = Math.floor(mins / 60); const m = mins % 60;

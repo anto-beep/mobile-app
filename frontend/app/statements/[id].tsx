@@ -469,6 +469,24 @@ export default function StatementDetail() {
           </View>
         )}
 
+        {/* Informational notes — calmer section, NOT alarms (Rule 12 AT-HM,
+            PPA, etc.). Surfaced beside anomalies so the user sees them but
+            doesn't read them as red flags. */}
+        {Array.isArray(stmt.informational_notes) && stmt.informational_notes.length > 0 && (
+          <View style={styles.section} testID="statement-info-notes">
+            <Text style={styles.sectionTitle}>Notes for your records</Text>
+            {stmt.informational_notes.map((n, i) => (
+              <View key={`info-${i}`} style={styles.infoNoteCard} testID={`info-note-${n.kind || i}`}>
+                <View style={styles.infoNoteHead}>
+                  <Ionicons name="information-circle-outline" size={16} color={c.brandPrimary} />
+                  <Text style={styles.infoNoteTitle}>{n.title || (n.kind ? n.kind.replace(/_/g, ' ') : 'For your records')}</Text>
+                </View>
+                {!!n.detail && <Text style={styles.infoNoteDetail}>{n.detail}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Line items</Text>
           {(stmt.line_items || []).map((li: any) => {
@@ -602,4 +620,9 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   streamChipText: { fontFamily: Fonts.bodySemi, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
   lineMetaText: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary },
   lineYouPaid: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textSecondary, marginTop: 6 },
+  // Informational notes — calmer card for non-anomaly notices.
+  infoNoteCard: { backgroundColor: c.surfaceTint, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 8 },
+  infoNoteHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  infoNoteTitle: { flex: 1, fontFamily: Fonts.bodySemi, fontSize: 13, color: c.textPrimary, textTransform: 'capitalize' },
+  infoNoteDetail: { fontFamily: Fonts.body, fontSize: 12, color: c.textSecondary, lineHeight: 18 },
 }); }

@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { formatDateTime } from '../../src/lib/formatDate';
 import {
   View,
   Text,
@@ -202,12 +203,7 @@ export default function Notifications() {
               </View>
               <Text style={styles.cardBody}>{n.body}</Text>
               <Text style={styles.cardTime}>
-                {new Date(n.created_at).toLocaleString('en-AU', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatDateTime(n.created_at)}
               </Text>
             </TouchableOpacity>
           ))

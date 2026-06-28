@@ -12,6 +12,7 @@
 // the single source of truth for layout + Wayly branding. Anything else
 // will drift like the Decoded PDF mismatch did.
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDate } from '../src/lib/formatDate';
 import {
   Alert,
   FlatList,
@@ -451,7 +452,7 @@ export default function Reports() {
     const meta = TYPES.find((t) => t.key === item.report_type);
     const sizeBytes = item.file_size_bytes ?? item.size_bytes ?? 0;
     const sizeKb = sizeBytes > 0 ? Math.max(1, Math.round(sizeBytes / 1024)) : null;
-    const generatedDate = item.generated_at ? new Date(item.generated_at).toLocaleDateString() : '';
+    const generatedDate = item.generated_at ? formatDate(item.generated_at) : '';
     const status = item.status || 'READY';
     const isReady = status === 'READY';
     return (

@@ -9,6 +9,7 @@
 // All copy below is verbatim from Appendix A of the web handoff. DO NOT
 // re-word — the parity tests check this text.
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../../src/lib/formatDate';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Fonts, Radius, Spacing } from '../lib/theme';
@@ -94,7 +95,7 @@ export function DupExactModal({
           <Text style={styles.metaTitle}>Already in your history</Text>
           {!!existing.existing_filename && <Text style={styles.metaRow}>{existing.existing_filename}</Text>}
           {!!existing.existing_period_label && <Text style={styles.metaRow}>{existing.existing_period_label}</Text>}
-          {!!existing.existing_uploaded_at && <Text style={styles.metaRow}>Uploaded {new Date(existing.existing_uploaded_at).toLocaleString()}</Text>}
+          {!!existing.existing_uploaded_at && <Text style={styles.metaRow}>Uploaded {formatDateTime(existing.existing_uploaded_at)}</Text>}
         </View>
       ) : null}
       <View style={styles.actions}>

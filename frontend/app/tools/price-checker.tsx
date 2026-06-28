@@ -30,6 +30,8 @@ export default function PriceChecker() {
   const [rate, setRate] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  // §10b — recent-line-items prefill pills.
+  const [prefills, setPrefills] = useState<Array<{ service: string; unit_price: number; period_label?: string; raw_service?: string; statement_id?: string }>>([]);
 
   useEffect(() => {
     api.get('/public/price-check/services').then((r) => {
@@ -37,6 +39,21 @@ export default function PriceChecker() {
       if (list.length) setServices(list);
     }).catch(() => {});
   }, []);
+
+  // Prefill pills — only renders when the user has decoded statements with
+  // mappable line items. 404 / 403 / empty → silently no pills.
+  useEffect(() => {
+    if (!hasPaidAccess(user)) return;
+    api.get('/statements/recent-line-items')
+      .then((r) => setPrefills((r.data?.items || []).slice(0, 12)))
+      .catch(() => setPrefills([]));
+  }, [user]);
+
+  const applyPrefill = (p: { service: string; unit_price: number }) => {
+    setService(p.service);
+    setRate(String(p.unit_price));
+    setResult(null);
+  };
 
   if (!hasPaidAccess(user)) {
     return (
@@ -102,8 +119,28 @@ export default function PriceChecker() {
             ))}
           </View>
 
-          <Text style={styles.label}>Rate ($/hr or $/unit)</Text>
+          <Text style={styles.label}>Rate ($/hr, $/trip or $/meal)</Text>
           <TextInput style={styles.input} keyboardType="numeric" value={rate} onChangeText={setRate} placeholder="65.00" placeholderTextColor={c.textMuted} testID="price-rate-input" />
+
+          {prefills.length > 0 && (
+            <View style={styles.prefillWrap} testID="price-prefill-row">
+              <Text style={styles.prefillHead}>From your recent statements</Text>
+              <Text style={styles.prefillSub}>Tap a line to copy its service and rate into the checker.</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prefillRow}>
+                {prefills.map((p, i) => (
+                  <TouchableOpacity
+                    key={`pf-${i}`}
+                    onPress={() => applyPrefill(p)}
+                    style={styles.prefillPill}
+                    testID={`price-prefill-${i}`}
+                  >
+                    <Text style={styles.prefillPillService} numberOfLines={1}>{p.service}</Text>
+                    <Text style={styles.prefillPillRate}>{formatAUD2(p.unit_price)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           <TouchableOpacity onPress={check} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="price-check-button">
             <Text style={styles.btnText}>{loading ? 'Checking…' : 'Check it'}</Text>
@@ -111,17 +148,33 @@ export default function PriceChecker() {
 
           {result && (
             <View style={[styles.result, { borderLeftColor: verdictColor, borderLeftWidth: 4 }]} testID="price-result">
-              <Text style={[styles.verdict, { color: verdictColor }]}>{result.verdict_label}</Text>
+              <View style={styles.verdictRow}>
+                <Text style={[styles.verdict, { color: verdictColor }]}>{result.verdict_label}</Text>
+                {!!result.stream && (
+                  <View style={[styles.streamBadge, { backgroundColor: (c.streams[result.stream] || c.brandPrimary) + '20' }]}>
+                    <Text style={[styles.streamBadgeText, { color: c.streams[result.stream] || c.brandPrimary }]}>{result.stream}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.assessment}>{result.assessment}</Text>
               <View style={styles.statRow}>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>You're charged</Text>
+                  <Text style={styles.statLabel}>You&apos;re charged</Text>
                   <Text style={styles.statValue}>{formatAUD2(result.charged)}</Text>
+                  {!!result.unit && <Text style={styles.statUnit}>per {result.unit}</Text>}
                 </View>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Network median</Text>
+                  <Text style={styles.statLabel}>Indicative median</Text>
                   <Text style={styles.statValue}>{formatAUD2(result.median)}</Text>
+                  {!!result.unit && <Text style={styles.statUnit}>per {result.unit}</Text>}
                 </View>
+                {(result.lower != null && result.upper != null) && (
+                  <View style={styles.stat}>
+                    <Text style={styles.statLabel}>Indicative range</Text>
+                    <Text style={styles.statValue}>{formatAUD2(result.lower)} – {formatAUD2(result.upper)}</Text>
+                    <Text style={styles.statUnit}>DoH Oct 2025</Text>
+                  </View>
+                )}
               </View>
               {result.caps_note ? (
                 <View style={styles.capsNote} testID="pc-result-caps-note">
@@ -161,7 +214,19 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   btn: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
   btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
   result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
-  verdict: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 8 },
+  verdictRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  verdict: { flex: 1, fontFamily: Fonts.heading, fontSize: 18 },
+  streamBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  streamBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' },
+  statUnit: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, marginTop: 1 },
+  // Prefill pills row
+  prefillWrap: { marginTop: 12, marginBottom: 6 },
+  prefillHead: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.textPrimary },
+  prefillSub: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  prefillRow: { gap: 8, paddingVertical: 8, paddingHorizontal: 1 },
+  prefillPill: { backgroundColor: c.surfaceTint, borderWidth: 1, borderColor: c.borderSubtle, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, gap: 2, minWidth: 120, maxWidth: 220 },
+  prefillPillService: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.textPrimary },
+  prefillPillRate: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
   assessment: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, lineHeight: 20, marginBottom: Spacing.md },
   statRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
   stat: { flex: 1, padding: Spacing.sm, backgroundColor: c.background, borderRadius: Radius.sm },

@@ -3,6 +3,7 @@
 //
 // Web parity: /app/frontend/src/pages/statements/ArchivedStatements.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDate } from '../../src/lib/formatDate';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -118,7 +119,7 @@ export default function ArchivedStatements() {
             </Text>
             <Text style={styles.rowMeta} numberOfLines={1}>
               {item.filename ? `${item.filename} · ` : ''}
-              {item.archived_at ? `archived ${new Date(item.archived_at).toLocaleDateString()}` : ''}
+              {item.archived_at ? `archived ${formatDate(item.archived_at)}` : ''}
             </Text>
           </View>
           {expired ? (

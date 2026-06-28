@@ -1,5 +1,6 @@
 // Admin user profile — suspend/reinstate, extend trial, add note, send password reset
 import React, { useCallback, useState } from 'react';
+import { formatDate, formatDateTime } from '../../../src/lib/formatDate';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Linking, TextInput, Modal, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -145,9 +146,9 @@ export default function AdminUserProfile() {
           <View style={styles.statGrid}>
             <Stat label="Plan" value={(u.plan || 'free')} />
             <Stat label="Role" value={u.role || '—'} />
-            <Stat label="Joined" value={u.created_at ? new Date(u.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'} />
+            <Stat label="Joined" value={u.created_at ? formatDate(u.created_at) : '—'} />
             <Stat label="Subscription" value={u.subscription_status || 'none'} />
-            {u.trial_ends_at ? <Stat label="Trial ends" value={new Date(u.trial_ends_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })} fullWidth /> : null}
+            {u.trial_ends_at ? <Stat label="Trial ends" value={formatDate(u.trial_ends_at)} fullWidth /> : null}
           </View>
 
           {/* Actions */}
@@ -156,7 +157,7 @@ export default function AdminUserProfile() {
               <Text style={styles.sectionLabel}>Actions</Text>
               <View style={styles.actionsCard}>
                 <ActionRow icon="mail-outline" label="Send password reset" hint={u.email} loading={busy === 'reset'} onPress={sendReset} testID="action-reset" />
-                <ActionRow icon="time-outline" label="Extend trial" hint={u.trial_ends_at ? `Current end: ${new Date(u.trial_ends_at).toLocaleDateString('en-AU')}` : 'Not on trial'} loading={busy === 'extend'} onPress={() => setShowExtend(true)} testID="action-extend" />
+                <ActionRow icon="time-outline" label="Extend trial" hint={u.trial_ends_at ? `Current end: ${formatDate(u.trial_ends_at)}` : 'Not on trial'} loading={busy === 'extend'} onPress={() => setShowExtend(true)} testID="action-extend" />
                 <ActionRow icon={u.suspended ? 'play-circle-outline' : 'pause-circle-outline'} label={u.suspended ? 'Reinstate user' : 'Suspend user'} hint={u.suspended ? 'They’ll regain access' : 'Locks sign-in for this account'} loading={busy === 'suspend'} onPress={toggleSuspend} tone={u.suspended ? undefined : 'warning'} last testID="action-suspend" />
               </View>
             </>
@@ -182,7 +183,7 @@ export default function AdminUserProfile() {
             ) : (p.notes || []).map((n: any) => (
               <View key={n.id} style={styles.noteItem}>
                 <Text style={styles.noteBody}>{n.body}</Text>
-                <Text style={styles.noteMeta}>{n.admin_email} · {new Date(n.created_at).toLocaleString('en-AU')}</Text>
+                <Text style={styles.noteMeta}>{n.admin_email} · {formatDateTime(n.created_at)}</Text>
               </View>
             ))}
           </View>

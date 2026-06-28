@@ -1,5 +1,6 @@
 // Ticket detail — thread, reply (with macro picker + internal note toggle), change status/priority/assign
 import React, { useCallback, useState } from 'react';
+import { formatDateTime } from '../../../src/lib/formatDate';
 import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -171,7 +172,7 @@ export default function TicketDetail() {
               {m.internal ? <Text style={styles.internalLabel}>INTERNAL NOTE</Text> : null}
               <Text style={[styles.bubbleText, m.from === 'admin' && !m.internal && { color: c.cream }]}>{m.body}</Text>
               <Text style={[styles.bubbleMeta, m.from === 'admin' && !m.internal && { color: 'rgba(250, 247, 242, 0.65)' }]}>
-                {m.from === 'admin' ? (m.admin_email || 'admin') : (ticket.user_name || 'user')} · {new Date(m.created_at).toLocaleString('en-AU')}
+                {m.from === 'admin' ? (m.admin_email || 'admin') : (ticket.user_name || 'user')} · {formatDateTime(m.created_at)}
               </Text>
             </View>
           ))}
