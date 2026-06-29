@@ -71,6 +71,7 @@ export default function More() {
       { label: 'Plan & Billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
       { label: 'Settings', icon: 'settings-outline', href: '/settings', testID: 'more-link-settings' },
       { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat', testID: 'more-link-help' },
+      { label: 'Support', icon: 'help-buoy-outline', href: '/support', testID: 'more-link-support' },
       { label: 'Search', icon: 'search-outline', href: '/search', testID: 'more-link-search' },
       // Diagnostics: admin-only — non-admin users should never see this row.
       ...(isAdmin ? [{ label: 'Diagnostics', icon: 'pulse-outline' as const, href: '/diagnostics', testID: 'more-link-diagnostics' }] : []),
