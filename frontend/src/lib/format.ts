@@ -3,6 +3,8 @@
 // AU-formatted dates ("3 Mar 2026"), relative dates ("3 days left"),
 // and a colour-swatch lookup that drives the participant switcher.
 
+import { formatDate } from './formatDate';
+
 export const COLOR_SWATCHES = [
   '#0E4D52',  // teal-600
   '#3D8488',  // teal-400
@@ -24,17 +26,20 @@ export function initialOf(s: string | null | undefined): string {
 
 export function formatAUDate(input: string | Date | null | undefined): string {
   if (!input) return '—';
-  const d = typeof input === 'string' ? new Date(input) : input;
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  // §19 — delegate to the canonical DD/MM/YYYY formatter so EVERY screen that
+  // calls formatAUDate (statements, audit, timeline, alerts, settings/plan,
+  // dashboard, etc.) renders dates in Australian DD/MM/YYYY form.
+  const out = formatDate(input);
+  return out || '—';
 }
 
-/** "Mon, 3 Mar" — used in trial-end labels. */
+/** "Mon, 03/03/2026" — used in trial-end labels. Day-of-week + DD/MM/YYYY. */
 export function formatAUWeekday(input: string | Date | null | undefined): string {
   if (!input) return '—';
   const d = typeof input === 'string' ? new Date(input) : input;
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  const wd = d.toLocaleDateString('en-AU', { weekday: 'short' });
+  return `${wd}, ${formatDate(d)}`;
 }
 
 export function daysUntil(input: string | Date | null | undefined): number | null {
