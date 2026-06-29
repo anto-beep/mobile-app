@@ -80,17 +80,22 @@ export default function SupportDetailRoute() {
     if (!note.trim()) { toast.warning('Add a note first.'); return; }
     setSending(true);
     try {
-      // Try messages endpoint first, then fall back to /notes.
-      try {
-        await api.post(`/support/tickets/${ticket.id}/messages`, { body: note.trim() });
-      } catch {
-        await api.post(`/support/tickets/${ticket.id}/notes`, { body: note.trim() });
-      }
+      // §11 Support Ticketing — user replies go to /messages only.
+      // (/notes is admin-only and rejects user tokens — never call it here.)
+      await api.post(`/support/tickets/${ticket.id}/messages`, { body: note.trim() });
       setNote('');
       await refresh();
-      toast.success('Note sent.');
-    } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't send the note"));
+      toast.success('Reply sent.');
+    } catch (e: any) {
+      // 404 → ticket not owned by user; 409 → ticket closed/resolved.
+      const status = e?.response?.status;
+      if (status === 404) {
+        toast.error("This ticket isn't available on your account.");
+      } else if (status === 409) {
+        toast.warning('This ticket is closed — start a new one if you need more help.');
+      } else {
+        toast.error(extractErrorMessage(e, "Couldn't send the reply"));
+      }
     } finally { setSending(false); }
   }, [ticket?.id, note, refresh]);
 
