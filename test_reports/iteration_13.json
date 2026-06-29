@@ -1,0 +1,39 @@
+{
+  "summary": "FINAL RETEST PASSES. Both destructive flows that were blocked in iteration_12 are now WORKING after the confirmDestructive helper + Expo restart picked up the new bundle. KEY CONTACTS REMOVE: tap kc-add → fill name=QA Remove → kc-save (POST /api/participants/{pid}/contacts → 200) → expand kc-row-{id} → tap kc-remove-{id} → helper logs 'Platform.OS=web' → window.confirm('Remove contact?\\n\\nRemove QA Remove from Dorothy's key contacts?') fires → DELETE /api/participants/{pid}/contacts/{id} → 200 → toast 'Contact removed.' → contact disappears from the modal list. CALENDAR REMOVE: add-appointment → fill title=QA Cal Remove, date=today, time=10:00, duration=30 → visit-save (POST /api/visits → 200) → visit card appears in the day panel (event-{id}) → tap card → composer opens in Edit mode → tap visit-remove → composer closes → after ~200ms window.confirm('Remove this appointment?\\n\\nIt will be archived and removed from the calendar.') fires → DELETE /api/visits/{id} → 200 → visit is gone from BOTH the day panel AND the Agenda view (which shows 'Nothing upcoming'). IMPORTANT INVESTIGATION NOTE for E1: on the first run after the new src/lib/confirmDestructive.ts file was created, Metro's bundle was stale (Platform.OS!=='web' branch was effectively unreachable because the new module wasn't yet loaded by the browser) and BOTH remove buttons appeared inert — no console log, no window.confirm, no network. After `sudo supervisorctl restart expo` (which forces a fresh Metro bundle), the helper started behaving exactly as designed. Cleanup completed: all 3 leftover QA Cal Remove visits from prior failed runs + 2 leftover QA Remove contacts were removed via the now-working UI flow; prod state is clean (Agenda shows 'Nothing upcoming' for today). Deprecated packages detected: none new. SafeAreaView issues detected: none new. Cosmetic web-only noise remains (RN-Web shadow*/pointerEvents deprecation warnings; Inter-VariableFont.ttf OTS decode failure; expo-notifications listener web warning) — none block the destructive flows.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All web preview screens", "issues": [
+        "Cosmetic only: Inter-VariableFont.ttf still fails to decode (OTS error). Falls back to system font.",
+        "Cosmetic only: RN-Web 'shadow*' and 'props.pointerEvents' deprecation warnings."
+      ]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/cal_after_remove.png"
+  ],
+  "action_items": [
+    "No code changes required for the destructive flows — both remove paths now work on web via confirmDestructive. The iteration_12 blocker is resolved.",
+    "(Cosmetic, optional) Migrate remaining RN shadow* style props to boxShadow, and props.pointerEvents to style.pointerEvents, to silence the RN-Web warnings.",
+    "(Cosmetic, optional) Replace Inter-VariableFont.ttf with a valid TTF/OTF that passes OTS, or remove it from the asset preload."
+  ],
+  "critical_code_review_comments": [
+    "confirmDestructive helper is correctly platform-branched (Platform.OS==='web' → window.confirm, native → Alert.alert) and try/catch'd so a blocked confirm calls onCancel instead of silently deleting. Good defensive choice for destructive UX.",
+    "calendar.tsx visit-remove uses setComposerOpen(false) + setTimeout(remove, 200) to let the composer animate out before the confirm fires — works, but a more declarative alternative is to await the modal close transition (or call confirm inside an onAnimationEnd) for stricter ordering.",
+    "Important Metro caveat for the next testing agent: after adding/editing a new file under src/lib, a `sudo supervisorctl restart expo` is sometimes required for the web bundle to actually include the new module. Fast Refresh alone did not pick it up in this session, which is what made the helper look broken on the first re-test pass."
+  ],
+  "updated_files": [
+    "/app/frontend/src/lib/confirmDestructive.ts (added then reverted a temporary debug console.log during investigation — final file is identical to the version E1 shipped)"
+  ],
+  "success_rate": {
+    "backend": "100% (POST/DELETE for /api/participants/{pid}/contacts and /api/visits all returned 200 across the run)",
+    "frontend": "100% — Key Contacts CREATE/REMOVE WORKS; Calendar CREATE/EDIT/REMOVE WORKS; Agenda reflects deletions"
+  },
+  "seed_data_creation": "Test data created and fully cleaned up via the UI: contacts (kQWL-JUYjmZbz5iz, ryDIi50ys6d1AuoV, DtHlaUcPEklZAqsr) — all DELETE 200; visits (629f2914…, 5de9cea1…, 9921f6e7…, 7b518b1b…) — all DELETE 200. Prod Agenda is empty for today after the run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login at http://localhost:3000/login with cathy@example.com / testpass123 ([data-testid='auth-email-input'], 'auth-password-input', 'auth-login-button'). Backend is overridden to https://aged-care-os.emergent.host by src/lib/api.ts (the warning in console is expected). Key testIDs: today-key-contacts, kc-add, kc-name, kc-type-toggle, kc-save, kc-row-{id} (tap to expand), kc-edit-{id}, kc-remove-{id}, kc-close; add-appointment, visit-title, visit-date wrapping a web <input data-testid='visit-date-input'>, visit-time wrapping 'visit-time-input', visit-duration, visit-provider, visit-location, visit-notes, visit-save, visit-remove, cal-today, cal-back, cal-next, cal-view-month/week/agenda, cell-{YYYY-MM-DD}, event-{id} (whole card -> opens edit), event-remove-{id} (small X on the card -> direct remove). For destructive flows on web, BOTH options work in Playwright: (a) install an init script that overrides window.confirm to return true and pushes to a tracking array; (b) attach page.on('dialog', d -> d.accept()) — but (a) is more reliable because it sidesteps the dialog-event async race. Calendar visit-remove path has a 200ms delay (composer animates out first) — wait at least 3000ms after the click. If a brand-new module under src/lib appears not to load, do `sudo supervisorctl restart expo` and wait ~10s for Metro to rebundle."
+}

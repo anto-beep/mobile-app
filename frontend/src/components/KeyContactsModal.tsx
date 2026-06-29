@@ -22,6 +22,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../lib/api';
+import { confirmDestructive } from '../lib/confirmDestructive';
 import { toast } from './Toast';
 import { Fonts, Radius, Spacing } from '../lib/theme';
 import type { ColorPalette } from '../lib/theme';
@@ -201,20 +202,18 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
   }, [form, editing, participantId, load]);
 
   const remove = useCallback((k: Contact) => {
-    Alert.alert(
-      'Remove contact?',
-      `Remove ${k.name || k.full_name || 'this contact'} from ${participantName}'s key contacts?`,
-      [
-        { text: 'Keep', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: async () => {
-          try {
-            await api.delete(`/participants/${participantId}/contacts/${k.id}`);
-            toast.success('Contact removed.');
-            await load();
-          } catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
-        } },
-      ],
-    );
+    confirmDestructive({
+      title: 'Remove contact?',
+      message: `Remove ${k.name || k.full_name || 'this contact'} from ${participantName}'s key contacts?`,
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/participants/${participantId}/contacts/${k.id}`);
+          toast.success('Contact removed.');
+          await load();
+        } catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
+      },
+    });
   }, [participantId, participantName, load]);
 
   // ─── render ───────────────────────────────────────────────────────────

@@ -25,6 +25,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
+import { confirmDestructive } from '../src/lib/confirmDestructive';
 import BackHeader from '../src/components/BackHeader';
 import { toast } from '../src/components/Toast';
 import { Fonts, Radius, Spacing } from '../src/lib/theme';
@@ -205,17 +206,15 @@ export default function CalendarRoute() {
   }, [title, kind, provider, location, notes, date, time, duration, editing, refresh]);
 
   const remove = useCallback((v: Visit) => {
-    Alert.alert(
-      'Remove this appointment?',
-      'It will be archived and removed from the calendar.',
-      [
-        { text: 'Keep', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: async () => {
-          try { await api.delete(`/visits/${v.id}`); toast.success('Appointment removed.'); await refresh(); }
-          catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
-        } },
-      ],
-    );
+    confirmDestructive({
+      title: 'Remove this appointment?',
+      message: 'It will be archived and removed from the calendar.',
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        try { await api.delete(`/visits/${v.id}`); toast.success('Appointment removed.'); await refresh(); }
+        catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
+      },
+    });
   }, [refresh]);
 
   // Helpers.
