@@ -106,7 +106,7 @@ export default function Today() {
   }, []);
   const router = useRouter();
   const { user } = useAuth();
-  const { participantSig, active: activeParticipant } = useParticipants();
+  const { participantSig, active: activeParticipant, summary: accountSummary } = useParticipants();
   const [data, setData] = useState<Derived | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -304,7 +304,17 @@ export default function Today() {
       >
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.overline}>Wellbeing summary</Text>
+            <View style={styles.overlineRow}>
+              <Text style={styles.overline}>Wellbeing summary</Text>
+              {accountSummary?.base_plan && accountSummary.base_plan !== 'FREE' && (
+                <View style={styles.planBadge} testID="today-plan-badge">
+                  <Text style={styles.planBadgeText}>
+                    {accountSummary.base_plan} PLAN
+                    {accountSummary.trial_ends_at ? ' · TRIAL' : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.greeting} testID="today-greeting">
               {(() => {
                 // The ACTIVE-PARTICIPANT name from ParticipantsContext wins
@@ -367,16 +377,35 @@ export default function Today() {
             </View>
 
             {!!activeParticipant && (
-              <TouchableOpacity
-                onPress={() => setContactsOpen(true)}
-                style={styles.kcButton}
-                testID="today-key-contacts"
-                accessibilityRole="button"
-              >
-                <Ionicons name="people-outline" size={16} color={c.brandPrimary} />
-                <Text style={styles.kcButtonText}>Key Contacts</Text>
-                <Ionicons name="chevron-forward" size={16} color={c.brandPrimary} />
-              </TouchableOpacity>
+              <View style={styles.ctaRow}>
+                <TouchableOpacity
+                  onPress={() => router.push('/family-wall' as any)}
+                  style={styles.ctaBtn}
+                  testID="today-share-family"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="people-circle-outline" size={16} color={c.brandPrimary} />
+                  <Text style={styles.ctaBtnText} numberOfLines={1}>Share with family</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setUploadOpen(true)}
+                  style={styles.ctaBtn}
+                  testID="today-upload-statement"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="cloud-upload-outline" size={16} color={c.brandPrimary} />
+                  <Text style={styles.ctaBtnText} numberOfLines={1}>Upload a statement</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setContactsOpen(true)}
+                  style={styles.ctaBtn}
+                  testID="today-key-contacts"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="people-outline" size={16} color={c.brandPrimary} />
+                  <Text style={styles.ctaBtnText} numberOfLines={1}>Key Contacts</Text>
+                </TouchableOpacity>
+              </View>
             )}
 
             <View style={styles.statGrid}>
@@ -613,8 +642,12 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   heroAmount: { fontFamily: Fonts.heading, fontSize: 44, color: c.brandPrimary, letterSpacing: -1 },
   heroSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   heroSubBold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
-  kcButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.md, paddingVertical: 12, borderRadius: 9999, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, alignSelf: 'flex-start', marginBottom: Spacing.md, minHeight: 44 },
-  kcButtonText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, flex: 1 },
+  overlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  planBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: `${c.brandPrimary}14`, borderWidth: 1, borderColor: `${c.brandPrimary}40` },
+  planBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 10, color: c.brandPrimary, letterSpacing: 0.6 },
+  ctaRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md, flexWrap: 'wrap' },
+  ctaBtn: { flex: 1, minWidth: 110, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 12, borderRadius: 9999, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, minHeight: 44 },
+  ctaBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary, flexShrink: 1 },
   progressTrack: { marginTop: Spacing.md, height: 6, backgroundColor: 'rgba(14, 77, 82, 0.08)', borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: c.brandSecondary },
   progressLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginTop: 6 },
