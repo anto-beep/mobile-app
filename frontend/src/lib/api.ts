@@ -146,7 +146,15 @@ api.interceptors.response.use(
 export const extractErrorMessage = (err: any, fallback = 'Something went wrong'): string => {
   const detail = err?.response?.data?.detail;
   if (typeof detail === 'string') return detail;
-  if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
+  if (Array.isArray(detail) && detail.length > 0) {
+    // FastAPI validation errors: surface the first missing/invalid field
+    // ("body.name → Field required") so users know what to fix.
+    const first = detail[0];
+    const field = Array.isArray(first?.loc) ? first.loc.filter((p: any) => p !== 'body').join('.') : '';
+    const msg = first?.msg || '';
+    if (field && msg) return `${field}: ${msg}`;
+    if (msg) return msg;
+  }
   if (typeof detail === 'object' && detail?.message) return String(detail.message);
   return err?.message || fallback;
 };

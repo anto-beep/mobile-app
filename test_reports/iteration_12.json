@@ -1,0 +1,61 @@
+{
+  "summary": "Frontend retest against live prod backend (https://aged-care-os.emergent.host) as cathy@example.com. KEY CONTACTS CREATE: FIXED — POST /api/participants/{pid}/contacts now returns 200 with new payload {name, kind, phone, is_primary:false}; 'Contact added.' toast shows; contact appears under GP group; expand row reveals phone (tappable), Edit and Remove. CALENDAR CREATE: FIXED — testID='visit-date' wrapper and inner data-testid='visit-date-input' / 'visit-time-input' are now reaching the DOM (verified by querySelector); filling them via Playwright works; POST /api/visits returns 200; 'Appointment added' toast shows; visit appears in day panel and in agenda view; tapping the event opens the composer in Edit Appointment mode with visit-remove visible. extractErrorMessage 422 surfacing: not specifically triggered (no 422 came back this run since payload is now correct). CRITICAL REMAINING ISSUE: Alert.alert() is a no-op on react-native-web in this app. Clicking kc-remove-{id} or visit-remove fires Alert.alert with Keep/Remove buttons, but no native window.confirm dialog is shown, no 'dialog' event fires in Playwright, and NO DELETE request is sent. The Remove button is therefore unreachable from the web UI — affecting BOTH KeyContactsModal.remove (KeyContactsModal.tsx:203-218) and calendar visit-remove (calendar.tsx:207-219). Backend DELETE endpoints themselves work perfectly: confirmed by direct fetch — DELETE /api/visits/{id} and DELETE /api/participants/{pid}/contacts/{id} both returned 200. Test data cleanup: 3 QA visits + 1 QA contact deleted via direct API call. Deprecated packages detected: none new. SafeAreaView issues detected: none. Other warnings (non-blocking): RN 'shadow*'/'pointerEvents' deprecation; Inter-VariableFont.ttf OTS decode failure on web; expo-notifications listener warning.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "KeyContactsModal.tsx + calendar.tsx — Alert.alert delete confirm",
+        "issue": "On react-native-web, `Alert.alert('Remove …', message, [Keep, Remove])` renders NOTHING — no native confirm, no in-app modal — so the destructive callback is never invoked. Result: clicking kc-remove-{id} or visit-remove on web does not delete (no DELETE network request is sent, no toast, no UI change). Backend DELETE works (verified via direct fetch, returns 200). Fix options: (a) use a platform-aware confirm — `Platform.OS === 'web' ? window.confirm(message) : Alert.alert(...)`; (b) replace with a cross-platform custom modal (matches the rest of the app's design). Reference: src/components/KeyContactsModal.tsx:203-218; app/calendar.tsx:207-219.",
+        "testID": "kc-remove-{id} / visit-remove",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Delete contact / delete visit on web",
+        "issue": "User cannot delete a Key Contact or a Calendar visit from the mobile web preview because the Alert.alert confirm step is a no-op. Backend DELETE endpoints respond 200; the bug is purely a web platform polyfill gap.",
+        "affected_testIDs": ["kc-remove-{id}", "visit-remove"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "All web preview screens",
+        "issues": [
+          "Inter-VariableFont.ttf still fails to decode (OTS parsing error: invalid sfntVersion). Cosmetic; falls back to system font.",
+          "Persistent 'shadow*' and 'props.pointerEvents' deprecation warnings in RN-Web."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "Alert (react-native)",
+        "issue": "Alert.alert is not implemented on react-native-web — the 2-button (Keep/Remove) confirmation never appears, so any destructive flow that depends on it is broken on web. Affects KeyContactsModal.tsx:203 and calendar.tsx:207. Use Platform.OS==='web' ? window.confirm(...) : Alert.alert(...) or a cross-platform custom modal."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/tmp/kc_after.png",
+    "/tmp/calendar_after.png",
+    "/tmp/cal_composer.png"
+  ],
+  "action_items": [
+    "Replace Alert.alert(...) confirm step with a cross-platform confirm — easiest fix: `const ok = Platform.OS === 'web' ? window.confirm('Remove contact?') : await new Promise(r => Alert.alert('Remove contact?', msg, [{text:'Keep', onPress:()=>r(false)}, {text:'Remove', style:'destructive', onPress:()=>r(true)}]));` then `if (ok) await api.delete(...)`. Apply in BOTH KeyContactsModal.tsx (remove fn, line ~203) AND calendar.tsx (remove fn, line ~207). This unblocks the full CRUD flow on web.",
+    "After the Alert.alert fix lands, re-run the delete leg of both flows (kc-remove-{id} → confirm → DELETE 200 → toast; visit-remove → confirm → DELETE 200 → toast).",
+    "Optional: address RN-Web deprecation warnings (shadow* / pointerEvents) and the Inter font decode failure for a cleaner console."
+  ],
+  "critical_code_review_comments": [
+    "Alert.alert is used for destructive confirms in at least KeyContactsModal.tsx and calendar.tsx — neither works on web. Audit the rest of the codebase (grep for `Alert.alert`) and migrate all destructive confirms to a cross-platform path.",
+    "calendar.tsx web-only date/time `<input>` uses inline style strings inside React.createElement — fine functionally, but consider extracting to a tiny WebDateInput component so testIDs and styling are co-located and easier to maintain.",
+    "KeyContactsModal.tsx Contact type union has both `name`/`full_name` and `kind`/`contact_type` to support legacy responses — leave a TODO to remove legacy alias support once the prod backend is confirmed to only return the new shape."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (DELETE/POST/GET for contacts and visits all returned 200; verified via Playwright network capture and direct fetch cleanup)",
+    "frontend": "75% — Key Contacts create+expand WORKS; Calendar create+agenda+open-edit WORKS; delete on BOTH modules is blocked on web by Alert.alert being a no-op"
+  },
+  "seed_data_creation": "Test data created during the run was cleaned up via direct DELETE calls: visits f7c10ffd…, 64008ab9…, 286eb166… and contact 7DANmS0t7C8wYe87 (QA Test Contact) — all returned 200. Prod is clean except the 1 pre-existing support ticket from iteration_11 (xaYqqLWkQqPpsDMd — backend has no DELETE for support).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login at http://localhost:3000/login → [data-testid='auth-email-input'] / [data-testid='auth-password-input'] / [data-testid='auth-login-button']. EXPO_PUBLIC_BACKEND_URL is overridden to https://aged-care-os.emergent.host by src/lib/api.ts. After Expo restart the calendar testIDs DO survive: `[data-testid='visit-date-input']` and `[data-testid='visit-time-input']` are usable via .fill(). If .fill() ever flakes, the JS native-setter pattern is reliable: `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input, val); input.dispatchEvent(new Event('input',{bubbles:true}))`. For DELETE flows, the Alert.alert confirm DOES NOT FIRE on web — page.on('dialog', …) never triggers — so the delete leg is blocked until the main agent migrates to a cross-platform confirm. Once that lands, retest: kc-remove-{id} and visit-remove should both send DELETE and show toasts.",
+  "rca_of_issue": "Alert.alert no-op on react-native-web: react-native-web's Alert export is a stub that does not render the buttons array. When KeyContactsModal.remove or calendar.remove call `Alert.alert('Remove …', msg, [{text:'Keep',style:'cancel'}, {text:'Remove',style:'destructive',onPress: async () => { await api.delete(...) }}])`, nothing visible happens on web and the destructive onPress is never invoked. Reproduction: log in as cathy@example.com → /today → Key Contacts → add a contact → expand → tap Remove → nothing happens, no DELETE request fires. Or: /calendar → Add Appointment → save → tap the event card → tap Remove in composer → nothing happens. Verified the backend DELETE works by issuing the requests directly via fetch from the page (all returned 200). Mitigation: branch on Platform.OS — on web, use `window.confirm(msg)` (returns boolean); on native, keep Alert.alert. Better long-term: a single cross-platform `useConfirm()` hook that renders a styled modal."
+}

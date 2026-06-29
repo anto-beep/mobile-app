@@ -31,10 +31,12 @@ import { initialOf } from '../lib/format';
 
 export type Contact = {
   id: string;
-  full_name?: string;
   name?: string;
-  contact_type?: string;
-  role?: string;
+  full_name?: string; // legacy alias used by some web responses
+  kind?: string;
+  contact_type?: string; // legacy alias
+  role_or_title?: string;
+  role?: string; // legacy alias
   organisation?: string;
   organization?: string;
   phone?: string;
@@ -64,9 +66,9 @@ const TYPE_LABEL: Record<string, string> = Object.fromEntries(CONTACT_TYPES.map(
 const GROUP_ORDER: string[] = ['emergency', 'care_manager', 'gp', 'specialist', 'allied_health', 'pharmacist', 'provider_coordinator', 'advocate', 'family', 'friend', 'neighbour', 'other'];
 
 type FormState = {
-  full_name: string;
-  contact_type: string;
-  role: string;
+  name: string;
+  kind: string;
+  role_or_title: string;
   organisation: string;
   phone: string;
   email: string;
@@ -76,7 +78,7 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
-  full_name: '', contact_type: 'gp', role: '', organisation: '',
+  name: '', kind: 'gp', role_or_title: '', organisation: '',
   phone: '', email: '', address: '', notes: '', is_primary: false,
 };
 
@@ -107,6 +109,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
     setLoading(true);
     try {
       const { data } = await api.get(`/participants/${participantId}/contacts`);
+      // Prod returns { contacts: [] }; some legacy endpoints return [].
       const arr: Contact[] = Array.isArray(data) ? data : (data?.contacts || []);
       setContacts(arr);
     } catch (e) {
@@ -119,20 +122,20 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
     if (visible) load();
   }, [visible, load]);
 
-  // Group by contact_type using GROUP_ORDER, then alphabetise within group.
+  // Group by `kind` (the prod field) using GROUP_ORDER, then alphabetise within group.
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filter = (k: Contact) => {
       if (!q) return true;
-      const hay = [k.full_name, k.name, k.role, k.organisation, k.organization, k.contact_type, k.phone, k.email].filter(Boolean).join(' ').toLowerCase();
+      const hay = [k.name, k.full_name, k.role_or_title, k.role, k.organisation, k.organization, k.kind, k.contact_type, k.phone, k.email].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     };
     const map: Record<string, Contact[]> = {};
     for (const k of contacts.filter(filter)) {
-      const key = (k.contact_type || 'other').toLowerCase();
+      const key = ((k.kind || k.contact_type) || 'other').toLowerCase();
       (map[key] = map[key] || []).push(k);
     }
-    Object.values(map).forEach((list) => list.sort((a, b) => (a.full_name || a.name || '').localeCompare(b.full_name || b.name || '')));
+    Object.values(map).forEach((list) => list.sort((a, b) => (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '')));
     const ordered: { type: string; label: string; items: Contact[] }[] = [];
     for (const key of GROUP_ORDER) {
       if (map[key]?.length) ordered.push({ type: key, label: (TYPE_LABEL[key] || key).toUpperCase(), items: map[key] });
@@ -153,9 +156,9 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
   const openEdit = useCallback((k: Contact) => {
     setEditing(k);
     setForm({
-      full_name: k.full_name || k.name || '',
-      contact_type: k.contact_type || 'other',
-      role: k.role || '',
+      name: k.name || k.full_name || '',
+      kind: k.kind || k.contact_type || 'other',
+      role_or_title: k.role_or_title || k.role || '',
       organisation: k.organisation || k.organization || '',
       phone: k.phone || '',
       email: k.email || '',
@@ -167,20 +170,22 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
   }, []);
 
   const submit = useCallback(async () => {
-    if (!form.full_name.trim()) { toast.warning('Add a name first.'); return; }
+    if (!form.name.trim()) { toast.warning('Add a name first.'); return; }
     setBusy(true);
     try {
+      // Prod contract: name, kind, role_or_title (omit empty optionals so
+      // server-side defaults stay clean and 422s don't reject blank strings).
       const body: any = {
-        full_name: form.full_name.trim(),
-        contact_type: form.contact_type,
-        role: form.role.trim() || null,
-        organisation: form.organisation.trim() || null,
-        phone: form.phone.trim() || null,
-        email: form.email.trim() || null,
-        address: form.address.trim() || null,
-        notes: form.notes.trim() || null,
+        name: form.name.trim(),
+        kind: form.kind,
         is_primary: form.is_primary,
       };
+      if (form.role_or_title.trim()) body.role_or_title = form.role_or_title.trim();
+      if (form.organisation.trim()) body.organisation = form.organisation.trim();
+      if (form.phone.trim())        body.phone = form.phone.trim();
+      if (form.email.trim())        body.email = form.email.trim();
+      if (form.address.trim())      body.address = form.address.trim();
+      if (form.notes.trim())        body.notes = form.notes.trim();
       if (editing?.id) {
         await api.patch(`/participants/${participantId}/contacts/${editing.id}`, body);
         toast.success('Contact updated.');
@@ -198,7 +203,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
   const remove = useCallback((k: Contact) => {
     Alert.alert(
       'Remove contact?',
-      `Remove ${k.full_name || k.name || 'this contact'} from ${participantName}'s key contacts?`,
+      `Remove ${k.name || k.full_name || 'this contact'} from ${participantName}'s key contacts?`,
       [
         { text: 'Keep', style: 'cancel' },
         { text: 'Remove', style: 'destructive', onPress: async () => {
@@ -264,8 +269,8 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
                 <Text style={styles.groupLbl}>{g.label}</Text>
                 {g.items.map((k) => {
                   const open = expanded === k.id;
-                  const name = k.full_name || k.name || 'Unnamed contact';
-                  const sub = [k.role, k.organisation || k.organization].filter(Boolean).join(' · ') || TYPE_LABEL[k.contact_type || ''] || '';
+                  const name = k.name || k.full_name || 'Unnamed contact';
+                  const sub = [k.role_or_title || k.role, k.organisation || k.organization].filter(Boolean).join(' · ') || TYPE_LABEL[k.kind || k.contact_type || ''] || '';
                   return (
                     <View key={k.id} style={styles.contactCard}>
                       <TouchableOpacity
@@ -343,11 +348,11 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
           </View>
 
           <Field label="Full Name">
-            <TextInput style={styles.input} value={form.full_name} onChangeText={(v) => setForm((s) => ({ ...s, full_name: v }))} placeholder="Their full name" placeholderTextColor={c.textMuted} testID="kc-name" />
+            <TextInput style={styles.input} value={form.name} onChangeText={(v) => setForm((s) => ({ ...s, name: v }))} placeholder="Their full name" placeholderTextColor={c.textMuted} testID="kc-name" />
           </Field>
           <Field label="Contact Type">
             <TouchableOpacity onPress={() => setTypeMenuOpen((v) => !v)} style={styles.selectRow} testID="kc-type-toggle">
-              <Text style={styles.selectText}>{TYPE_LABEL[form.contact_type] || form.contact_type}</Text>
+              <Text style={styles.selectText}>{TYPE_LABEL[form.kind] || form.kind}</Text>
               <Ionicons name={typeMenuOpen ? 'chevron-up' : 'chevron-down'} size={16} color={c.textMuted} />
             </TouchableOpacity>
             {typeMenuOpen && (
@@ -355,11 +360,11 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
                 {CONTACT_TYPES.map((t) => (
                   <TouchableOpacity
                     key={t.v}
-                    onPress={() => { setForm((s) => ({ ...s, contact_type: t.v })); setTypeMenuOpen(false); }}
+                    onPress={() => { setForm((s) => ({ ...s, kind: t.v })); setTypeMenuOpen(false); }}
                     style={styles.selectMenuRow}
                   >
                     <Text style={styles.selectMenuText}>{t.l}</Text>
-                    {form.contact_type === t.v && <Ionicons name="checkmark" size={16} color={c.brandPrimary} />}
+                    {form.kind === t.v && <Ionicons name="checkmark" size={16} color={c.brandPrimary} />}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -368,7 +373,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
           <View style={styles.row2}>
             <View style={{ flex: 1 }}>
               <Field label="Role or Title">
-                <TextInput style={styles.input} value={form.role} onChangeText={(v) => setForm((s) => ({ ...s, role: v }))} placeholder="e.g. Cardiologist, Daughter" placeholderTextColor={c.textMuted} testID="kc-role" />
+                <TextInput style={styles.input} value={form.role_or_title} onChangeText={(v) => setForm((s) => ({ ...s, role_or_title: v }))} placeholder="e.g. Cardiologist, Daughter" placeholderTextColor={c.textMuted} testID="kc-role" />
               </Field>
             </View>
             <View style={{ flex: 1 }}>

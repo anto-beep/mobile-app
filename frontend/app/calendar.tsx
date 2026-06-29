@@ -386,30 +386,38 @@ export default function CalendarRoute() {
           <View style={styles.row2}>
             <View style={{ flex: 1 }}>
               <Field label="Date">
-                {Platform.OS === 'web' ? (
-                  React.createElement('input', {
-                    type: 'date',
-                    value: date,
-                    onChange: (e: any) => setDate(e?.target?.value || ''),
-                    style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
-                  })
-                ) : (
-                  <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} testID="visit-date" autoCapitalize="none" />
-                )}
+                <View testID="visit-date">
+                  {Platform.OS === 'web' ? (
+                    React.createElement('input', {
+                      type: 'date',
+                      value: date,
+                      onChange: (e: any) => setDate(e?.target?.value || ''),
+                      'data-testid': 'visit-date-input',
+                      name: 'visit_date',
+                      style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+                    })
+                  ) : (
+                    <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} autoCapitalize="none" />
+                  )}
+                </View>
               </Field>
             </View>
             <View style={{ flex: 1 }}>
               <Field label="Time">
-                {Platform.OS === 'web' ? (
-                  React.createElement('input', {
-                    type: 'time',
-                    value: time,
-                    onChange: (e: any) => setTime(e?.target?.value || ''),
-                    style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
-                  })
-                ) : (
-                  <TextInput style={styles.input} value={time} onChangeText={setTime} placeholder="HH:MM" placeholderTextColor={c.textMuted} testID="visit-time" autoCapitalize="none" />
-                )}
+                <View testID="visit-time">
+                  {Platform.OS === 'web' ? (
+                    React.createElement('input', {
+                      type: 'time',
+                      value: time,
+                      onChange: (e: any) => setTime(e?.target?.value || ''),
+                      'data-testid': 'visit-time-input',
+                      name: 'visit_time',
+                      style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+                    })
+                  ) : (
+                    <TextInput style={styles.input} value={time} onChangeText={setTime} placeholder="HH:MM" placeholderTextColor={c.textMuted} autoCapitalize="none" />
+                  )}
+                </View>
               </Field>
             </View>
             <View style={{ flex: 1 }}>
