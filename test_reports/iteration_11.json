@@ -1,0 +1,65 @@
+{
+  "summary": "Frontend validation against live prod backend (https://aged-care-os.emergent.host) using cathy@example.com. Login OK. Support module (list → composer → POST /api/support/tickets → detail page with WAY- ref, 'Received' pill, help text 'We have your ticket and it is in the queue.', back chip returns to list with new ticket) WORKS end-to-end. Provider Switch wizard renders eyebrow + hero + 5 step cards; tapping Step 4 'Giving Notice' opens the letter-drafting panel with last-day input, reason input, Copy/.txt/PDF buttons; the generated draft letter reflects the Step-1 'Current provider' field (BlueBerry Care QA appeared in body). Key Contacts modal opens from /today with correct title/subtitle/search/+Add CTA. Calendar renders CALENDAR eyebrow + 'Appointments and Home Visits' hero + Today/Back/Next/Add toolbar; '+ Add Appointment' composer opens and title accepts text. TWO ISSUES FOUND — see backend_issues / frontend_issues below. Deprecated packages detected: none new. SafeAreaView issues detected: none.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/participants/{pid}/contacts",
+        "issue": "Returns 422 when KeyContactsModal submits a contact with full_name='Test Contact', contact_type='gp', phone='0412345678', and null-valued optional fields. After save, the contact does NOT appear in the list (modal silently fails — toast.error is shown but the network call rejects). Likely the backend expects 'name' (not 'full_name'), or it rejects null on certain fields. Tested at 14:00 UTC on live prod backend. Reference: src/components/KeyContactsModal.tsx:173-189.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "calendar.tsx visit-date input",
+        "issue": "On web preview the date field renders as a native HTML5 date input (<input type=\"date\">) showing 'mm/dd/yyyy', but the placeholder says 'YYYY-MM-DD'. The Playwright fill against [data-testid='visit-date'] with a YYYY-MM-DD value timed out — either the testID is being dropped by the platform-specific date-input swap, or the input's value can only be set via .input-event in browser. Recommend confirming the testID is preserved on the rendered <input type=\"date\"> element AND using a platform-aware default value (Date.toISOString slice) so users on web don't have to type YYYY-MM-DD manually.",
+        "testID": "visit-date",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Key Contacts → Add Contact → Save",
+        "issue": "POST returns 422 against live prod; contact not created, no clear inline error surfaced to user (only Toast). See backend_issues entry above.",
+        "affected_testIDs": ["kc-save", "kc-name", "kc-phone", "kc-type-toggle"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "All authenticated screens (web preview)",
+        "issues": [
+          "Inter-VariableFont.ttf fails to decode (multiple OTS parsing errors in console). Cosmetic on web but text falls back to system font.",
+          "Numerous React Native deprecation warnings: 'shadow*' props deprecated (use boxShadow), 'props.pointerEvents' deprecated (use style.pointerEvents). Non-blocking but worth a sweep."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/final.png",
+    "/root/.emergent/automation_output/20260629_125358/console_20260629_125358.log"
+  ],
+  "action_items": [
+    "Investigate POST /api/participants/{pid}/contacts 422 — payload from KeyContactsModal sends full_name/contact_type/phone/etc with nulls; align with backend contract (likely needs 'name' or non-null phone) and surface a friendlier inline error.",
+    "Verify the visit-date testID survives the web-platform date-input swap in calendar.tsx — and consider pre-filling the date field with today's ISO date so the YYYY-MM-DD placeholder isn't misleading on web (HTML5 <input type=\"date\"> displays per browser locale).",
+    "Re-run a full calendar create→agenda→delete pass once the visit-date selector is confirmed.",
+    "Optional cleanup on prod: the test left ONE support ticket xaYqqLWkQqPpsDMd (WAY-XAYQ) under cathy@example.com — backend doesn't expose a delete-from-UI action, leave for manual cleanup."
+  ],
+  "critical_code_review_comments": [
+    "KeyContactsModal.submit() does not log/show the 422 detail body — extractErrorMessage falls back to a generic toast. Surface the FastAPI 422 'detail[0].msg' so the user (and tests) can see which field is wrong.",
+    "support/[id].tsx tries POST /messages then falls back to /notes — fine, but both endpoints could 404 silently. Consider probing once at mount and disabling the composer if neither exists, to avoid a confusing 'Couldn't send the note' for users on older backends.",
+    "calendar.tsx uses YYYY-MM-DD placeholder text but renders <input type=date> on web (locale-dependent display). Either keep it as a manual TextInput on web or set the value to today's ISO date by default."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only run; live prod)",
+    "frontend": "75% (Support + Provider-Switch fully passing; Key Contacts blocked by 422; Calendar partially verified — UI renders, composer opens, title accepts input, date fill blocked)"
+  },
+  "seed_data_creation": "Left 1 prod support ticket id=xaYqqLWkQqPpsDMd (text 'QA test ticket — please ignore.') under cathy@example.com — backend has no UI delete for support tickets, so it remains. No KC contacts created (422). No calendar visits created (did not complete).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login via [data-testid='auth-email-input']/[data-testid='auth-password-input']/[data-testid='auth-login-button']. EXPO_PUBLIC_BACKEND_URL is a preview-pod URL but src/lib/api.ts overrides to https://aged-care-os.emergent.host — confirmed by console warning. Support flow is solid. For KC, the 422 response is the blocker; once fixed, re-run create → expand row → remove. For Calendar, the visit-date is an HTML5 date input on web — try `await page.evaluate('document.querySelector(\\\"[data-testid=visit-date]\\\").value = \\\"YYYY-MM-DD\\\"')` plus a dispatchEvent('input') if .fill() times out, OR confirm testID is intact via DOM inspection.",
+  "rca_of_issue": "KeyContactsModal POST 422: KeyContactsModal.tsx:173 builds body { full_name, contact_type, role: null|string, organisation: null|string, phone: null|string, email: null|string, address: null|string, notes: null|string, is_primary: false }. Live prod backend rejected this with HTTP 422. Web app at aged-care-os.preview.emergentagent.com presumably sends a slightly different shape (likely 'name' instead of 'full_name', or omits null fields entirely). Reproduction: log in as cathy@example.com → /today → Key Contacts → + Add Contact → Name='X', Phone='0412345678' (GP default) → Save → 422 in network tab. Mitigation: change body to omit null keys (only include the keys with truthy values) and rename 'full_name' → 'name' to match web parity, or align backend to accept both. Re-test after main agent's fix."
+}
