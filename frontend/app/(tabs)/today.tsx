@@ -19,6 +19,7 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { useAuth } from '../../src/context/AuthContext';
 import { useParticipants } from '../../src/context/ParticipantsContext';
 import UploadSheet from '../../src/components/UploadSheet';
+import { KeyContactsModal } from '../../src/components/KeyContactsModal';
 import { registerForPushNotifications } from '../../src/lib/push';
 import DashboardInsights from '../../src/components/DashboardInsights';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
@@ -115,6 +116,7 @@ export default function Today() {
   // switcher snapshots while it's open.
   useSensitiveScreen();
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pathways, setPathways] = useState<any[]>([]);
@@ -364,6 +366,19 @@ export default function Today() {
               <Text style={styles.progressLabel}>{data.burn_pct.toFixed(1)}% used</Text>
             </View>
 
+            {!!activeParticipant && (
+              <TouchableOpacity
+                onPress={() => setContactsOpen(true)}
+                style={styles.kcButton}
+                testID="today-key-contacts"
+                accessibilityRole="button"
+              >
+                <Ionicons name="people-outline" size={16} color={c.brandPrimary} />
+                <Text style={styles.kcButtonText}>Key Contacts</Text>
+                <Ionicons name="chevron-forward" size={16} color={c.brandPrimary} />
+              </TouchableOpacity>
+            )}
+
             <View style={styles.statGrid}>
               <View style={styles.statCard} testID="today-stat-quarter">
                 <View style={styles.statHeader}>
@@ -571,6 +586,14 @@ export default function Today() {
       </TouchableOpacity>
 
       <UploadSheet visible={uploadOpen} onClose={() => setUploadOpen(false)} />
+      {activeParticipant && (
+        <KeyContactsModal
+          visible={contactsOpen}
+          onClose={() => setContactsOpen(false)}
+          participantId={activeParticipant.id}
+          participantName={activeParticipant.first_name || 'them'}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -590,6 +613,8 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   heroAmount: { fontFamily: Fonts.heading, fontSize: 44, color: c.brandPrimary, letterSpacing: -1 },
   heroSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   heroSubBold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
+  kcButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.md, paddingVertical: 12, borderRadius: 9999, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.borderSubtle, alignSelf: 'flex-start', marginBottom: Spacing.md, minHeight: 44 },
+  kcButtonText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, flex: 1 },
   progressTrack: { marginTop: Spacing.md, height: 6, backgroundColor: 'rgba(14, 77, 82, 0.08)', borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: c.brandSecondary },
   progressLabel: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textMuted, marginTop: 6 },
