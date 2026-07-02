@@ -52,7 +52,7 @@ export default function ClassificationCheck() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Classification check</Text>
-          <Text style={styles.h1}>Quick self-check</Text>
+          <Text style={styles.h1}>Quick Self-Check</Text>
           <AIAccuracyBanner tool="classification-self-check" />
           <ToolGate tool="classification-self-check" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
@@ -85,7 +85,7 @@ export default function ClassificationCheck() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Classification check</Text>
-        <Text style={styles.h1}>Quick self-check</Text>
+        <Text style={styles.h1}>Quick Self-Check</Text>
         <Text style={styles.sub}>Twelve questions, two minutes, gives a likely Support at Home level.</Text>
         <AIAccuracyBanner tool="classification-self-check" />
 

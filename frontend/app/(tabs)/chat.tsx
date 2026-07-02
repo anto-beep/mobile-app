@@ -30,7 +30,7 @@ const STARTER_PROMPTS = [
   "What does my latest statement actually mean?",
   "Are we on track this quarter?",
   "How do contributions work again?",
-  "What's a clinical visit cost typically?",
+  'What does a clinical visit cost typically?',
 ];
 
 // 5 minutes inactivity counts as a "new session" for the resume prompt.
@@ -160,7 +160,7 @@ export default function Chat() {
         const contacts = scenario.getContacts(probe.contacts || []);
         const lead = probe.boundary === 'ESCALATE'
           ? "This one needs a real person, fast. Wayly does not give legal or financial advice, so I'll point you straight to who can help:"
-          : "A specialist can answer this best, Wayly does not give legal or financial advice. Here's where to start:";
+          : "A specialist can answer this best, Wayly does not give legal or financial advice. Here is where to start:";
         const lines = contacts.map((c) => `\u2022 ${c.label} \u2014 ${c.phone}${c.hours ? ` (${c.hours})` : ''}`).join('\n');
         const safeLines = lines || '\u2022 Visit https://wayly.com.au/contacts for the up-to-date list of who to call.';
         setTurns((prev) => [...prev, { role: 'assistant', content: `${lead}\n\n${safeLines}` }]);

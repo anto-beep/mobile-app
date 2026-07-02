@@ -26,7 +26,7 @@ export default function WorkflowsIndex() {
   const wfs = Object.values(schema?.workflows || {});
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackHeader title="Guided workflows" />
+      <BackHeader title="Guided Workflows" />
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: 12 }}>
         <Text style={styles.lead}>Step-by-step flows for the big moments in a participant’s journey. Each step captures the right event on the timeline.</Text>
         {wfs.length === 0 ? (

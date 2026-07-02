@@ -89,14 +89,14 @@ export default function ResetPassword() {
             {done ? (
               <>
                 <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={c.success} /></View>
-                <Text style={styles.h1}>Password updated</Text>
+                <Text style={styles.h1}>Password Updated</Text>
                 <Text style={styles.sub}>Taking you back to sign in…</Text>
                 <ActivityIndicator color={c.brandPrimary} style={{ marginTop: Spacing.lg }} />
               </>
             ) : (
               <>
                 <Text style={styles.overline}>Reset password</Text>
-                <Text style={styles.h1}>Choose a new password</Text>
+                <Text style={styles.h1}>Choose A New Password</Text>
                 <Text style={styles.sub}>Pick something only you would know. Reset link expires after 1 hour.</Text>
 
                 <Text style={styles.label}>New password</Text>

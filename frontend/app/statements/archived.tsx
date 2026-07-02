@@ -168,7 +168,7 @@ export default function ArchivedStatements() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Archived statements" />
+      <BackHeader title="Archived Statements" />
       {loading ? (
         <View style={styles.fill}><ActivityIndicator color={c.brandPrimary} /></View>
       ) : (

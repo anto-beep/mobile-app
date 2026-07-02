@@ -64,7 +64,7 @@ export default function Forgot() {
             {done ? (
               <>
                 <View style={styles.successIcon}><Ionicons name="mail" size={28} color={c.brandPrimary} /></View>
-                <Text style={styles.h1}>Check your inbox</Text>
+                <Text style={styles.h1}>Check Your Inbox</Text>
                 <Text style={styles.sub}>
                   If an account with <Text style={{ fontFamily: Fonts.bodySemi }}>{email.trim()}</Text> exists, we have sent a password reset link. It expires in 1 hour.
                 </Text>
@@ -79,7 +79,7 @@ export default function Forgot() {
             ) : (
               <>
                 <Text style={styles.overline}>Forgot password</Text>
-                <Text style={styles.h1}>Reset your password</Text>
+                <Text style={styles.h1}>Reset Your Password</Text>
                 <Text style={styles.sub}>Enter the email on your Wayly account and we will send you a secure link.</Text>
 
                 <Text style={styles.label}>Email</Text>

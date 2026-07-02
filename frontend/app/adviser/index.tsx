@@ -156,7 +156,7 @@ export default function AdviserHome() {
   if (planErr) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <BackHeader title="Adviser portal" />
+        <BackHeader title="Adviser Portal" />
         <View style={styles.lockedWrap}>
           <View style={styles.lockedIcon}>
             <Ionicons name="briefcase-outline" size={32} color={c.brandPrimary} />
@@ -176,7 +176,7 @@ export default function AdviserHome() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Adviser portal" />
+      <BackHeader title="Adviser Portal" />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

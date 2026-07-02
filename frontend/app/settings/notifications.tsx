@@ -75,7 +75,7 @@ export default function NotificationsPrefs() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <BackHeader title="Push & in-app" />
+        <BackHeader title="Push & In-App" />
         <View style={styles.loadingFill}><ActivityIndicator color={c.brandPrimary} /></View>
       </SafeAreaView>
     );
@@ -86,7 +86,7 @@ export default function NotificationsPrefs() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Push & in-app" />
+      <BackHeader title="Push & In-App" />
       <ScrollView contentContainerStyle={styles.scroll} testID="prefs-scroll">
         <Text style={styles.sectionLabel}>Push notifications</Text>
         <View style={styles.card}>

@@ -255,7 +255,7 @@ export default function Amendments() {
         </View>
 
         {/* Past requests */}
-        <Text style={styles.sectionH}>Past requests</Text>
+        <Text style={styles.sectionH}>Past Requests</Text>
         {sorted.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>No requests yet. Submit the form above and it will appear here.</Text>

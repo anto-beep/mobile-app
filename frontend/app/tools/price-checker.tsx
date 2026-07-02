@@ -62,7 +62,7 @@ export default function PriceChecker() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
-          <Text style={styles.h1}>Is this rate fair?</Text>
+          <Text style={styles.h1}>Is This Rate Fair?</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <ToolGate tool="provider-price-checker" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
@@ -96,7 +96,7 @@ export default function PriceChecker() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
-          <Text style={styles.h1}>Is this rate fair?</Text>
+          <Text style={styles.h1}>Is This Rate Fair?</Text>
           <Text style={styles.sub}>We compare your provider's rate against the official indicative range published by the Department of Health (October 2025), not a government cap. National price caps were deferred indefinitely in May 2026.</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <View style={styles.capsNote} testID="pc-caps-note">

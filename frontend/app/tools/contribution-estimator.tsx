@@ -45,7 +45,7 @@ export default function ContributionEstimator() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
-          <Text style={styles.h1}>What will I pay?</Text>
+          <Text style={styles.h1}>What Will I Pay?</Text>
           <AIAccuracyBanner tool="contribution-estimator" />
           <ToolGate tool="contribution-estimator" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
@@ -87,7 +87,7 @@ export default function ContributionEstimator() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
-          <Text style={styles.h1}>What will I pay?</Text>
+          <Text style={styles.h1}>What Will I Pay?</Text>
           <Text style={styles.sub}>Quarter and annual contribution estimates by cohort.</Text>
           <AIAccuracyBanner tool="contribution-estimator" />
 

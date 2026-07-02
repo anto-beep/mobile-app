@@ -279,7 +279,7 @@ export default function ProviderSwitch() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Switch provider" />
+      <BackHeader title="Switch Provider" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -454,7 +454,7 @@ export default function ProviderSwitch() {
                       value: lastDay || '',
                       onChange: (e: any) => setLastDay(e?.target?.value || ''),
                       'data-testid': 'last-day',
-                      style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+                      style: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
                     })
                   ) : (
                     <TextInput

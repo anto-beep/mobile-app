@@ -231,7 +231,7 @@ export default function CalendarRoute() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.eyebrow}>CALENDAR</Text>
-        <Text style={styles.hero}>Appointments and Home Visits</Text>
+        <Text style={styles.hero}>Appointments And Home Visits</Text>
         <Text style={styles.subhero}>Every appointment, home visit, telehealth call and assessment in one place. Tap a day to add something new, or tap an event to view, edit or cancel it.</Text>
 
         <TouchableOpacity onPress={() => openAddFor()} style={styles.primaryCta} testID="add-appointment">
@@ -393,7 +393,7 @@ export default function CalendarRoute() {
                       onChange: (e: any) => setDate(e?.target?.value || ''),
                       'data-testid': 'visit-date-input',
                       name: 'visit_date',
-                      style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+                      style: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
                     })
                   ) : (
                     <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} autoCapitalize="none" />
@@ -411,7 +411,7 @@ export default function CalendarRoute() {
                       onChange: (e: any) => setTime(e?.target?.value || ''),
                       'data-testid': 'visit-time-input',
                       name: 'visit_time',
-                      style: { fontFamily: 'inherit', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
+                      style: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: c.textPrimary, background: c.background, borderRadius: 8, padding: '12px 14px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 46 },
                     })
                   ) : (
                     <TextInput style={styles.input} value={time} onChangeText={setTime} placeholder="HH:MM" placeholderTextColor={c.textMuted} autoCapitalize="none" />

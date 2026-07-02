@@ -70,7 +70,7 @@ export default function DangerSettings() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackHeader title="Danger zone" />
+      <BackHeader title="Danger Zone" />
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: Spacing.md }}>
         <View style={styles.card}>
           <Ionicons name="shield-outline" size={20} color={c.brandPrimary} />

@@ -40,7 +40,7 @@ export default function AgedCareQA() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Aged Care Q&amp;A</Text>
-          <Text style={styles.h1}>Plain-English aged-care answers</Text>
+          <Text style={styles.h1}>Plain-English Aged-Care Answers</Text>
           <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
           <AIAccuracyBanner tool="aged-care-qa" />
           <ToolGate tool="aged-care-qa" variant={user ? 'free-plan' : 'unauth'} />
@@ -77,7 +77,7 @@ export default function AgedCareQA() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Aged Care Q&amp;A</Text>
-        <Text style={styles.h1}>Plain-English aged-care answers</Text>
+        <Text style={styles.h1}>Plain-English Aged-Care Answers</Text>
         <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
         <Text style={styles.boundary} testID="aged-care-qa-boundary">
           This is a general Q&amp;A assistant, it cannot see your account or statements. Signed-in members can ask the in-app assistant questions about their own household.

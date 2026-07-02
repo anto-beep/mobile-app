@@ -43,7 +43,7 @@ export function RecentActivityPanel() {
   return (
     <View style={styles.wrap} testID="dashboard-recent-activity">
       <View style={styles.head}>
-        <Text style={styles.title}>Recent activity</Text>
+        <Text style={styles.title}>Recent Activity</Text>
         <TouchableOpacity onPress={() => router.push('/timeline' as any)} testID="recent-activity-see-all" hitSlop={6}>
           <Text style={styles.link}>Open timeline</Text>
         </TouchableOpacity>
@@ -69,9 +69,10 @@ export function RecentActivityPanel() {
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   wrap: { marginTop: Spacing.md },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, marginBottom: 6 },
-  // Section title — explicit themed color so it never stays black in dark mode.
-  title: { ...(Type.h3 as any), color: c.textPrimary },
-  link: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  // Section header matches the web dashboard card overlines: uppercase
+  // Inter 11/600, letter-spacing 2, muted.
+  title: { fontFamily: Fonts.bodySemi, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: c.textMuted },
+  link: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 13 },
   empty: { ...Type.caption, color: c.textMuted, paddingHorizontal: Spacing.md },
   emptyCard: { marginHorizontal: Spacing.md, padding: Spacing.md, backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, borderRadius: 14, gap: 6, alignItems: 'flex-start' },
   emptyTitle: { ...Type.bodySemi, color: c.textPrimary },

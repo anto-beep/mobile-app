@@ -35,7 +35,7 @@ const TOOL_DISCLAIMERS: Record<string, string> = {
   'reassessment-letter': "AI drafts can get details wrong. Review carefully, check the date, and add your address before sending.",
   'contribution-estimator': "Contribution rates are based on the published Support at Home schedule. Your actual contribution depends on Services Australia's means assessment.",
   'care-plan-reviewer': "Wayly reviews care plan text for completeness and balance, it does not replace your care manager's clinical judgement.",
-  'aged-care-qa': "I'm a general Q&A assistant, I cannot see your account, statements or budget. I will not recommend specific providers or make clinical decisions. Always confirm details with your provider, My Aged Care on 1800 200 422, or the Aged Care Quality & Safety Commission on 1800 951 822.",
+  'aged-care-qa': "I am a general Q&A assistant, I cannot see your account, statements or budget. I will not recommend specific providers or make clinical decisions. Always confirm details with your provider, My Aged Care on 1800 200 422, or the Aged Care Quality & Safety Commission on 1800 951 822.",
 };
 
 export function AIAccuracyBanner({ tool }: { tool: keyof typeof TOOL_DISCLAIMERS | string }) {

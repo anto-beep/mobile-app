@@ -91,7 +91,7 @@ export default function ReassessmentLetter() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Reassessment letter</Text>
-          <Text style={styles.h1}>Draft an aged-care letter</Text>
+          <Text style={styles.h1}>Draft An Aged-Care Letter</Text>
           <Text style={styles.sub}>If needs have changed, write to My Aged Care or your provider with the right framing.</Text>
           <AIAccuracyBanner tool="reassessment-letter" />
 
@@ -129,7 +129,7 @@ export default function ReassessmentLetter() {
             </View>
           )}
 
-          <Text style={styles.label}>What's changed?</Text>
+          <Text style={styles.label}>What Has Changed?</Text>
           <TextInput style={[styles.input, { minHeight: 100, textAlignVertical: 'top' }]} value={changes} onChangeText={setChanges} placeholder="e.g. New mobility issues since fall in March; increased confusion in the evenings; can no longer prepare meals safely…" placeholderTextColor={c.textMuted} multiline testID="reassess-changes" />
 
           <Text style={styles.label}>Recent events (optional)</Text>

@@ -82,7 +82,7 @@ export default function VerifyRequired() {
             <Ionicons name="mail-unread-outline" size={28} color={c.brandPrimary} />
           </View>
           <Text style={styles.h1} testID="verify-required-title">
-            Verify your email to sign in
+            Verify Your Email To Sign In
           </Text>
           <Text style={styles.sub}>
             We sent a verification link to{'\n'}

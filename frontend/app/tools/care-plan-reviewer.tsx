@@ -47,7 +47,7 @@ export default function CarePlanReviewer() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
-          <Text style={styles.h1}>Six-check care-plan review</Text>
+          <Text style={styles.h1}>Six-Check Care-Plan Review</Text>
           <AIAccuracyBanner tool="care-plan-reviewer" />
           <ToolGate tool="care-plan-reviewer" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
@@ -81,7 +81,7 @@ export default function CarePlanReviewer() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
-          <Text style={styles.h1}>Six-check care-plan review</Text>
+          <Text style={styles.h1}>Six-Check Care-Plan Review</Text>
           <Text style={styles.sub}>Paste the participant's care plan. We check budget fit, CM cap, services, stream alignment, review date and goals.</Text>
           <AIAccuracyBanner tool="care-plan-reviewer" />
 

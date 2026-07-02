@@ -117,7 +117,7 @@ export default function Login() {
 
           <View style={styles.card}>
             <Text style={styles.overline}>Sign in</Text>
-            <Text style={styles.h1} testID="auth-title">Welcome back</Text>
+            <Text style={styles.h1} testID="auth-title">Welcome Back</Text>
             <Text style={styles.sub}>
               Calm, clear-headed care for your parent&apos;s Support at Home journey.
             </Text>

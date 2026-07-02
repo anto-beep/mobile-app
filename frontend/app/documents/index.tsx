@@ -197,7 +197,7 @@ export default function Documents() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Document vault" rightAccessory={(
+      <BackHeader title="Document Vault" rightAccessory={(
         <TouchableOpacity onPress={pickFile} style={styles.uploadBtn} testID="docs-upload-btn">
           <Ionicons name="cloud-upload-outline" size={16} color={c.cream} />
           <Text style={styles.uploadBtnText}>Upload</Text>
@@ -208,7 +208,7 @@ export default function Documents() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Household</Text>
-        <Text style={styles.h1}>Your documents</Text>
+        <Text style={styles.h1}>Your Documents</Text>
         <Text style={styles.sub}>Securely store statements, care plans, assessments and more. Only members of your household can see these.</Text>
 
         {/* Vault meter */}

@@ -90,7 +90,7 @@ export default function StatementsList() {
       >
         <Text style={styles.overline}>All statements</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={styles.h1}>Your statement history</Text>
+          <Text style={styles.h1}>Your Statement History</Text>
           <TouchableOpacity
             onPress={() => router.push('/statements/archived' as any)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: c.surfaceTint, borderWidth: 1, borderColor: c.borderSubtle }}

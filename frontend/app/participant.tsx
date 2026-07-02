@@ -28,7 +28,7 @@ type Today = {
 };
 
 const MOOD_BTNS: { mood: 'good' | 'okay' | 'not_great'; label: string; sub: string; color: string; icon: any }[] = [
-  { mood: 'good', label: 'Good', sub: "I'm feeling well today", color: Colors.success, icon: 'happy-outline' },
+  { mood: 'good', label: 'Good', sub: 'Feeling well today', color: Colors.success, icon: 'happy-outline' },
   { mood: 'okay', label: 'Okay', sub: 'Just a normal day', color: Colors.brandSecondary, icon: 'remove-outline' },
   { mood: 'not_great', label: 'Not great', sub: "I'd like someone to check in", color: Colors.severityAlert, icon: 'sad-outline' },
 ];
@@ -115,7 +115,7 @@ export default function Participant() {
             )}
 
             <View style={styles.checkinSection}>
-              <Text style={styles.sectionTitle}>How are you feeling today?</Text>
+              <Text style={styles.sectionTitle}>How Are You Feeling Today?</Text>
               <Text style={styles.sectionSub}>
                 One tap. {today?.caregiver_name || 'Your caregiver'} will see it.
               </Text>

@@ -46,7 +46,7 @@ export default function BudgetCalc() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Budget calculator</Text>
-          <Text style={styles.h1}>What's the budget?</Text>
+          <Text style={styles.h1}>What Is The Budget?</Text>
           <AIAccuracyBanner tool="budget-calculator" />
           <ToolGate tool="budget-calculator" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
@@ -85,7 +85,7 @@ export default function BudgetCalc() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Budget calculator</Text>
-          <Text style={styles.h1}>What's the budget?</Text>
+          <Text style={styles.h1}>What Is The Budget?</Text>
           <Text style={styles.sub}>Per quarter and per year, for any classification level, with optional supplements.</Text>
           <AIAccuracyBanner tool="budget-calculator" />
 
@@ -176,7 +176,7 @@ export default function BudgetCalc() {
               {Array.isArray(result.streams) && result.streams.length > 0 && (
                 <View testID="bc-streams">
                   <View style={styles.streamHead}>
-                    <Text style={styles.sectionTitle}>Per-stream allocation</Text>
+                    <Text style={styles.sectionTitle}>Per-Stream Allocation</Text>
                     <View style={[styles.sourcePill, isStatementSource ? styles.sourceSage : styles.sourceAmber]} testID="bc-streams-source">
                       <Text style={[styles.sourcePillText, { color: isStatementSource ? c.success : c.brandSecondary }]}>
                         {isStatementSource ? 'From your latest statement' : 'Indicative split'}
@@ -194,7 +194,7 @@ export default function BudgetCalc() {
               )}
               {Array.isArray(result.applied_supplements) && result.applied_supplements.length > 0 && (
                 <View testID="bc-supplements-result" style={{ marginTop: Spacing.md }}>
-                  <Text style={styles.sectionTitle}>Supplements applied</Text>
+                  <Text style={styles.sectionTitle}>Supplements Applied</Text>
                   {result.applied_supplements.map((sup: any) => {
                     const meta = SUPPLEMENT_OPTIONS.find((m) => m.key === sup.name);
                     return (

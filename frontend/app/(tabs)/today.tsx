@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { Fonts, formatAUD, Radius, Spacing } from '../../src/lib/theme';
+import { cleanPeriodLabel } from '../../src/lib/format';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
@@ -442,7 +443,7 @@ export default function Today() {
                 </View>
                 <Text style={styles.statValue}>{data.statement_count}</Text>
                 <Text style={styles.statHint} numberOfLines={1}>
-                  {data.statement_count === 0 ? 'None yet' : data.latest_statement?.period_label ? `Latest ${data.latest_statement.period_label}` : 'Latest received'}
+                  {data.statement_count === 0 ? 'None yet' : data.latest_statement?.period_label ? `Latest ${cleanPeriodLabel(data.latest_statement.period_label)}` : 'Latest received'}
                 </Text>
               </TouchableOpacity>
 
@@ -484,7 +485,7 @@ export default function Today() {
               <>
                 {data.streams.length > 0 && (
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Spending by stream</Text>
+                    <Text style={styles.sectionTitle}>Spending By Stream</Text>
                     {data.streams.map((s) => (
                       <View key={s.stream} style={styles.streamRow} testID={`today-stream-${s.stream}`}>
                         <View style={styles.streamHead}>
@@ -540,15 +541,16 @@ export default function Today() {
                 testID="today-latest-statement-card"
               >
                 <View style={styles.latestHead}>
-                  <Text style={styles.overline}>Latest statement</Text>
-                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+                  <Text style={styles.overline}>Latest Statement</Text>
+                  <Ionicons name="arrow-forward" size={16} color={c.brandPrimary} />
                 </View>
-                <Text style={styles.latestTitle}>{data.latest_statement.period_label || 'Statement'}</Text>
-                {data.latest_statement.summary ? (
+                <Text style={styles.latestTitle}>{cleanPeriodLabel(data.latest_statement.period_label) || 'Statement'}</Text>
+                {!!data.latest_statement.summary &&
+                  data.latest_statement.summary.trim() !== (data.latest_statement.period_label || '').trim() && (
                   <Text style={styles.latestSummary} numberOfLines={3}>
                     {data.latest_statement.summary}
                   </Text>
-                ) : null}
+                )}
                 <View style={styles.latestMeta}>
                   <Text style={styles.latestMetaText}>
                     {data.latest_statement.line_item_count} line items
@@ -632,7 +634,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   loadingFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 100 },
   header: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: Spacing.lg },
-  overline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textMuted, marginBottom: 4 },
+  overline: { fontFamily: Fonts.bodySemi, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: c.textMuted, marginBottom: 4 },
   greeting: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
   subline: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: c.cardBg, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.md, borderWidth: 1, borderColor: c.border },
@@ -680,10 +682,10 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   streamFill: { height: '100%' },
   latestCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.md + 4, borderWidth: 1, borderColor: c.borderSubtle },
   latestHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  latestTitle: { fontFamily: Fonts.headingMed, fontSize: 18, color: c.brandPrimary, marginTop: 4 },
+  latestTitle: { fontFamily: Fonts.headingMed, fontSize: 20, color: c.brandPrimary, marginTop: 6, letterSpacing: -0.2 },
   latestSummary: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 8, lineHeight: 20 },
-  latestMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
-  latestMetaText: { fontFamily: Fonts.bodyMed, fontSize: 12, color: c.textMuted },
+  latestMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 10 },
+  latestMetaText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textMuted },
   anomalyBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(192, 57, 43, 0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   anomalyBadgeText: { fontFamily: Fonts.bodySemi, fontSize: 11, color: c.severityAlert },
   emptyCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md },

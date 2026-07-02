@@ -78,7 +78,7 @@ export default function ClientSnapshot() {
       <ScrollView contentContainerStyle={[styles.scroll, { flexGrow: 1, justifyContent: 'center' }]}>
         <View style={styles.pendingCard}>
           <View style={styles.pendingIcon}><Ionicons name="mail-unread" size={26} color={c.brandSecondary} /></View>
-          <Text style={styles.h1}>Invite pending</Text>
+          <Text style={styles.h1}>Invite Pending</Text>
           <Text style={styles.sub}>
             <Text style={{ fontFamily: Fonts.bodySemi }}>{notLinked.client_name}</Text> has not accepted yet. Once they sign up, this page will show their household, statements and anomalies.
           </Text>

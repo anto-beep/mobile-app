@@ -236,6 +236,7 @@ function AnomaliesOverTimeStrip({ statements }: { statements: Statement[] }) {
 type LifetimeProps = { lifetime_cap: number; lifetime_contributions: number; lifetime_pct: number; is_grandfathered?: boolean };
 
 function LifetimeCapCard({ lifetime_cap, lifetime_contributions, lifetime_pct, is_grandfathered }: LifetimeProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.insightCard, styles.lifetimeCard]} testID="dashboard-lifetime-cap-card">
       <View style={styles.lifetimeHead}>

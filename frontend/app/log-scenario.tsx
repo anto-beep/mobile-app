@@ -52,7 +52,7 @@ export default function LogScenarioRoute() {
   if (!active) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <BackHeader title="Log a scenario" onBack={goBack} />
+        <BackHeader title="Log A Scenario" onBack={goBack} />
         <EmptyState
           icon="people-outline"
           title="No participant selected"
@@ -65,7 +65,7 @@ export default function LogScenarioRoute() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackHeader title="Log a scenario" onBack={onBackPressed} />
+      <BackHeader title="Log A Scenario" onBack={onBackPressed} />
       <LogScenarioSheet
         inline
         visible

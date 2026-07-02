@@ -72,7 +72,7 @@ export default function AtHm() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="AT & home mods" rightAccessory={(
+      <BackHeader title="AT & Home Mods" rightAccessory={(
         <TouchableOpacity onPress={() => setOpen(true)} style={styles.addBtn} testID="at-hm-add">
           <Ionicons name="add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Add</Text>
@@ -84,7 +84,7 @@ export default function AtHm() {
       >
         <View style={styles.heroRow}>
           <Ionicons name="construct-outline" size={22} color={c.brandPrimary} />
-          <Text style={styles.hero}>AT & home mods</Text>
+          <Text style={styles.hero}>AT & Home Mods</Text>
         </View>
         <Text style={styles.subhero}>Track wheelchair fittings, bathroom rails, kitchen mods, anything needing a quote, approval or install date.</Text>
 

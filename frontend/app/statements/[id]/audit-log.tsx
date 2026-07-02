@@ -74,7 +74,7 @@ export default function StatementAuditLog() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Audit log" />
+      <BackHeader title="Audit Log" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         testID="statement-audit-log-page"

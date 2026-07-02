@@ -120,21 +120,8 @@ export default function ToolsIndex() {
           </TouchableOpacity>
         ) : null}
         <Text style={styles.overline}>Helpful tools</Text>
-        <Text style={styles.h1}>AI tools</Text>
+        <Text style={styles.h1}>AI Tools</Text>
         <Text style={styles.sub}>Quick answers when you need them, all included with Solo and Family plans.</Text>
-
-        {/* AI disclaimer, matches the yellow callout on the web app */}
-        <View style={styles.aiBanner}>
-          <View style={styles.aiBannerIcon}>
-            <Ionicons name="information-circle" size={16} color="#8A6D14" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.aiBannerTitle}>AI assistance only, not financial, legal, or medical advice</Text>
-            <Text style={styles.aiBannerBody}>
-              The tools below use Wayly&apos;s AI to surface ideas, draft language, and explain rules. They are a starting point, not a substitute for a registered tax agent, lawyer, or clinician. Always verify anything that affects your money, plan, or care.
-            </Text>
-          </View>
-        </View>
 
         <TrialCountdownBanner />
 
@@ -163,6 +150,20 @@ export default function ToolsIndex() {
             <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </TouchableOpacity>
         ))}
+
+        {/* AI disclaimer, matches the yellow callout on the web app.
+            Sits BELOW the tool list per user request. */}
+        <View style={[styles.aiBanner, { marginTop: Spacing.md, marginBottom: 0 }]}>
+          <View style={styles.aiBannerIcon}>
+            <Ionicons name="information-circle" size={16} color="#8A6D14" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.aiBannerTitle}>AI assistance only, not financial, legal, or medical advice</Text>
+            <Text style={styles.aiBannerBody}>
+              The tools below use Wayly&apos;s AI to surface ideas, draft language, and explain rules. They are a starting point, not a substitute for a registered tax agent, lawyer, or clinician. Always verify anything that affects your money, plan, or care.
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -99,7 +99,7 @@ export default function Ratings() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Provider ratings" />
+      <BackHeader title="Provider Ratings" />
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -107,7 +107,7 @@ export default function Ratings() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Private provider ratings</Text>
-        <Text style={styles.h1}>Your own honest opinions on providers</Text>
+        <Text style={styles.h1}>Your Own Honest Opinions On Providers</Text>
         <Text style={styles.sub}>
           These ratings are private to you, not shared with providers or other Wayly users. Use them as a memory aid when comparing or switching.
         </Text>

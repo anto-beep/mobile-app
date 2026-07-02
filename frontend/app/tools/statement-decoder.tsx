@@ -17,6 +17,22 @@ import { AIAccuracyBanner, DecoderProgress, ToolGate, hasPaidAccess } from '../.
 import { ToolSummary, ReportIssueButton, ReportThis } from '../../src/components/ToolShell';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
+// Used when `__SAMPLE__` is typed and the backend `_sample` shortcut is not
+// deployed (production). Small but anomaly-rich so "Points To Check" renders.
+const SAMPLE_STATEMENT_TEXT = `HOME CARE STATEMENT - May 2026
+Provider: BlueBerry Care  Package Level: 4
+Opening balance: $6,682.00
+01/05/2026 Personal care 1.0 hr $78.00
+01/05/2026 Personal care 1.0 hr $78.00
+05/05/2026 Nursing visit 1.0 hr $135.00
+12/05/2026 Gardening 2.0 hr $190.00
+19/05/2026 Care management fee $668.20
+26/05/2026 Transport 15 km $37.50
+Total charged: $1,186.70
+Government contribution: $1,000.00
+Your contribution: $186.70`;
+
+
 type Tab = 'snap' | 'upload' | 'paste';
 
 export default function StatementDecoder() {
@@ -86,10 +102,16 @@ export default function StatementDecoder() {
         form.append('file', { uri: file.uri, name: file.name, type: file.mime } as any);
         res = await api.post('/public/decode-statement', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else if (text.trim() === '__SAMPLE__') {
-        // Dev/QA — exercises the full audit.anomalies + audit.informational_notes
+        // Dev/QA, exercises the full audit.anomalies + audit.informational_notes
         // render path without burning AI tokens. The backend `_sample` endpoint
-        // returns a pre-baked job that includes both note kinds from the spec.
-        res = await api.post('/public/decode-statement-text/_sample', {});
+        // returns a pre-baked job. Production does not ship it, so fall back to
+        // the regular text endpoint with a baked sample statement.
+        try {
+          res = await api.post('/public/decode-statement-text/_sample', {});
+        } catch (sampleErr: any) {
+          if (sampleErr?.response?.status !== 404) throw sampleErr;
+          res = await api.post('/public/decode-statement-text', { text: SAMPLE_STATEMENT_TEXT });
+        }
       } else {
         if (!text.trim()) { Alert.alert('Add some text', 'Paste the statement text first.'); setSubmitting(false); return; }
         res = await api.post('/public/decode-statement-text', { text });
@@ -131,7 +153,7 @@ export default function StatementDecoder() {
       <ScrollView contentContainerStyle={styles.scroll} testID="statement-decoder-scroll" keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Statement Decoder</Text>
-        <Text style={styles.h1}>What does this statement actually say?</Text>
+        <Text style={styles.h1}>What Does This Statement Actually Say?</Text>
         <Text style={styles.sub}>Snap a photo, upload a file, or paste text, we will read it and flag anything off.</Text>
 
         <AIAccuracyBanner tool="statement-decoder" />
@@ -267,7 +289,7 @@ export default function StatementDecoder() {
                       `previous_period_adjustment` per production spec. */}
                   {informationalNotes.length > 0 && (
                     <>
-                      <Text style={styles.sectionTitle}>Statement notes</Text>
+                      <Text style={styles.sectionTitle}>Statement Notes</Text>
                       <Text style={styles.sectionSub}>
                         Context the decoder spotted, not alerts, just things worth knowing.
                       </Text>

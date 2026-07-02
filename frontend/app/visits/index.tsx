@@ -244,7 +244,7 @@ export default function Visits() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Visit calendar</Text>
-        <Text style={styles.h1}>Upcoming appointments & home visits</Text>
+        <Text style={styles.h1}>Upcoming Appointments & Home Visits</Text>
         <Text style={styles.sub}>Track GP appointments, allied-health visits, ACAT reviews, and provider home visits in one place.</Text>
 
         {loading ? (
@@ -298,7 +298,7 @@ export default function Visits() {
                 onChange: (e: any) => setModal((m) => m && { ...m, starts_at: fromLocalInput(e?.target?.value || '') }),
                 'data-testid': 'visit-starts-at',
                 style: {
-                  fontFamily: 'inherit', fontSize: 14, color: c.brandPrimary,
+                  fontFamily: 'Inter, sans-serif', fontSize: 14, color: c.brandPrimary,
                   background: c.background,
                   borderRadius: 8, padding: '12px 14px',
                   border: `1px solid ${c.borderSubtle}`,

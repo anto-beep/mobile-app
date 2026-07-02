@@ -442,7 +442,7 @@ export default function FamilyWall() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionH}>Recent activity</Text>
+        <Text style={styles.sectionH}>Recent Activity</Text>
         {loading ? (
           <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} />
         ) : posts.length === 0 ? (

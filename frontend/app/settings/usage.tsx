@@ -37,7 +37,7 @@ export default function Usage() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <BackHeader title="Your Wayly use" />
+        <BackHeader title="Your Wayly Use" />
         <View style={styles.loadingFill}><ActivityIndicator color={c.brandPrimary} /></View>
       </SafeAreaView>
     );
@@ -54,7 +54,7 @@ export default function Usage() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Your Wayly use" />
+      <BackHeader title="Your Wayly Use" />
       <ScrollView contentContainerStyle={styles.scroll} testID="usage-scroll">
         <Text style={styles.sectionLabel}>Activity</Text>
 

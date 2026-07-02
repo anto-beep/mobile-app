@@ -82,7 +82,7 @@ export default function Notifications() {
         testID="notifications-list"
       >
         <Text style={styles.overline}>Things to know</Text>
-        <Text style={styles.h1}>Recent alerts</Text>
+        <Text style={styles.h1}>Recent Alerts</Text>
 
         {/* QA: fire a sample push that exercises NotificationRouter end-to-end. */}
         <View style={styles.testRow} testID="notifications-test-row">

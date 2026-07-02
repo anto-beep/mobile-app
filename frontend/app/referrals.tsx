@@ -88,7 +88,7 @@ export default function Referrals() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.overline}>Referrals</Text>
-        <Text style={styles.h1}>GP, allied health, and specialist referrals</Text>
+        <Text style={styles.h1}>GP, Allied Health, And Specialist Referrals</Text>
         <Text style={styles.sub}>Keep track of who referred whom, when, and what came of it, invaluable when a new GP asks for history.</Text>
 
         <View style={styles.card}>
@@ -119,13 +119,13 @@ export default function Referrals() {
                 type: 'date', value: referredAt,
                 onChange: (e: any) => setReferredAt(e?.target?.value || ''),
                 'data-testid': 'ref-date',
-                style: { fontFamily: 'inherit', fontSize: 14, color: c.brandPrimary, background: '#FFFFFF', borderRadius: 6, padding: '11px 12px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 44 },
+                style: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: c.brandPrimary, background: '#FFFFFF', borderRadius: 6, padding: '11px 12px', border: `1px solid ${c.borderSubtle}`, outline: 'none', width: '100%', boxSizing: 'border-box', minHeight: 44 },
               })
             : <TextInput style={styles.input} value={referredAt} onChangeText={setReferredAt} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} testID="ref-date" />
           }
 
           <Text style={styles.lbl}>Reason</Text>
-          <TextInput style={[styles.input, { minHeight: 90, textAlignVertical: 'top', paddingTop: 12 }]} value={reason} onChangeText={setReason} multiline placeholder="What's the referral for?" placeholderTextColor={c.textMuted} testID="ref-reason" />
+          <TextInput style={[styles.input, { minHeight: 90, textAlignVertical: 'top', paddingTop: 12 }]} value={reason} onChangeText={setReason} multiline placeholder="What is the referral for?" placeholderTextColor={c.textMuted} testID="ref-reason" />
 
           <TouchableOpacity onPress={submit} disabled={busy || !referredTo.trim()} style={[styles.cta, (busy || !referredTo.trim()) && { opacity: 0.55 }]} testID="ref-add">
             {busy ? <ActivityIndicator color="#FFFFFF" /> : (<><Ionicons name="add" size={14} color="#FFFFFF" /><Text style={styles.ctaText}>Add</Text></>)}

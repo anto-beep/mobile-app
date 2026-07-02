@@ -70,7 +70,7 @@ export default function Reports() {
       <BackHeader title="Summary Reports" />
       <ScrollView contentContainerStyle={styles.scroll} testID="reports-scroll">
         <Text style={styles.overline}>SUMMARY REPORTS</Text>
-        <Text style={styles.h1}>Your Wayly snapshot</Text>
+        <Text style={styles.h1}>Your Wayly Snapshot</Text>
         <Text style={styles.sub}>
           A Wayly-branded PDF you can share with family or your adviser. Includes spend, anomalies, lifetime cap usage and recent statements.
         </Text>

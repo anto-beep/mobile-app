@@ -474,7 +474,7 @@ export default function StatementDetail() {
         {(stmt.anomalies || []).length > 0 && (
           <View style={styles.section}>
             <View style={styles.anomaliesHead}>
-              <Text style={styles.sectionTitle}>Things to know</Text>
+              <Text style={styles.sectionTitle}>Things To Know</Text>
               {(stmt.anomaly_dollar_impact_total ?? 0) > 0 ? (
                 <View style={styles.impactPill} testID="anomalies-total-impact">
                   <Text style={styles.impactPillText}>Potential impact: {formatAUD2(stmt.anomaly_dollar_impact_total || 0)}</Text>
@@ -522,7 +522,7 @@ export default function StatementDetail() {
             does not read them as red flags. */}
         {Array.isArray(stmt.informational_notes) && stmt.informational_notes.length > 0 && (
           <View style={styles.section} testID="statement-info-notes">
-            <Text style={styles.sectionTitle}>Notes for your records</Text>
+            <Text style={styles.sectionTitle}>Notes For Your Records</Text>
             {stmt.informational_notes.map((n, i) => (
               <View key={`info-${i}`} style={styles.infoNoteCard} testID={`info-note-${n.kind || i}`}>
                 <View style={styles.infoNoteHead}>
@@ -536,7 +536,7 @@ export default function StatementDetail() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Line items</Text>
+          <Text style={styles.sectionTitle}>Line Items</Text>
           {(stmt.line_items || []).map((li: any) => {
             const streamColor = c.streams[li.stream] || c.textMuted;
             return (

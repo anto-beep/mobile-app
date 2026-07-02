@@ -93,3 +93,15 @@ export function titleCaseSafe(text: string): string {
     return ch.toUpperCase();
   });
 }
+
+// Statement period labels arrive as "1–30 June 2026" or
+// "1 May 2026 – 31 May 2026". Collapse full-month ranges to "June 2026" and
+// rewrite any leftover dash ranges as "to" (UI-2 Rule 2.2).
+export function cleanPeriodLabel(label: string | null | undefined): string {
+  if (!label) return '';
+  const m = label.match(/^\s*\d{1,2}\s*[–-]\s*\d{1,2}\s+([A-Za-z]+\s+\d{4})\s*$/);
+  if (m) return m[1];
+  const m2 = label.match(/^\s*\d{1,2}\s+([A-Za-z]+)\s+(\d{4})\s*[–-]\s*\d{1,2}\s+([A-Za-z]+)\s+(\d{4})\s*$/);
+  if (m2 && m2[1] === m2[3] && m2[2] === m2[4]) return `${m2[1]} ${m2[2]}`;
+  return label.replace(/\s*–\s*/g, ' to ').replace(/(\d)\s*-\s*(\d)/g, '$1 to $2');
+}

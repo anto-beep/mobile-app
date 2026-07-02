@@ -86,7 +86,7 @@ export default function Signup() {
 
           <View style={styles.card}>
             <Text style={styles.overline}>Create account</Text>
-            <Text style={styles.h1}>Welcome to Wayly</Text>
+            <Text style={styles.h1}>Welcome To Wayly</Text>
             <Text style={styles.sub}>
               Helping you keep an eye on your parent's care, calmly.
             </Text>

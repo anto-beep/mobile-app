@@ -115,14 +115,14 @@ export default function BudgetAlerts() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Budget alerts" />
+      <BackHeader title="Budget Alerts" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
           <Ionicons name="alert-circle-outline" size={22} color={c.brandPrimary} />
-          <Text style={styles.hero}>Budget alerts</Text>
+          <Text style={styles.hero}>Budget Alerts</Text>
         </View>
         <Text style={styles.subhero}>
           Tell Wayly which budget lines to watch. We re-check every statement upload and flag lines that look like they will run over.
