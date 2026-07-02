@@ -59,14 +59,14 @@ export default function Referrals() {
       setReferredTo(''); setPhoneEmail(''); setReason(''); setReferredAt(todayISO());
       await refresh();
       toast.success('Referral added.');
-    } catch (e) { toast.error(extractErrorMessage(e, "Couldn't save referral.")); }
+    } catch (e) { toast.error(extractErrorMessage(e, "Could not save referral.")); }
     finally { setBusy(false); }
   };
 
   const remove = (r: Referral) => {
     const doDelete = async () => {
       try { await api.delete(`/referrals/${r.id}`); await refresh(); toast.success('Removed.'); }
-      catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
+      catch (e) { toast.error(extractErrorMessage(e, "Could not remove.")); }
     };
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.confirm(`Remove referral to ${r.referred_to}?`)) doDelete();
@@ -89,7 +89,7 @@ export default function Referrals() {
       >
         <Text style={styles.overline}>Referrals</Text>
         <Text style={styles.h1}>GP, allied health, and specialist referrals</Text>
-        <Text style={styles.sub}>Keep track of who referred whom, when, and what came of it — invaluable when a new GP asks for history.</Text>
+        <Text style={styles.sub}>Keep track of who referred whom, when, and what came of it, invaluable when a new GP asks for history.</Text>
 
         <View style={styles.card}>
           <Text style={styles.lbl}>Referred to</Text>
@@ -138,7 +138,7 @@ export default function Referrals() {
           <View style={styles.emptyCard}>
             <Ionicons name="share-social-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No referrals yet</Text>
-            <Text style={styles.emptyBody}>Track every clinical and support-service referral so you don&apos;t lose visibility.</Text>
+            <Text style={styles.emptyBody}>Track every clinical and support-service referral so you do not lose visibility.</Text>
           </View>
         ) : items.map((r) => (
           <View key={r.id} style={styles.row} testID={`ref-${r.id}`}>

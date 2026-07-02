@@ -37,7 +37,7 @@ export default function ClientSnapshot() {
     try {
       const res = await downloadReviewPack(String(cid), snap?.client?.client_name);
       if (!res.ok) {
-        toast.error(res.error || "Couldn't download review pack");
+        toast.error(res.error || "Could not download review pack");
       } else {
         toast.success(Platform.OS === 'web' ? 'PDF downloaded.' : 'Review pack ready.');
       }
@@ -58,7 +58,7 @@ export default function ClientSnapshot() {
       if (detail && typeof detail === 'object' && detail.error === 'client_not_linked') {
         setNotLinked({ client_name: detail?.client?.client_name || '', client_email: detail?.client?.client_email || '' });
       } else {
-        toast.error(extractErrorMessage(e, "Couldn't load snapshot"));
+        toast.error(extractErrorMessage(e, "Could not load snapshot"));
       }
     } finally { setLoading(false); }
   }, [cid]);
@@ -80,7 +80,7 @@ export default function ClientSnapshot() {
           <View style={styles.pendingIcon}><Ionicons name="mail-unread" size={26} color={c.brandSecondary} /></View>
           <Text style={styles.h1}>Invite pending</Text>
           <Text style={styles.sub}>
-            <Text style={{ fontFamily: Fonts.bodySemi }}>{notLinked.client_name}</Text> hasn’t accepted yet. Once they sign up, this page will show their household, statements and anomalies.
+            <Text style={{ fontFamily: Fonts.bodySemi }}>{notLinked.client_name}</Text> has not accepted yet. Once they sign up, this page will show their household, statements and anomalies.
           </Text>
           <Text style={styles.subMuted}>{notLinked.client_email}</Text>
           <TouchableOpacity style={styles.cta} onPress={() => router.back()}>
@@ -148,7 +148,7 @@ export default function ClientSnapshot() {
         </>
       ) : null}
 
-      <Text style={styles.disclaimer}>Read-only view. AI may be incorrect — verify before acting.</Text>
+      <Text style={styles.disclaimer}>Read-only view. AI may be incorrect, verify before acting.</Text>
 
       <TouchableOpacity onPress={onDownload} disabled={downloading} style={[styles.pdfCta, downloading && { opacity: 0.6 }]} testID="adviser-download-pdf">
         {downloading ? (

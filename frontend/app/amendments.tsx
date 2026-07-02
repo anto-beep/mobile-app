@@ -107,7 +107,7 @@ export default function Amendments() {
         kind: 'care_plan_change',
         service: first.service || undefined,
         change_type: first.change_type,
-        description: valid.map((c, i) => `${i + 1}. ${c.service ? c.service + ' — ' : ''}${c.change_type}\n${c.why}`).join('\n\n'),
+        description: valid.map((c, i) => `${i + 1}. ${c.service ? c.service + ', ' : ''}${c.change_type}\n${c.why}`).join('\n\n'),
         changes: valid,
         status: 'SENT',
       });
@@ -131,7 +131,7 @@ export default function Amendments() {
           <Text style={styles.hero}>Care Plan Amendments</Text>
         </View>
         <Text style={styles.subhero}>
-          Build a clear, formal request to change the care plan — provider will receive the changes you actually need, in writing.
+          Build a clear, formal request to change the care plan, provider will receive the changes you actually need, in writing.
         </Text>
 
         {/* New amendment request */}
@@ -211,7 +211,7 @@ export default function Amendments() {
               </View>
               <View style={styles.whyHeader}>
                 <Text style={styles.lbl}>Why this change?</Text>
-                {/* Dictate button is a no-op placeholder on mobile for now —
+                {/* Dictate button is a no-op placeholder on mobile for now,
                     web uses MediaRecorder + Whisper. Keep visible for parity. */}
                 <TouchableOpacity style={styles.dictateBtn} onPress={() => toast.info('Dictation is coming to mobile soon. Type your reason for now.')} testID={`amendment-dictate-${idx}`}>
                   <Ionicons name="mic-outline" size={13} color={c.brandPrimary} />
@@ -286,7 +286,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
   hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  subhero: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, lineHeight: 21, marginBottom: Spacing.lg },
 
   card: {
     backgroundColor: c.cardBg, borderRadius: Radius.lg,

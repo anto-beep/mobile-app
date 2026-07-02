@@ -293,7 +293,7 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
           <Ionicons name="sparkles" size={18} color={Colors.severityInfo} />
           <View style={{ flex: 1 }}>
             <Text style={styles.nothingTitle}>Nothing unusual at the moment.</Text>
-            <Text style={styles.nothingBody}>We'll flag anything that doesn't look right once new statements arrive.</Text>
+            <Text style={styles.nothingBody}>We will flag anything that does not look right once new statements arrive.</Text>
           </View>
         </View>
       ) : (
@@ -326,7 +326,7 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
         })
       )}
 
-      <Text style={styles.disclaimer}>AI may be incorrect — verify before acting.</Text>
+      <Text style={styles.disclaimer}>AI may be incorrect, verify before acting.</Text>
     </View>
   );
 }

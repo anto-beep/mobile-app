@@ -47,7 +47,7 @@ export function BoundaryAskWayly({ onSafeAsk, placeholder = 'Ask Wayly…', busy
             </Text>
           </View>
           <Text style={styles.guardBody}>
-            Wayly doesn’t give legal or financial advice. Use the contact below — they’re free and trained on this exact question.
+            Wayly does not give legal or financial advice. Use the contact below, they are free and trained on this exact question.
           </Text>
           {!!schema && <ContactCard boundary={result.boundary as any} contactKeys={result.contacts || []} />}
           <TouchableOpacity onPress={() => setResult(null)} style={styles.dismiss}><Text style={styles.dismissText}>Ask a different question</Text></TouchableOpacity>

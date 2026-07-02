@@ -51,7 +51,7 @@ type TicketDetail = {
 const STATUS_PILL: Record<string, { tint: string; label: string; help: string }> = {
   received:    { tint: '#0E4D52', label: 'Received',    help: 'We have your ticket and it is in the queue.' },
   in_progress: { tint: '#C8932B', label: 'In progress', help: 'A Wayly team member is looking into this.' },
-  awaiting:    { tint: '#6B7C92', label: 'Awaiting you', help: "We've replied — your turn." },
+  awaiting:    { tint: '#6B7C92', label: 'Awaiting you', help: "We have replied, your turn." },
   resolved:    { tint: '#3A5F37', label: 'Resolved',    help: 'Closed out. Reopen any time.' },
   closed:      { tint: '#6B7C92', label: 'Closed',      help: 'Closed out. Reopen any time.' },
 };
@@ -90,11 +90,11 @@ export default function SupportDetailRoute() {
       // 404 → ticket not owned by user; 409 → ticket closed/resolved.
       const status = e?.response?.status;
       if (status === 404) {
-        toast.error("This ticket isn't available on your account.");
+        toast.error("This ticket is not available on your account.");
       } else if (status === 409) {
-        toast.warning('This ticket is closed — start a new one if you need more help.');
+        toast.warning('This ticket is closed, start a new one if you need more help.');
       } else {
-        toast.error(extractErrorMessage(e, "Couldn't send the reply"));
+        toast.error(extractErrorMessage(e, "Could not send the reply"));
       }
     } finally { setSending(false); }
   }, [ticket?.id, note, refresh]);
@@ -148,7 +148,7 @@ export default function SupportDetailRoute() {
 
             {!!ticket.user_note && (
               <View style={styles.messageCard}>
-                <Text style={styles.messageMeta}>You — {ticket.created_at ? formatDate(ticket.created_at) : ''}</Text>
+                <Text style={styles.messageMeta}>You, {ticket.created_at ? formatDate(ticket.created_at) : ''}</Text>
                 <Text style={styles.messageBody}>{ticket.user_note}</Text>
               </View>
             )}
@@ -163,7 +163,7 @@ export default function SupportDetailRoute() {
                   const isMe = (r.direction || r.author || '').toLowerCase().includes('me') || (r.direction === 'out');
                   return (
                     <View key={r.id || `r-${idx}`} style={[styles.messageCard, isMe && styles.messageMine]}>
-                      <Text style={styles.messageMeta}>{r.author_name || r.author || (isMe ? 'You' : 'Wayly')} — {r.created_at ? formatDate(r.created_at) : ''}</Text>
+                      <Text style={styles.messageMeta}>{r.author_name || r.author || (isMe ? 'You' : 'Wayly')}, {r.created_at ? formatDate(r.created_at) : ''}</Text>
                       <Text style={styles.messageBody}>{r.body || r.message || ''}</Text>
                     </View>
                   );

@@ -57,7 +57,7 @@ export default function Participants() {
                 </View>
               </View>
               <Text style={styles.subhero}>
-                Anyone you&apos;re caring for who has their own Support at Home plan. Each gets their own statements, budget and care plan view.
+                Anyone you are caring for who has their own Support at Home plan. Each gets their own statements, budget and care plan view.
               </Text>
             </View>
             {canAdd ? (
@@ -99,7 +99,7 @@ export default function Participants() {
                 <Text style={styles.emailText} numberOfLines={1}>{p.contact_email || '—'}</Text>
               </View>
 
-              {pending && <Text style={styles.pending}>Removal scheduled — restorable for 30 days</Text>}
+              {pending && <Text style={styles.pending}>Removal scheduled, restorable for 30 days</Text>}
 
               <View style={styles.actions}>
                 <TouchableOpacity
@@ -150,7 +150,7 @@ export default function Participants() {
 
         {!canAdd && (
           <View style={styles.limitCard}>
-            <Text style={styles.limitText}>You&apos;ve hit the participant cap on your {summary?.base_plan || 'current'} plan.</Text>
+            <Text style={styles.limitText}>You have hit the participant cap on your {summary?.base_plan || 'current'} plan.</Text>
             <TouchableOpacity onPress={() => router.push('/settings/plan' as any)}>
               <Text style={styles.limitCta}>Upgrade plan</Text>
             </TouchableOpacity>

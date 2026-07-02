@@ -125,7 +125,7 @@ export default function BudgetAlerts() {
           <Text style={styles.hero}>Budget alerts</Text>
         </View>
         <Text style={styles.subhero}>
-          Tell Wayly which budget lines to watch. We re-check every statement upload and flag lines that look like they&apos;ll run over.
+          Tell Wayly which budget lines to watch. We re-check every statement upload and flag lines that look like they will run over.
         </Text>
 
         {/* ── Threshold-config card ─────────────────────────────────── */}
@@ -136,14 +136,14 @@ export default function BudgetAlerts() {
               <Text style={styles.configSub}>
                 {prefs.enabled
                   ? `${activeCount} of ${STREAMS.length} streams being watched`
-                  : 'Paused — Wayly won\u2019t send budget alerts right now'}
+                  : 'Paused, Wayly won\u2019t send budget alerts right now'}
               </Text>
             </View>
             <Switch
               value={prefs.enabled}
               onValueChange={toggleAll}
-              trackColor={{ false: c.borderSubtle, true: c.brandPrimary }}
-              thumbColor={Platform.OS === 'android' ? c.cream : undefined}
+              trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }}
+              thumbColor="#FFFFFF"
               testID="budget-alerts-master-toggle"
             />
           </View>
@@ -207,7 +207,7 @@ export default function BudgetAlerts() {
           <View style={styles.emptyCard}>
             <Ionicons name="shield-checkmark-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No alerts right now</Text>
-            <Text style={styles.emptyBody}>If any category looks like it&apos;ll over-run this quarter, we&apos;ll surface it here.</Text>
+            <Text style={styles.emptyBody}>If any category looks like it will over-run this quarter, we will surface it here.</Text>
             <TouchableOpacity style={styles.cta} onPress={() => router.push('/(tabs)/today' as any)}>
               <Text style={styles.ctaText}>View budget</Text>
             </TouchableOpacity>

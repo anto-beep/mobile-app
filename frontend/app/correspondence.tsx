@@ -59,7 +59,7 @@ export default function Correspondence() {
           <Ionicons name="mail-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Correspondence</Text>
         </View>
-        <Text style={styles.subhero}>Letters, emails and outcomes from your provider — kept in one place so the whole family can read them.</Text>
+        <Text style={styles.subhero}>Letters, emails and outcomes from your provider, kept in one place so the whole family can read them.</Text>
 
         {loading ? null : items.length === 0 ? (
           <View style={styles.emptyCard}>

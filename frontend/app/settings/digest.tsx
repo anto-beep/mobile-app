@@ -15,8 +15,8 @@ export default function DigestSettings() {
   const styles = useThemedStyles(makeStyles);
   const [cadence, setCadence] = useState<Cadence>('weekly');
   const opts: Array<{ key: Cadence; title: string; sub: string }> = [
-    { key: 'weekly', title: 'Weekly', sub: 'Sunday 7am AEST — 1‑glance of the week’s spend + anomalies.' },
-    { key: 'monthly', title: 'Monthly', sub: 'First of the month — a fuller PDF of last month’s activity.' },
+    { key: 'weekly', title: 'Weekly', sub: 'Sunday 7am AEST, 1‑glance of the week’s spend + anomalies.' },
+    { key: 'monthly', title: 'Monthly', sub: 'First of the month, a fuller PDF of last month’s activity.' },
     { key: 'off', title: 'Off', sub: 'No digest. You can still pull reports on demand.' },
   ];
   return (

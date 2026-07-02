@@ -59,11 +59,11 @@ export default function Members() {
     setInviting(true);
     try {
       await api.post('/household/invite', { email: email.trim().toLowerCase(), role, note });
-      Alert.alert('Invitation sent', `We've emailed ${email} an invite link.`);
+      Alert.alert('Invitation sent', `We have emailed ${email} an invite link.`);
       setEmail(''); setNote('');
       load();
     } catch (e) {
-      Alert.alert("Couldn't send invite", extractErrorMessage(e));
+      Alert.alert("Could not send invite", extractErrorMessage(e));
     } finally {
       setInviting(false);
     }
@@ -82,7 +82,7 @@ export default function Members() {
             try {
               await api.delete(`/household/members/${memberId}`);
               load();
-            } catch (e) { Alert.alert("Couldn't remove", extractErrorMessage(e)); }
+            } catch (e) { Alert.alert("Could not remove", extractErrorMessage(e)); }
           },
         },
       ]
@@ -96,7 +96,7 @@ export default function Members() {
         <View style={styles.gateCard} testID="members-upgrade-gate">
           <Ionicons name="people-outline" size={32} color={c.brandSecondary} />
           <Text style={styles.gateTitle}>Family invites are on Family plan</Text>
-          <Text style={styles.gateBody}>Upgrade to Family to invite up to 5 people to your dashboard — siblings, your participant, even an advisor.</Text>
+          <Text style={styles.gateBody}>Upgrade to Family to invite up to 5 people to your dashboard, siblings, your participant, even an advisor.</Text>
           <TouchableOpacity onPress={() => router.push('/settings/plan' as any)} style={styles.gateBtn} testID="members-go-to-plan">
             <Text style={styles.gateBtnText}>See plans</Text>
           </TouchableOpacity>
@@ -112,7 +112,7 @@ export default function Members() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" testID="members-scroll">
           <Text style={styles.sectionLabel}>Members</Text>
           {loading ? <ActivityIndicator color={c.brandPrimary} /> : members.length === 0 ? (
-            <Text style={styles.emptyText}>No-one else yet — invite your first family member below.</Text>
+            <Text style={styles.emptyText}>No-one else yet, invite your first family member below.</Text>
           ) : members.map((m) => (
             <View key={m.user_id || m.email} style={styles.memberCard} testID={`member-${m.user_id || m.email}`}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{(m.name || m.email).charAt(0).toUpperCase()}</Text></View>
@@ -155,7 +155,7 @@ export default function Members() {
             <Text style={[styles.label, { marginTop: Spacing.md }]}>Personal note (optional)</Text>
             <TextInput
               value={note} onChangeText={setNote}
-              placeholder="Hey — added you to Mum's Wayly so you can keep an eye too."
+              placeholder="Hey, added you to Mum's Wayly so you can keep an eye too."
               placeholderTextColor={c.textMuted}
               style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]}
               multiline testID="members-invite-note"

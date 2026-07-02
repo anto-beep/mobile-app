@@ -86,9 +86,9 @@ export function DupExactModal({
   const styles = useThemedStyles(makeShellStyles);
   return (
     <ModalShell visible={visible} onClose={onClose} testID="dup-exact-modal">
-      <ModalHeading icon="document-text-outline" iconTint="#0E4D52" title="You've uploaded this statement before" />
+      <ModalHeading icon="document-text-outline" iconTint="#0E4D52" title="You have uploaded this statement before" />
       <Text style={styles.body}>
-        We compared the file you just dropped in against your history and found it's byte-for-byte identical to one we've already processed. We'd usually wave you through — but since nothing's changed, there's no new work to do.
+        We compared the file you just dropped in against your history and found it is byte-for-byte identical to one we have already processed. We'd usually wave you through, but since nothing's changed, there is no new work to do.
       </Text>
       {existing?.existing_filename ? (
         <View style={styles.meta}>
@@ -115,7 +115,7 @@ export function DupLogicalSameModal({
     <ModalShell visible={visible} onClose={onClose} testID="dup-logical-same-modal">
       <ModalHeading icon="copy-outline" iconTint="#0E4D52" title="Looks like the same statement, re-exported" />
       <Text style={styles.body}>
-        The file is different on disk, but every line item, total and date is identical to a statement you've already uploaded. Most providers re-generate PDFs with a new timestamp — that's almost certainly what happened here.
+        The file is different on disk, but every line item, total and date is identical to a statement you have already uploaded. Most providers re-generate PDFs with a new timestamp, that's almost certainly what happened here.
       </Text>
       <View style={styles.actions}>
         <SecondaryBtn onPress={onClose}>Cancel</SecondaryBtn>
@@ -132,9 +132,9 @@ export function DupLogicalDiffModal({
   const styles = useThemedStyles(makeShellStyles);
   return (
     <ModalShell visible={visible} onClose={onClose} testID="dup-logical-diff-modal">
-      <ModalHeading icon="git-branch-outline" iconTint="#0E4D52" title="Looks like a revised statement — saved as a new version" />
+      <ModalHeading icon="git-branch-outline" iconTint="#0E4D52" title="Looks like a revised statement, saved as a new version" />
       <Text style={styles.body}>
-        The period matches a statement you already have, but the numbers don't. We've kept the old version in your audit trail and made this new one your active statement. Any reports or budget calculations now use the revised numbers.
+        The period matches a statement you already have, but the numbers do not. We have kept the old version in your audit trail and made this new one your active statement. Any reports or budget calculations now use the revised numbers.
       </Text>
       <View style={styles.actions}>
         <SecondaryBtn onPress={onViewAudit || onClose} testID="dup-logical-diff-view-audit-btn">View audit log</SecondaryBtn>
@@ -166,7 +166,7 @@ export function ArchiveConfirmModal({
     <ModalShell visible={visible} onClose={onClose} testID="archive-confirm-modal">
       <ModalHeading icon="archive-outline" iconTint="#C8932B" title="Archive this statement?" />
       <Text style={styles.body}>
-        Archiving hides this statement from your dashboard, reports, and AI assistant. You have <Text style={styles.bodyStrong}>30 days</Text> to restore it before it's permanently deleted.
+        Archiving hides this statement from your dashboard, reports, and AI assistant. You have <Text style={styles.bodyStrong}>30 days</Text> to restore it before it is permanently deleted.
       </Text>
       {preview?.period_label || preview?.filename ? (
         <View style={styles.meta}>
@@ -181,7 +181,7 @@ export function ArchiveConfirmModal({
         <View style={[styles.callout, styles.calloutWarn]} testID="archive-gap-warning">
           <Ionicons name="warning-outline" size={16} color="#A54030" />
           <Text style={styles.calloutText}>
-            This is the only active statement for this period. Archiving will leave a gap — your dashboard will show this period as <Text style={styles.bodyStrong}>missing</Text> until you upload another.
+            This is the only active statement for this period. Archiving will leave a gap, your dashboard will show this period as <Text style={styles.bodyStrong}>missing</Text> until you upload another.
           </Text>
         </View>
       )}
@@ -261,7 +261,7 @@ export function NeedsReviewBanner({ confidence }: { confidence: number }) {
     <View style={[styles.banner, styles.bannerWarn]} testID="needs-review-banner">
       <Ionicons name="alert-circle-outline" size={18} color="#A54030" />
       <Text style={styles.bannerText}>
-        <Text style={styles.bannerStrong}>Low parsing confidence ({pct}%).</Text> Some line items may be wrong — double-check against the original PDF before relying on this for any decisions.
+        <Text style={styles.bannerStrong}>Low parsing confidence ({pct}%).</Text> Some line items may be wrong, double-check against the original PDF before relying on this for any decisions.
       </Text>
     </View>
   );

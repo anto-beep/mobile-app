@@ -95,7 +95,7 @@ export default function Visits() {
       const { data } = await api.get<Visit[]>('/visits');
       setVisits(data || []);
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't load visits"));
+      toast.error(extractErrorMessage(e, "Could not load visits"));
     } finally {
       setLoading(false); setRefreshing(false);
     }
@@ -158,7 +158,7 @@ export default function Visits() {
       setModal(null);
       await load();
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't save visit"));
+      toast.error(extractErrorMessage(e, "Could not save visit"));
     } finally { setSaving(false); }
   }, [modal, load]);
 
@@ -170,7 +170,7 @@ export default function Visits() {
         setVisits((vs) => vs.filter((x) => x.id !== v.id));
         setModal(null);
       } catch (e) {
-        toast.error(extractErrorMessage(e, "Couldn't remove"));
+        toast.error(extractErrorMessage(e, "Could not remove"));
       }
     };
     if (Platform.OS === 'web') {

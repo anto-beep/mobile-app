@@ -213,7 +213,7 @@ export default function Profile() {
 
           <TouchableOpacity onPress={onLogout} style={styles.logout} testID="profile-logout">
             <Ionicons name="log-out-outline" size={18} color={c.severityAlert} />
-            <Text style={styles.logoutText}>Sign out</Text>
+            <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
 
           <Text style={styles.footer}>Wayly · Mobile companion to your web account</Text>
@@ -247,7 +247,7 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
       reset();
       onClose();
     } catch (e) {
-      Alert.alert("Couldn't send", extractErrorMessage(e));
+      Alert.alert("Could not send", extractErrorMessage(e));
     } finally {
       setSending(false);
     }
@@ -259,7 +259,7 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
       <View style={styles.sheet} testID="share-sheet">
         <View style={styles.handle} />
         <Text style={styles.modalTitle}>Share dashboard</Text>
-        <Text style={styles.modalSub}>We'll email a snapshot of this quarter to whoever should know.</Text>
+        <Text style={styles.modalSub}>We will email a snapshot of this quarter to whoever should know.</Text>
 
         <Text style={styles.label}>Email addresses</Text>
         <TextInput
@@ -279,7 +279,7 @@ function ShareModal({ visible, onClose }: { visible: boolean; onClose: () => voi
           style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
           value={note}
           onChangeText={setNote}
-          placeholder="Mum's tracking well this quarter — thought you'd want a look."
+          placeholder="Mum's tracking well this quarter, thought you'd want a look."
           placeholderTextColor={c.textMuted}
           multiline
           testID="share-note-input"

@@ -54,6 +54,15 @@ function resolveBackend(): string {
 
 const BASE = resolveBackend();
 
+// ── Trial read-only mode (UI-2 Part F) ─────────────────────────────────────
+// Backend blocks writes for expired trials with HTTP 402 `trial_expired`.
+// We also block writes BEFORE the network call once the flag is set (from
+// AuthContext on login/refresh, or from the first 402 seen).
+let trialReadOnly = false;
+export const setTrialReadOnly = (v: boolean) => { trialReadOnly = v; };
+export const isTrialReadOnly = () => trialReadOnly;
+const TRIAL_EXPIRED_MSG = 'Your trial has ended. Subscribe to add or change anything.';
+
 // Exposed so non-axios callers (e.g. `expo-file-system` PDF downloads) can
 // build absolute URLs to the same backend without re-running the override
 // resolver. NEVER hardcode the URL in screens — import this instead.
@@ -96,9 +105,16 @@ api.interceptors.request.use(async (config) => {
   // If an admin has impersonated a user, every non-GET request is rejected client-side.
   const method = (config.method || 'get').toUpperCase();
   if (isImpersonating() && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    toast.warning('Read-only mode — write actions are disabled while impersonating.', 4500);
+    toast.warning('Read-only mode, write actions are disabled while impersonating.', 4500);
     const ce = new axios.Cancel('Impersonation read-only mode');
     throw ce;
+  }
+  // Trial expired → block writes client-side. Auth + billing stay open so the
+  // user can sign in/out and subscribe.
+  const isWriteBlockedRoute = !url.startsWith('/auth') && !url.startsWith('/billing');
+  if (trialReadOnly && isWriteBlockedRoute && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    toast.warning(TRIAL_EXPIRED_MSG, 5000);
+    throw new axios.Cancel('Trial expired read-only mode');
   }
   return config;
 });
@@ -126,12 +142,22 @@ api.interceptors.response.use(
       await clearTokens();
     }
 
+    // 402 trial_expired → flip the client-side read-only flag + surface the
+    // upgrade message (Part F).
+    if (status === 402) {
+      const detail: any = (err?.response?.data as any)?.detail;
+      if (detail && (detail.error === 'trial_expired' || detail.read_only)) {
+        trialReadOnly = true;
+        try { toast.warning(detail.message || TRIAL_EXPIRED_MSG, 5000); } catch {}
+      }
+    }
+
     // Global toast policy (unchanged from before).
     try {
       const isAuthMe = url.endsWith('/auth/me');
       if (!isAuthMe) {
         if (status === 429) {
-          toast.warning('Slow down — please try again in a moment.', 5000);
+          toast.warning('Slow down, please try again in a moment.', 5000);
         } else if (status === 503) {
           toast.error('Wayly is temporarily unavailable. Please try again in a minute.', 6000);
         } else if (status && status >= 500 && status < 600) {

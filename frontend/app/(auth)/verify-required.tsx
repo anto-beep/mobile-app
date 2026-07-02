@@ -90,7 +90,7 @@ export default function VerifyRequired() {
           </Text>
           <Text style={styles.help}>
             Open the email and tap the link. The link is valid for 24 hours.
-            Check your spam folder if you don&apos;t see it.
+            Check your spam folder if you do not see it.
           </Text>
 
           <TouchableOpacity

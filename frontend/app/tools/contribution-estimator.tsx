@@ -13,6 +13,7 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 type Cohort = 'full' | 'part' | 'cshc' | 'self';
 const COHORTS: { key: Cohort; label: string; ratesEditable: boolean }[] = [
@@ -69,14 +70,14 @@ export default function ContributionEstimator() {
       const { data } = await api.post('/public/contribution-estimator', body);
       setResult(data);
     } catch (e: any) {
-      setErr(extractErrorMessage(e, "Couldn't estimate"));
+      setErr(extractErrorMessage(e, "Could not estimate"));
     } finally { setLoading(false); }
   };
 
   const isBand = result?.rate_basis === 'band_range';
   const verboseRate = (s: any) => {
     if (s.rate_pct != null) return `${s.rate_pct}%`;
-    if (s.rate_pct_low != null) return `${s.rate_pct_low}–${s.rate_pct_high}%`;
+    if (s.rate_pct_low != null) return `${s.rate_pct_low}-${s.rate_pct_high}%`;
     return '';
   };
 
@@ -136,11 +137,19 @@ export default function ContributionEstimator() {
 
           {result && (
             <View style={styles.result} testID="contrib-result">
+              <ToolSummary
+                toolName="Contribution Estimator"
+                tone="neutral"
+                headline={isBand
+                  ? `Your quarterly contribution sits between ${formatAUD((result.annual_contribution_low || 0) / 4)} and ${formatAUD((result.annual_contribution_high || 0) / 4)}.`
+                  : `Your estimated contribution is ${formatAUD(result.quarterly_contribution || 0)} per quarter.`}
+                body={`Wayly worked this out from your pension status, means-tested income and daily fee. On Support at Home the government pays most of the cost; what is shown here is the co-payment that comes out of your budget.${result.caveat ? ` ${result.caveat}` : ''}`}
+              />
               <Text style={styles.resultOverline}>Estimated contribution</Text>
               {isBand ? (
                 <>
                   <Text style={styles.resultAmount} testID="ce-annual-range">
-                    {formatAUD(result.annual_contribution_low || 0)}–{formatAUD(result.annual_contribution_high || 0)}/yr
+                    {formatAUD(result.annual_contribution_low || 0)} to {formatAUD(result.annual_contribution_high || 0)}/yr
                   </Text>
                   <View style={styles.caveat} testID="ce-caveat">
                     <Ionicons name="information-circle-outline" size={14} color={c.brandSecondary} />
@@ -162,13 +171,14 @@ export default function ContributionEstimator() {
                         {verboseRate(s) ? <Text style={styles.streamPct}>{verboseRate(s)}</Text> : null}
                       </View>
                       <Text style={styles.streamAmt}>
-                        {s.contribution != null ? `${formatAUD(s.contribution)}/yr` : `${formatAUD(s.contribution_low || 0)}–${formatAUD(s.contribution_high || 0)}/yr`}
+                        {s.contribution != null ? `${formatAUD(s.contribution)}/yr` : `${formatAUD(s.contribution_low || 0)} to ${formatAUD(s.contribution_high || 0)}/yr`}
                       </Text>
                     </View>
                   ))}
                 </View>
               )}
               {result.note && <Text style={styles.note}>{result.note}</Text>}
+              <ReportIssueButton tool="Contribution Estimator" />
             </View>
           )}
         </ScrollView>
@@ -201,13 +211,13 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   error: { marginTop: Spacing.md, padding: 10, backgroundColor: 'rgba(192, 57, 43, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.severityAlert, fontFamily: Fonts.body, fontSize: 12, color: c.severityAlert, lineHeight: 17 },
   result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
   resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
-  resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.8 },
-  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  resultAmount: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 24, color: c.brandPrimary },
+  resultSub: { fontFamily: Fonts.mono, fontVariant: ['tabular-nums' as const], fontSize: 13, color: c.textSecondary, marginTop: 4 },
   caveat: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, marginTop: Spacing.sm, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary },
   caveatText: { flex: 1, fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
   streamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.borderSubtle },
   streamName: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.textSecondary },
   streamPct: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 1 },
-  streamAmt: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  streamAmt: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 13, color: c.brandPrimary },
   note: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: Spacing.md, fontStyle: 'italic', lineHeight: 17 },
 }); }

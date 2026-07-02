@@ -66,7 +66,7 @@ export default function NotificationsPrefs() {
     } catch (e) {
       // Revert on failure
       setPrefs((p) => ({ ...p, [key]: !next[key] }));
-      Alert.alert("Couldn't save", extractErrorMessage(e));
+      Alert.alert("Could not save", extractErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -96,7 +96,7 @@ export default function NotificationsPrefs() {
                 <Text style={styles.rowLabel}>{r.label}</Text>
                 <Text style={styles.rowSub}>{r.sub}</Text>
               </View>
-              <Switch value={!!prefs[r.key]} onValueChange={() => toggle(r.key)} disabled={saving} />
+              <Switch thumbColor="#FFFFFF" trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }} value={!!prefs[r.key]} onValueChange={() => toggle(r.key)} disabled={saving} />
             </View>
           ))}
         </View>
@@ -109,7 +109,7 @@ export default function NotificationsPrefs() {
                 <Text style={styles.rowLabel}>{r.label}</Text>
                 <Text style={styles.rowSub}>{r.sub}</Text>
               </View>
-              <Switch value={!!prefs[r.key]} onValueChange={() => toggle(r.key)} disabled={saving} />
+              <Switch thumbColor="#FFFFFF" trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }} value={!!prefs[r.key]} onValueChange={() => toggle(r.key)} disabled={saving} />
             </View>
           ))}
         </View>
@@ -117,7 +117,7 @@ export default function NotificationsPrefs() {
         <View style={styles.note}>
           <Ionicons name="information-circle-outline" size={14} color={c.textMuted} />
           <Text style={styles.noteText}>
-            Push notifications need a real device + permission. The first time you log in we'll ask if Wayly can send them.
+            Push notifications need a real device + permission. The first time you log in we will ask if Wayly can send them.
           </Text>
         </View>
       </ScrollView>

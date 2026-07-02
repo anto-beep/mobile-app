@@ -64,7 +64,7 @@ export default function Participant() {
       });
       setSubmittedMood(mood);
     } catch (e) {
-      Alert.alert("Couldn't save", extractErrorMessage(e));
+      Alert.alert("Could not save", extractErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -98,7 +98,7 @@ export default function Participant() {
               <View style={styles.appointmentCard} testID="participant-appointment">
                 <Text style={styles.appointmentOverline}>Today at a glance</Text>
                 <Text style={styles.appointmentTitle}>
-                  {today.appointment.time} — {today.appointment.service}
+                  {today.appointment.time}, {today.appointment.service}
                 </Text>
                 <Text style={styles.appointmentMeta}>
                   with {today.appointment.name} · {today.appointment.duration}

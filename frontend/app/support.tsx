@@ -9,14 +9,14 @@
 //   POST /api/support/tickets        → { ticket: {...} }
 //
 // Status pills match the web ("Received", "In progress", "Resolved", etc.).
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../src/lib/useApi';
 import { api, extractErrorMessage } from '../src/lib/api';
@@ -89,6 +89,7 @@ export default function SupportRoute() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const params = useLocalSearchParams<{ open?: string; tool?: string }>();
   const { data, loading, refreshing, refresh } = useApi<{ tickets: Ticket[] }>('/support/tickets');
 
   const [composerOpen, setComposerOpen] = useState(false);
@@ -102,6 +103,15 @@ export default function SupportRoute() {
   const [note, setNote] = useState('');
 
   const tickets = useMemo<Ticket[]>(() => Array.isArray(data?.tickets) ? data!.tickets : [], [data]);
+
+  // Deep-link from tool results: /support?open=1&tool=Statement%20Decoder
+  useEffect(() => {
+    if (params.open === '1') {
+      if (params.tool && TOOL_OPTIONS.includes(String(params.tool))) setTool(String(params.tool));
+      setComposerOpen(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.open, params.tool]);
 
   const reset = useCallback(() => {
     setTool('General Support'); setCategory(''); setCorrectAnswer(''); setSource(''); setNote('');
@@ -136,7 +146,7 @@ export default function SupportRoute() {
       toast.success('Ticket sent. We will be in touch.');
       if (tid) router.push(`/support/${tid}` as any);
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't raise the ticket"));
+      toast.error(extractErrorMessage(e, "Could not raise the ticket"));
     } finally { setBusy(false); }
   }, [tool, category, correctAnswer, source, note, canSend, refresh, reset, router]);
 

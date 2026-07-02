@@ -159,8 +159,8 @@ export default function Chat() {
       if (probe.boundary !== 'SAFE_TO_EXPLAIN') {
         const contacts = scenario.getContacts(probe.contacts || []);
         const lead = probe.boundary === 'ESCALATE'
-          ? "This one needs a real person, fast. Wayly doesn't give legal or financial advice, so I'll point you straight to who can help:"
-          : "A specialist can answer this best — Wayly doesn't give legal or financial advice. Here's where to start:";
+          ? "This one needs a real person, fast. Wayly does not give legal or financial advice, so I'll point you straight to who can help:"
+          : "A specialist can answer this best, Wayly does not give legal or financial advice. Here's where to start:";
         const lines = contacts.map((c) => `\u2022 ${c.label} \u2014 ${c.phone}${c.hours ? ` (${c.hours})` : ''}`).join('\n');
         const safeLines = lines || '\u2022 Visit https://wayly.com.au/contacts for the up-to-date list of who to call.';
         setTurns((prev) => [...prev, { role: 'assistant', content: `${lead}\n\n${safeLines}` }]);
@@ -175,7 +175,7 @@ export default function Chat() {
     } catch (e) {
       setTurns((prev) => [
         ...prev,
-        { role: 'assistant', content: extractErrorMessage(e, 'I couldn\'t reach my brain — try again?') },
+        { role: 'assistant', content: extractErrorMessage(e, 'I couldn\'t reach my brain, try again?') },
       ]);
     } finally {
       setSending(false);

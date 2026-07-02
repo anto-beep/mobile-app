@@ -30,7 +30,7 @@ export default function WorkflowsIndex() {
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: 12 }}>
         <Text style={styles.lead}>Step-by-step flows for the big moments in a participant’s journey. Each step captures the right event on the timeline.</Text>
         {wfs.length === 0 ? (
-          <EmptyState icon="compass-outline" title="Workflows unavailable" body="The scenario engine catalogue couldn’t be loaded — pull down to refresh on the main screen." />
+          <EmptyState icon="compass-outline" title="Workflows unavailable" body="The scenario engine catalogue could not be loaded, pull down to refresh on the main screen." />
         ) : wfs.map((w) => {
           const isEscalate = w.advice_boundary === 'ESCALATE';
           return (
@@ -47,7 +47,7 @@ export default function WorkflowsIndex() {
                 <Text style={[styles.title, isEscalate && { color: '#7A2210' }]}>{w.label}</Text>
                 <Text style={styles.body} numberOfLines={3}>{w.intro}</Text>
                 {isEscalate && (
-                  <View style={styles.escPill}><Text style={styles.escPillText}>Sensitive — escalation flow</Text></View>
+                  <View style={styles.escPill}><Text style={styles.escPillText}>Sensitive, escalation flow</Text></View>
                 )}
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />

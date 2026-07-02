@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { api, TOKEN_KEY, extractErrorMessage } from '../lib/api';
+import { api, TOKEN_KEY, extractErrorMessage, setTrialReadOnly } from '../lib/api';
 import { getAccessToken, persistTokens, clearTokens } from '../lib/tokens';
 import { clearAllUserData } from '../lib/secureStorage';
 import { unregisterPushNotifications } from '../lib/push';
@@ -91,6 +91,15 @@ async function fetchSubscription(): Promise<Subscription | null> {
 // rest of the app (paywalls, header badge, trial CTAs) sees the SAME effective
 // plan everywhere — production data can drift if a Stripe webhook missed and
 // `users.plan` will say "free" while `/billing/subscription` says "family".
+// Part F: expired trial → app-wide read-only. Active subscriptions are never
+// read-only; trialing accounts flip once trial_ends_at passes.
+export function isTrialExpired(u: User | null): boolean {
+  if (!u) return false;
+  if (u.subscription_status === 'active') return false;
+  if (!u.trial_ends_at) return false;
+  return new Date(u.trial_ends_at).getTime() < Date.now();
+}
+
 function mergeUserWithSub(u: User, sub: Subscription | null): User {
   if (!sub) return u;
   const subPlan = sub.plan.toLowerCase();
@@ -126,6 +135,9 @@ async function fetchVerification(): Promise<VerificationState | null> {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+
+  // Part F: keep the api-layer read-only flag in sync with the user's trial state.
+  useEffect(() => { setTrialReadOnly(isTrialExpired(user)); }, [user]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verification, setVerification] = useState<VerificationState | null>(null);
   const [loading, setLoading] = useState(true);

@@ -46,7 +46,7 @@ export function WaylyHeader({ transparent = false }: Props) {
 
   return (
     <View style={[styles.bar, transparent && styles.transparent]}>
-      {/* Brand mark — logo + "Wayly" wordmark (matches web app top-left). */}
+      {/* Brand mark, logo + "Wayly" wordmark (matches web app top-left). */}
       <TouchableOpacity
         testID="brand-link"
         hitSlop={8}

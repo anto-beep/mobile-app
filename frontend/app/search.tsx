@@ -53,7 +53,7 @@ export default function Search() {
           <EmptyState icon="search-outline" title={`No results for “${q}”`} body="Try a different word, a provider name, a month or a dollar amount." />
         )}
         {!busy && !q.trim() && (
-          <EmptyState icon="sparkles-outline" title="Search across everything" body="Statements, documents, visits, notes — all from one box." />
+          <EmptyState icon="sparkles-outline" title="Search across everything" body="Statements, documents, visits, notes, all from one box." />
         )}
         {groups.map((g) => (
           <View key={g.kind} style={{ marginTop: 14 }}>

@@ -123,7 +123,7 @@ export default function FamilyWall() {
       // to the empty-state card instead of flashing a "Not found" toast.
       const status = e?.response?.status;
       if (status !== 404 && status !== 403) {
-        toast.error(extractErrorMessage(e, "Couldn't load family wall."));
+        toast.error(extractErrorMessage(e, "Could not load family wall."));
       }
       setPosts([]);
     } finally {
@@ -161,13 +161,13 @@ export default function FamilyWall() {
       let b64 = a.base64 || null;
       if (!b64 && a.uri) b64 = await fileToBase64(a.uri);
       if (!b64) {
-        toast.error("Couldn't read that photo.");
+        toast.error("Could not read that photo.");
         return;
       }
       setImageB64(b64);
       setImageMime(a.mimeType || 'image/jpeg');
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't pick a photo."));
+      toast.error(extractErrorMessage(e, "Could not pick a photo."));
     }
   }, []);
 
@@ -201,7 +201,7 @@ export default function FamilyWall() {
         setRecElapsed(Date.now() - startedAt);
       }, 250);
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't start recording."));
+      toast.error(extractErrorMessage(e, "Could not start recording."));
     }
   }, [recorder]);
 
@@ -220,7 +220,7 @@ export default function FamilyWall() {
       }
       const b64 = await fileToBase64(uri);
       if (!b64) {
-        toast.error("Couldn't read recording.");
+        toast.error("Could not read recording.");
         return;
       }
       const ext = (uri.split('.').pop() || 'm4a').toLowerCase();
@@ -266,7 +266,7 @@ export default function FamilyWall() {
       }
     } catch (e) {
       setRecording(false);
-      toast.error(extractErrorMessage(e, "Couldn't stop recording."));
+      toast.error(extractErrorMessage(e, "Could not stop recording."));
     }
   }, [recorder, recElapsed]);
 
@@ -299,7 +299,7 @@ export default function FamilyWall() {
       await load();
       toast.success('Posted to family wall.');
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't post. Try again."));
+      toast.error(extractErrorMessage(e, "Could not post. Try again."));
     } finally {
       setSubmitting(false);
     }

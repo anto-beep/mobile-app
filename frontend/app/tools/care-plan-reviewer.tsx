@@ -12,6 +12,7 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 const CANONICAL_CHECKS = [
   { key: 'budget_fit',          label: 'Budget fit'           },
@@ -65,13 +66,14 @@ export default function CarePlanReviewer() {
       const { data } = await api.post('/public/care-plan-review', body);
       setResult(data);
     } catch (e) {
-      Alert.alert("Couldn't review", extractErrorMessage(e));
+      Alert.alert("Could not review", extractErrorMessage(e));
     } finally { setLoading(false); }
   };
 
   // Backend returns checks in canonical order, but we still defensively map by key.
   const checksByKey: Record<string, any> = {};
   (result?.checks || []).forEach((c: any) => { checksByKey[c.check] = c; });
+  const flagCount = (result?.checks || []).filter((x: any) => x.status === 'flag').length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -86,7 +88,7 @@ export default function CarePlanReviewer() {
           <Text style={styles.label}>Classification (optional)</Text>
           <View style={styles.row}>
             <TouchableOpacity style={[styles.chip, classification == null && styles.chipActive]} onPress={() => setClassification(null)}>
-              <Text style={[styles.chipText, classification == null && styles.chipTextActive]}>—</Text>
+              <Text style={[styles.chipText, classification == null && styles.chipTextActive]}>Not set</Text>
             </TouchableOpacity>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((c) => (
               <TouchableOpacity key={c} style={[styles.chip, classification === c && styles.chipActive]} onPress={() => setClassification(c)} testID={`cp-classification-${c}`}>
@@ -102,7 +104,7 @@ export default function CarePlanReviewer() {
           <TextInput style={[styles.input, { minHeight: 160, textAlignVertical: 'top' }]} value={plan} onChangeText={setPlan} placeholder="Paste the participant's care plan here…" placeholderTextColor={c.textMuted} multiline testID="careplan-text" />
 
           <Text style={styles.label}>Specific concerns (optional)</Text>
-          <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={concerns} onChangeText={setConcerns} placeholder="e.g. Mobility has worsened — is this plan keeping up?" placeholderTextColor={c.textMuted} multiline testID="careplan-concerns" />
+          <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={concerns} onChangeText={setConcerns} placeholder="e.g. Mobility has worsened, is this plan keeping up?" placeholderTextColor={c.textMuted} multiline testID="careplan-concerns" />
 
           <TouchableOpacity onPress={review} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]} testID="careplan-review">
             {loading ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Review the plan</Text>}
@@ -110,7 +112,14 @@ export default function CarePlanReviewer() {
 
           {result && (
             <View style={styles.result} testID="careplan-result">
-              {result.summary ? <Text style={styles.summary}>{result.summary}</Text> : null}
+              <ToolSummary
+                toolName="Care Plan Reviewer"
+                tone={flagCount > 0 ? 'alert' : 'success'}
+                headline={flagCount > 0
+                  ? `Your care plan has ${flagCount} thing${flagCount === 1 ? '' : 's'} worth checking with your provider.`
+                  : 'Your care plan looks fine on the six structured checks.'}
+                body={result.summary || 'Wayly checked your care plan against six Support at Home rules: budget fit, care management cap, service-list compliance, stream alignment, review-date currency, and goals alignment.'}
+              />
               <View testID="cp-checks" style={styles.checkList}>
                 {CANONICAL_CHECKS.map((c) => {
                   const r = checksByKey[c.key] || { status: 'unknown', note: 'Not assessed.' };
@@ -139,6 +148,7 @@ export default function CarePlanReviewer() {
                   ))}
                 </>
               )}
+              <ReportIssueButton tool="Care Plan Reviewer" />
             </View>
           )}
         </ScrollView>

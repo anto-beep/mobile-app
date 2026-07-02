@@ -38,7 +38,7 @@ export default function WorkflowRunner() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <BackHeader title="Workflow" />
-        <EmptyState icon="compass-outline" title="Workflow not found" body="This workflow isn't in the current catalogue." cta={{ label: 'All workflows', onPress: () => router.replace('/workflows' as any) }} />
+        <EmptyState icon="compass-outline" title="Workflow not found" body="This workflow is not in the current catalogue." cta={{ label: 'All workflows', onPress: () => router.replace('/workflows' as any) }} />
       </SafeAreaView>
     );
   }

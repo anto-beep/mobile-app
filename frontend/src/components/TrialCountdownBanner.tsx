@@ -24,7 +24,7 @@ export function TrialCountdownBanner() {
       activeOpacity={0.85}
       style={styles.bar}
       accessibilityRole="link"
-      accessibilityLabel={`Free trial — ${days} day(s) left, ends ${formatAUWeekday(summary.trial_ends_at)}`}
+      accessibilityLabel={`Free trial, ${days} day(s) left, ends ${formatAUWeekday(summary.trial_ends_at)}`}
     >
       <Ionicons name="ribbon" size={16} color="#5C3D11" />
       <Text style={styles.label}>

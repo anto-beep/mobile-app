@@ -13,6 +13,7 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 type LetterType = 'classification_reassessment' | 'rcp_assessment' | 'care_plan_amendment';
 const LETTER_TYPES: { key: LetterType; label: string; sub: string }[] = [
@@ -72,14 +73,14 @@ export default function ReassessmentLetter() {
       setLetter(data.letter || '');
       setReturnedType(data.letter_type || null);
     } catch (e) {
-      Alert.alert("Couldn't draft the letter", extractErrorMessage(e));
+      Alert.alert("Could not draft the letter", extractErrorMessage(e));
     } finally { setLoading(false); }
   };
 
   const copy = async () => {
     if (!letter) return;
     try { await Clipboard.setStringAsync(letter); Alert.alert('Copied', 'The letter is on your clipboard.'); }
-    catch { Alert.alert("Couldn't copy", 'Try selecting the text manually.'); }
+    catch { Alert.alert("Could not copy", 'Try selecting the text manually.'); }
   };
 
   const meta = LETTER_TYPES.find((l) => l.key === (returnedType || letterType)) || LETTER_TYPES[0];
@@ -143,6 +144,12 @@ export default function ReassessmentLetter() {
 
           {letter && (
             <View style={styles.result} testID="reassess-result">
+              <ToolSummary
+                toolName="Reassessment Letter"
+                tone="success"
+                headline="Your reassessment letter is ready to review."
+                body="Wayly drafted a short, factual letter to My Aged Care asking for a reassessment. Read it end to end, edit anything that does not sound like you, and send it from your own email. Include the participant's My Aged Care reference number if you have it."
+              />
               <View style={styles.resultHead}>
                 <Text style={styles.resultTitle}>{meta.label}</Text>
                 <TouchableOpacity onPress={copy} style={styles.copyBtn} testID="reassess-copy">
@@ -152,6 +159,7 @@ export default function ReassessmentLetter() {
               </View>
               <Text style={styles.letterText} selectable>{letter}</Text>
               <Text style={styles.caveat}>Review before sending. Add the date, your address, and the recipient's address at the top.</Text>
+              <ReportIssueButton tool="Reassessment Letter" />
             </View>
           )}
         </ScrollView>

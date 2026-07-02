@@ -134,7 +134,7 @@ export default function Hospital() {
       await api.post('/hospital/handover', payload);
       toast.success('Handover saved.');
       await refresh();
-    } catch (e) { toast.error(extractErrorMessage(e, "Couldn't save handover")); }
+    } catch (e) { toast.error(extractErrorMessage(e, "Could not save handover")); }
     finally { setSaving(false); }
   };
 
@@ -151,7 +151,7 @@ export default function Hospital() {
           <Ionicons name="medkit-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>Hospital handover</Text>
         </View>
-        <Text style={styles.subhero}>What an ED triage nurse needs in 30 seconds. We&apos;ll save it so you can pull it up on the way to hospital.</Text>
+        <Text style={styles.subhero}>What an ED triage nurse needs in 30 seconds. We will save it so you can pull it up on the way to hospital.</Text>
 
         {loading && !data ? <ActivityIndicator color={c.brandPrimary} /> : (
           <>

@@ -112,7 +112,7 @@ export default function StatementsList() {
             <Ionicons name="document-text-outline" size={36} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No statements yet</Text>
             <Text style={styles.emptyBody}>
-              Tap the camera button below to add the first one. We'll do the reading.
+              Tap the camera button below to add the first one. We will do the reading.
             </Text>
           </View>
         ) : (

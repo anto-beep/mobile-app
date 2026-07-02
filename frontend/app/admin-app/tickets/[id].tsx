@@ -180,7 +180,7 @@ export default function TicketDetail() {
 
         {/* Reply composer */}
         <View style={styles.composer}>
-          {internal ? <Text style={styles.internalBadge}>Writing an internal note (user can’t see this)</Text> : null}
+          {internal ? <Text style={styles.internalBadge}>Writing an internal note (user cannot see this)</Text> : null}
           <View style={styles.composerRow}>
             <TextInput
               value={reply}

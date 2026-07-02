@@ -130,7 +130,7 @@ export default function Reports() {
         </View>
 
         <Text style={styles.footnote}>
-          AI may be incorrect — verify before acting. This document is generated on demand and is not stored on Wayly servers.
+          AI may be incorrect, verify before acting. This document is generated on demand and is not stored on Wayly servers.
         </Text>
       </ScrollView>
     </SafeAreaView>

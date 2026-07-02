@@ -181,7 +181,7 @@ export async function uploadFromDocument(onProgress: UploadProgress): Promise<st
  *  with summary, line items and anomalies. */
 export async function uploadFromText(text: string, onProgress: UploadProgress): Promise<UploadResult> {
   const trimmed = (text || '').trim();
-  if (trimmed.length < 10) throw new Error('Paste a bit more text — at least 10 characters.');
+  if (trimmed.length < 10) throw new Error('Paste a bit more text, at least 10 characters.');
   onProgress('uploading', FRIENDLY_PHRASES.uploading);
   const { data } = await api.post('/statements/upload-text', { text: trimmed });
   const jobId = data?.job_id;

@@ -62,7 +62,7 @@ export default function StatementAuditLog() {
     } catch (e: any) {
       const status = e?.response?.status;
       if (status !== 404 && status !== 403) {
-        toast.error(extractErrorMessage(e, "Couldn't load audit log."));
+        toast.error(extractErrorMessage(e, "Could not load audit log."));
       }
       setEvents([]);
     } finally {

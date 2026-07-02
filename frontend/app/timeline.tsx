@@ -27,6 +27,7 @@ export default function Timeline() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCapture, setShowCapture] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'event' | 'state' | 'alert'>('all');
 
   const load = useCallback(async (isRefresh = false) => {
     if (!active) { setLoading(false); return; }
@@ -61,9 +62,22 @@ export default function Timeline() {
           <Text style={[Type.h1 as any, { color: c.textPrimary }]}>{active.first_name}</Text>
           {!!lifecycle && <StatusBadge state={lifecycle} />}
         </View>
+        {/* Category filter — wrapping chip grid (UI-2 §3), never a horizontal scroll. */}
+        <View style={styles.filterGrid} testID="timeline-filter-grid">
+          {([['all', 'All'], ['event', 'Events'], ['state', 'Status Changes'], ['alert', 'Alerts']] as const).map(([key, label]) => (
+            <TouchableOpacity
+              key={key}
+              onPress={() => setFilter(key)}
+              style={[styles.filterChip, filter === key && styles.filterChipActive]}
+              testID={`timeline-filter-${key}`}
+            >
+              <Text style={[styles.filterChipText, filter === key && styles.filterChipTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {loading ? <ListSkeleton rows={5} /> : items.length === 0 ? (
-          <EmptyState icon="document-text-outline" title="Nothing logged yet" body={`${active.first_name}’s timeline will start filling as events are captured — hospital admissions, statement anomalies, status changes, alerts.`} cta={{ label: 'Log a scenario', onPress: () => setShowCapture(true) }} />
-        ) : items.map((it, idx) => <TimelineCell key={`${it.type}-${idx}-${it.at}`} item={it} />)}
+          <EmptyState icon="document-text-outline" title="Nothing logged yet" body={`${active.first_name}’s timeline will start filling as events are captured, hospital admissions, statement anomalies, status changes, alerts.`} cta={{ label: 'Log a scenario', onPress: () => setShowCapture(true) }} />
+        ) : items.filter((it) => filter === 'all' || it.type === filter).map((it, idx) => <TimelineCell key={`${it.type}-${idx}-${it.at}`} item={it} />)}
       </ScrollView>
       <TouchableOpacity testID="log-scenario-fab" onPress={() => setShowCapture(true)} style={styles.fab}>
         <Ionicons name="add" size={26} color="#fff" />
@@ -76,5 +90,10 @@ export default function Timeline() {
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  filterGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9999, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg },
+  filterChipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
+  filterChipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  filterChipTextActive: { color: c.textInverse },
   fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: c.brandPrimary, alignItems: 'center', justifyContent: 'center', elevation: 4 },
 }); }

@@ -99,17 +99,17 @@ export default function Audit() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Audit log" />
+      <BackHeader title="Audit Log" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <View style={styles.heroRow}>
           <Ionicons name="shield-checkmark-outline" size={22} color={c.brandPrimary} />
-          <Text style={styles.hero}>Audit log</Text>
+          <Text style={styles.hero}>Audit Log</Text>
         </View>
         <Text style={styles.subhero}>
-          Every privacy-sensitive action — sign-ins, statement uploads, decoder runs, amendments, document downloads and admin events.
+          Every privacy-sensitive action, sign-ins, statement uploads, decoder runs, amendments, document downloads and admin events.
         </Text>
 
         {/* Search */}

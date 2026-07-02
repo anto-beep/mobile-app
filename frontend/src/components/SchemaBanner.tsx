@@ -31,11 +31,11 @@ export function SchemaBanner() {
     >
       <Ionicons name="warning" size={16} color={isMajor ? '#7A2210' : '#5C3D11'} style={{ marginTop: 2 }} />
       <View style={{ flex: 1 }}>
-        <Text style={[styles.title, isMajor && { color: '#7A2210' }]}>{isMajor ? 'Update required' : 'Couldn’t reach Wayly'}</Text>
+        <Text style={[styles.title, isMajor && { color: '#7A2210' }]}>{isMajor ? 'Update required' : 'Could not reach Wayly'}</Text>
         <Text style={styles.body}>
           {isMajor
             ? `Wayly's scenario engine has moved to a newer major version (schema ${schema?.schema_version}). Please update the app to keep using these screens.`
-            : 'We’ll try again automatically. Some screens may be limited until we reconnect.'}
+            : 'We will try again automatically. Some screens may be limited until we reconnect.'}
         </Text>
       </View>
       {isMajor ? (

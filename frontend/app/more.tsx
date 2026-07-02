@@ -112,7 +112,7 @@ export default function More() {
         ))}
         <TouchableOpacity style={styles.signout} onPress={async () => { await logout(); router.replace('/login' as any); }}>
           <Ionicons name="log-out-outline" size={18} color={c.brandSecondary} />
-          <Text style={styles.signoutText}>Sign out</Text>
+          <Text style={styles.signoutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

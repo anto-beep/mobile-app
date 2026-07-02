@@ -53,7 +53,7 @@ export default function Login() {
       const m = String(detail).match(/(\d+)\s*minute/i);
       const mins = m ? parseInt(m[1], 10) : 1;
       startCooldown(mins * 60);
-      return `Too many sign-in attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'} — Wayly is just rate-limiting to keep accounts safe.`;
+      return `Too many sign-in attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}, Wayly is just rate-limiting to keep accounts safe.`;
     }
     if (status === 401 || /invalid (email|password|credentials)/i.test(String(detail))) {
       return 'That email and password combination didn\u2019t match. Try again or use "Forgot password?" below.';

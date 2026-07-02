@@ -73,7 +73,7 @@ function RootStack() {
       </BiometricGate>
       <DeepLinkHandler />
       <NotificationRouter />
-      {/* AccessibilityWidget removed per request — settings still accessible via More → Settings → Appearance. */}
+      {/* AccessibilityWidget removed per request, settings still accessible via More → Settings → Appearance. */}
     </>
   );
 }
@@ -92,6 +92,8 @@ export default function RootLayout() {
     Fraunces: require('../assets/fonts/Fraunces-Variable.ttf'),
     Inter: require('../assets/fonts/Inter-VariableFont.ttf'),
     'IBM Plex Mono': require('../assets/fonts/IBMPlexMono-Regular.ttf'),
+    'IBM Plex Mono Medium': require('../assets/fonts/IBMPlexMono-Medium.ttf'),
+    'IBM Plex Mono SemiBold': require('../assets/fonts/IBMPlexMono-SemiBold.ttf'),
   });
   const [ready, setReady] = React.useState(false);
 

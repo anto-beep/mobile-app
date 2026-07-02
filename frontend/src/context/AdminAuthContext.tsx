@@ -64,7 +64,7 @@ adminApi.interceptors.request.use(async (config) => {
 });
 
 // Surface server-side messages from admin auth errors
-export const extractAdminError = (err: any, fallback = "That didn't work"): string => {
+export const extractAdminError = (err: any, fallback = "That did not work"): string => {
   const detail = err?.response?.data?.detail;
   if (typeof detail === 'string') return detail;
   return err?.message || fallback;

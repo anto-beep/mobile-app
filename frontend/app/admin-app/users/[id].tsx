@@ -55,7 +55,7 @@ export default function AdminUserProfile() {
 
   const toggleSuspend = () => {
     const willSuspend = !u.suspended;
-    Alert.alert(willSuspend ? 'Suspend user?' : 'Reinstate user?', willSuspend ? `${u.email} won't be able to sign in.` : `${u.email} regains access.`, [
+    Alert.alert(willSuspend ? 'Suspend user?' : 'Reinstate user?', willSuspend ? `${u.email} will not be able to sign in.` : `${u.email} regains access.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: willSuspend ? 'Suspend' : 'Reinstate', style: willSuspend ? 'destructive' : 'default', onPress: async () => {
         setBusy('suspend');

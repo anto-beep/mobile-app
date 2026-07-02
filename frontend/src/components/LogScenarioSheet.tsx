@@ -62,7 +62,7 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
     if (!dirty) { reset(); onClose(); return; }
     Alert.alert(
       'Discard this entry?',
-      "You've started capturing a scenario. If you close now your draft will be cleared.",
+      "You have started capturing a scenario. If you close now your draft will be cleared.",
       [
         { text: 'Keep editing', style: 'cancel' },
         { text: 'Discard', style: 'destructive', onPress: () => { reset(); onClose(); } },
@@ -88,7 +88,7 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
       setResult(r);
       const ts = r?.event?.proposed?.transition_status;
       if (ts === 'blocked') {
-        toast.warning('Transition blocked — the engine kept the participant in their current state.', 5500);
+        toast.warning('Transition blocked, the engine kept the participant in their current state.', 5500);
       } else if (ts === 'applied') {
         toast.success('Event logged');
       } else {

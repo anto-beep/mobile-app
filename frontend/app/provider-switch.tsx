@@ -155,7 +155,7 @@ export default function ProviderSwitch() {
   const goStep = useCallback((n: number) => { setStep(Math.max(1, Math.min(5, n)) as 1 | 2 | 3 | 4 | 5); }, []);
 
   const continueLabel = useMemo(() => {
-    if (step === 1) return 'I Have Read This — Continue';
+    if (step === 1) return 'I Have Read This, Continue';
     if (step === 2) return 'Compare Providers';
     if (step === 3) return 'Draft the Notice';
     if (step === 4) return 'Start the Handover';
@@ -164,7 +164,7 @@ export default function ProviderSwitch() {
 
   const onCopy = useCallback(async () => {
     try { await Clipboard.setStringAsync(letter); toast.success('Letter copied to clipboard.'); }
-    catch { toast.error("Couldn't copy. Try Share instead."); }
+    catch { toast.error("Could not copy. Try Share instead."); }
   }, [letter]);
 
   const onDownloadText = useCallback(async () => {
@@ -201,7 +201,7 @@ export default function ProviderSwitch() {
         await Share.share({ message: letter, title: 'Provider switch notice' });
       }
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't share the letter.");
+      toast.error(e?.message || "Could not share the letter.");
     }
   }, [letter]);
 
@@ -218,7 +218,7 @@ export default function ProviderSwitch() {
         w.focus();
         w.print();
       } catch {
-        toast.warning("Couldn't open the print dialog.");
+        toast.warning("Could not open the print dialog.");
       }
       return;
     }
@@ -238,7 +238,7 @@ export default function ProviderSwitch() {
       await refresh();
       toast.success('Switch tracking started. Wayly will watch the handover for you.');
       setStep(5);
-    } catch (e) { toast.error(extractErrorMessage(e, "Couldn't start the switch")); }
+    } catch (e) { toast.error(extractErrorMessage(e, "Could not start the switch")); }
     finally { setBusy(false); }
   }, [targetProvider, reason, lastDay, refresh]);
 
@@ -247,7 +247,7 @@ export default function ProviderSwitch() {
     // close-out for the lifecycle. Confirm before doing anything.
     Alert.alert(
       'Mark switch complete?',
-      "We'll close the tracked switch and you can start a new one any time.",
+      "We will close the tracked switch and you can start a new one any time.",
       [
         { text: 'Not yet', style: 'cancel' },
         { text: 'Mark complete', onPress: async () => {
@@ -255,7 +255,7 @@ export default function ProviderSwitch() {
             await api.post('/provider-switch/cancel');
             await refresh();
             toast.success('Switch marked complete.');
-          } catch (e) { toast.error(extractErrorMessage(e, "Couldn't update status.")); }
+          } catch (e) { toast.error(extractErrorMessage(e, "Could not update status.")); }
         } },
       ],
     );
@@ -266,7 +266,7 @@ export default function ProviderSwitch() {
       { text: 'Keep going', style: 'cancel' },
       { text: 'Cancel switch', style: 'destructive', onPress: async () => {
         try { await api.post('/provider-switch/cancel'); await refresh(); toast.success('Switch cancelled.'); }
-        catch (e) { toast.error(extractErrorMessage(e, "Couldn't cancel.")); }
+        catch (e) { toast.error(extractErrorMessage(e, "Could not cancel.")); }
       } },
     ]);
   }, [refresh]);

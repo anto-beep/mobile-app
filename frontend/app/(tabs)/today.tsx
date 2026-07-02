@@ -136,7 +136,7 @@ export default function Today() {
       // If budget call failed (e.g. no household), surface the error
       if (!bRes.data) {
         const err = (bRes as any)._err;
-        const detail = err?.response?.data?.detail || extractErrorMessage(err, "We couldn't load your dashboard.");
+        const detail = err?.response?.data?.detail || extractErrorMessage(err, "We could not load your dashboard.");
         setError(detail);
         setLoading(false);
         setRefreshing(false);
@@ -342,7 +342,7 @@ export default function Today() {
         {error && !data && (
           <View style={styles.emptyCard} testID="today-error-card">
             <Text style={styles.emptyTitle}>
-              {noHousehold ? 'Set up your household first' : "We couldn't load your dashboard"}
+              {noHousehold ? 'Set up your household first' : "We could not load your dashboard"}
             </Text>
             <Text style={styles.emptyBody}>
               {noHousehold
@@ -463,10 +463,10 @@ export default function Today() {
                 </View>
                 <Text style={styles.paywallTitle}>Free plan</Text>
                 <Text style={styles.paywallBody}>
-                  Connected household tracking — stream-by-stream spend, anomaly detection, and the monthly insights view — is on Solo and Family.
+                  Connected household tracking, stream-by-stream spend, anomaly detection, and the monthly insights view, is on Solo and Family.
                   {canStartTrial(user)
-                    ? ' Start your 7-day free trial to unlock the rest of your dashboard.'
-                    : ' Pick a plan to unlock the rest of your dashboard.'}
+                    ? ' Start your 7-day free trial to see the rest of your dashboard.'
+                    : ' Pick a plan to see the rest of your dashboard.'}
                 </Text>
                 <TouchableOpacity
                   style={styles.paywallBtn}
@@ -639,7 +639,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   bellDot: { position: 'absolute', top: 8, right: 9, width: 10, height: 10, borderRadius: 5, backgroundColor: c.severityAlert, borderWidth: 2, borderColor: c.cardBg },
   heroCard: { backgroundColor: c.cardBg, borderRadius: Radius.xl, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle, marginBottom: Spacing.md, shadowColor: c.brandPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   heroOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.textSecondary, marginBottom: Spacing.sm },
-  heroAmount: { fontFamily: Fonts.heading, fontSize: 44, color: c.brandPrimary, letterSpacing: -1 },
+  heroAmount: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 40, color: c.brandPrimary },
   heroSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
   heroSubBold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
   overlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
@@ -657,7 +657,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   statCardAlert: { borderColor: 'rgba(192, 57, 43, 0.3)', backgroundColor: 'rgba(192, 57, 43, 0.04)' },
   statHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statOverline: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted },
-  statValue: { fontFamily: Fonts.heading, fontSize: 22, color: c.brandPrimary, marginTop: 6 },
+  statValue: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 20, color: c.brandPrimary, marginTop: 6 },
   statHint: { fontFamily: Fonts.body, fontSize: 11, color: c.textSecondary, marginTop: 2 },
   paywallCard: { backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: 'rgba(183, 121, 31, 0.35)', alignItems: 'center', marginBottom: Spacing.md },
   paywallIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14, 77, 82, 0.06)', marginBottom: Spacing.md },

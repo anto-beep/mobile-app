@@ -54,7 +54,7 @@ export default function ArchivedStatements() {
     } catch (e: any) {
       const status = e?.response?.status;
       if (status !== 404 && status !== 403) {
-        toast.error(extractErrorMessage(e, "Couldn't load archived statements."));
+        toast.error(extractErrorMessage(e, "Could not load archived statements."));
       }
       setRows([]);
     } finally {
@@ -81,7 +81,7 @@ export default function ArchivedStatements() {
       } else if (status === 410) {
         toast.error('Restore window expired. You can permanently delete this statement.');
       } else {
-        toast.error(extractErrorMessage(e, "Couldn't restore that statement."));
+        toast.error(extractErrorMessage(e, "Could not restore that statement."));
       }
     } finally {
       setBusy(null);
@@ -99,7 +99,7 @@ export default function ArchivedStatements() {
       toast.success('Statement permanently deleted.');
       setDelTarget(null);
     } catch (e: any) {
-      toast.error(extractErrorMessage(e, "Couldn't permanently delete that statement."));
+      toast.error(extractErrorMessage(e, "Could not permanently delete that statement."));
     } finally {
       setDelSubmitting(false);
     }

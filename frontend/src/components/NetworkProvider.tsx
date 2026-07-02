@@ -50,8 +50,8 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
       // When transitioning offline→online, drain the queue.
       if (!wasOnline.current && nextOnline) {
         flushQueue().then((res) => {
-          if (res.replayed > 0) toast.success(`Caught up — ${res.replayed} action${res.replayed > 1 ? 's' : ''} sent.`);
-          if (res.dropped > 0) toast.warning(`${res.dropped} action${res.dropped > 1 ? 's' : ''} couldn't be sent and were dropped.`);
+          if (res.replayed > 0) toast.success(`Caught up, ${res.replayed} action${res.replayed > 1 ? 's' : ''} sent.`);
+          if (res.dropped > 0) toast.warning(`${res.dropped} action${res.dropped > 1 ? 's' : ''} could not be sent and were dropped.`);
           refreshPending();
         }).catch(() => {});
       }
@@ -122,7 +122,7 @@ function OfflineBanner({ pending }: { pending: number }) {
     <View style={styles.banner} pointerEvents="none" testID="offline-banner">
       <Ionicons name="cloud-offline-outline" size={14} color={Colors.cream} />
       <Text style={styles.text}>
-        Offline{pending > 0 ? ` · ${pending} change${pending > 1 ? 's' : ''} waiting to sync` : ' · we’ll catch up when you’re back'}
+        Offline{pending > 0 ? ` · ${pending} change${pending > 1 ? 's' : ''} waiting to sync` : ' · we will catch up when you are back'}
       </Text>
     </View>
   );

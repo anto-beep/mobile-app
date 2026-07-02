@@ -125,7 +125,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
         setDupExact(e.existing || {});
         return;
       }
-      Alert.alert("Couldn't decode", e?.message || 'Please try again.');
+      Alert.alert("Could not decode", e?.message || 'Please try again.');
     }
   };
 
@@ -176,7 +176,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
               </Text>
               <Text style={styles.progressBody}>{uploadPhrase(phase)}</Text>
               <Text style={styles.progressHint}>
-                {mode === 'paste' ? 'Usually 10–30 seconds.' : 'This usually takes 30–90 seconds.'}
+                {mode === 'paste' ? 'Usually 10 to 30 seconds.' : 'This usually takes 30 to 90 seconds.'}
               </Text>
             </View>
           ) : mode === 'paste' ? (
@@ -206,7 +206,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                   multiline
                   value={pasted}
                   onChangeText={setPasted}
-                  placeholder={"e.g. HomeCare Plus — Statement May 2026\nPersonal care 14/05 $240.50\nDomestic 18/05 $84.00\nTotal: $504.50"}
+                  placeholder={"e.g. HomeCare Plus, Statement May 2026\nPersonal care 14/05 $240.50\nDomestic 18/05 $84.00\nTotal: $504.50"}
                   placeholderTextColor={c.textMuted}
                   textAlignVertical="top"
                   testID="paste-input"
@@ -229,9 +229,9 @@ export default function UploadSheet({ visible, onClose }: Props) {
             </>
           ) : (
             <>
-              <Text style={styles.title}>Add a statement</Text>
+              <Text style={styles.title}>Drop In A Statement</Text>
               <Text style={styles.sub}>
-                Snap a photo of the paper statement, pick a PDF you've saved, or paste the text directly.
+                Snap a photo of the paper statement, pick a PDF you have saved, or paste the text directly.
               </Text>
 
               <TouchableOpacity testID="action-take-photo" style={styles.action} onPress={() => run(uploadFromCamera)}>
@@ -251,7 +251,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Pick from library</Text>
-                  <Text style={styles.actionSub}>Use a photo you've already taken</Text>
+                  <Text style={styles.actionSub}>Use a photo you have already taken</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>
@@ -262,7 +262,7 @@ export default function UploadSheet({ visible, onClose }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>Upload a PDF</Text>
-                  <Text style={styles.actionSub}>If you've been emailed one</Text>
+                  <Text style={styles.actionSub}>If you have been emailed one</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </TouchableOpacity>

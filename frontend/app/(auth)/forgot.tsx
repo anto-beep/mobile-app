@@ -39,7 +39,7 @@ export default function Forgot() {
       await api.post('/auth/forgot', { email: e });
       setDone(true);
     } catch (err) {
-      setError(extractErrorMessage(err, "Couldn't send the reset link"));
+      setError(extractErrorMessage(err, "Could not send the reset link"));
     } finally {
       setSubmitting(false);
     }
@@ -66,9 +66,9 @@ export default function Forgot() {
                 <View style={styles.successIcon}><Ionicons name="mail" size={28} color={c.brandPrimary} /></View>
                 <Text style={styles.h1}>Check your inbox</Text>
                 <Text style={styles.sub}>
-                  If an account with <Text style={{ fontFamily: Fonts.bodySemi }}>{email.trim()}</Text> exists, we've sent a password reset link. It expires in 1 hour.
+                  If an account with <Text style={{ fontFamily: Fonts.bodySemi }}>{email.trim()}</Text> exists, we have sent a password reset link. It expires in 1 hour.
                 </Text>
-                <Text style={[styles.sub, { marginTop: Spacing.md }]}>Didn't get it? Check your spam folder, then try again.</Text>
+                <Text style={[styles.sub, { marginTop: Spacing.md }]}>Did not get it? Check your spam folder, then try again.</Text>
                 <TouchableOpacity style={styles.btn} onPress={() => router.replace('/(auth)/login')} testID="forgot-back-to-login">
                   <Text style={styles.btnText}>Back to sign in</Text>
                 </TouchableOpacity>
@@ -80,7 +80,7 @@ export default function Forgot() {
               <>
                 <Text style={styles.overline}>Forgot password</Text>
                 <Text style={styles.h1}>Reset your password</Text>
-                <Text style={styles.sub}>Enter the email on your Wayly account and we'll send you a secure link.</Text>
+                <Text style={styles.sub}>Enter the email on your Wayly account and we will send you a secure link.</Text>
 
                 <Text style={styles.label}>Email</Text>
                 <TextInput
@@ -103,7 +103,7 @@ export default function Forgot() {
                   {submitting ? <ActivityIndicator color={c.cream} /> : <Text style={styles.btnText}>Send reset link</Text>}
                 </TouchableOpacity>
 
-                <Text style={styles.help}>We'll never share your email. Links expire after 1 hour for safety.</Text>
+                <Text style={styles.help}>We will never share your email. Links expire after 1 hour for safety.</Text>
               </>
             )}
           </View>

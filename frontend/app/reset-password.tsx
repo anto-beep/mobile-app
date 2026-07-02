@@ -144,7 +144,7 @@ export default function ResetPassword() {
                   testID="reset-confirm"
                 />
                 {confirm.length > 0 && confirm !== password ? (
-                  <Text style={styles.mismatch}>Passwords don't match yet.</Text>
+                  <Text style={styles.mismatch}>Passwords do not match yet.</Text>
                 ) : null}
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}

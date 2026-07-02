@@ -11,6 +11,7 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 const FALLBACK_SERVICES = ['Personal care', 'Domestic assistance', 'Nursing', 'Physiotherapy', 'Cleaning', 'Transport'];
 
@@ -72,7 +73,7 @@ export default function PriceChecker() {
   const check = async () => {
     const r = parseFloat(rate);
     if (!r || r <= 0) {
-      Alert.alert('Add the rate', "We'll need the per-hour or per-unit price the provider's charging.");
+      Alert.alert('Add the rate', "We will need the per-hour or per-unit price the provider's charging.");
       return;
     }
     setLoading(true);
@@ -81,7 +82,7 @@ export default function PriceChecker() {
       const { data } = await api.post('/public/price-check', { service, rate: r });
       setResult(data);
     } catch (e) {
-      Alert.alert("Couldn't check", extractErrorMessage(e));
+      Alert.alert("Could not check", extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -96,12 +97,12 @@ export default function PriceChecker() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
           <Text style={styles.h1}>Is this rate fair?</Text>
-          <Text style={styles.sub}>We compare your provider's rate against the official indicative range published by the Department of Health (October 2025) — not a government cap. National price caps were deferred indefinitely in May 2026.</Text>
+          <Text style={styles.sub}>We compare your provider's rate against the official indicative range published by the Department of Health (October 2025), not a government cap. National price caps were deferred indefinitely in May 2026.</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <View style={styles.capsNote} testID="pc-caps-note">
             <Ionicons name="information-circle-outline" size={14} color={c.brandSecondary} />
             <Text style={styles.capsNoteText}>
-              Price caps deferred. The Australian Government announced in May 2026 that the planned 1 July 2026 national provider price caps under Support at Home are deferred indefinitely. Providers continue to set their own prices. This tool compares against the official indicative range published by the Department of Health (October 2025) — not a government cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.
+              Price caps deferred. The Australian Government announced in May 2026 that the planned 1 July 2026 national provider price caps under Support at Home are deferred indefinitely. Providers continue to set their own prices. This tool compares against the official indicative range published by the Department of Health (October 2025), not a government cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.
             </Text>
           </View>
 
@@ -148,6 +149,12 @@ export default function PriceChecker() {
 
           {result && (
             <View style={[styles.result, { borderLeftColor: verdictColor, borderLeftWidth: 4 }]} testID="price-result">
+              <ToolSummary
+                toolName="Provider Price Checker"
+                tone={result.verdict === 'high' ? 'alert' : result.verdict === 'low' ? 'success' : 'neutral'}
+                headline={`Your provider's price is ${String(result.verdict_label || result.verdict || '').toLowerCase()}.`}
+                body={`${result.assessment || ''} Wayly compared what you pay (${formatAUD2(result.charged)} per ${result.unit || 'unit'}) against the indicative median of ${formatAUD2(result.median)} for the same service on the same stream.`.trim()}
+              />
               <View style={styles.verdictRow}>
                 <Text style={[styles.verdict, { color: verdictColor }]}>{result.verdict_label}</Text>
                 {!!result.stream && (
@@ -159,7 +166,7 @@ export default function PriceChecker() {
               <Text style={styles.assessment}>{result.assessment}</Text>
               <View style={styles.statRow}>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>You&apos;re charged</Text>
+                  <Text style={styles.statLabel}>You are charged</Text>
                   <Text style={styles.statValue}>{formatAUD2(result.charged)}</Text>
                   {!!result.unit && <Text style={styles.statUnit}>per {result.unit}</Text>}
                 </View>
@@ -171,7 +178,7 @@ export default function PriceChecker() {
                 {(result.lower != null && result.upper != null) && (
                   <View style={styles.stat}>
                     <Text style={styles.statLabel}>Indicative range</Text>
-                    <Text style={styles.statValue}>{formatAUD2(result.lower)} – {formatAUD2(result.upper)}</Text>
+                    <Text style={styles.statValue}>{formatAUD2(result.lower)} to {formatAUD2(result.upper)}</Text>
                     <Text style={styles.statUnit}>DoH Oct 2025</Text>
                   </View>
                 )}
@@ -188,6 +195,7 @@ export default function PriceChecker() {
                   <Text style={styles.actionText}>{result.suggested_action}</Text>
                 </View>
               )}
+              <ReportIssueButton tool="Provider Price Checker" />
             </View>
           )}
         </ScrollView>
@@ -226,12 +234,12 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   prefillRow: { gap: 8, paddingVertical: 8, paddingHorizontal: 1 },
   prefillPill: { backgroundColor: c.surfaceTint, borderWidth: 1, borderColor: c.borderSubtle, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, gap: 2, minWidth: 120, maxWidth: 220 },
   prefillPillService: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.textPrimary },
-  prefillPillRate: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandPrimary },
+  prefillPillRate: { fontFamily: Fonts.mono, fontVariant: ['tabular-nums' as const], fontSize: 11, color: c.brandPrimary },
   assessment: { fontFamily: Fonts.body, fontSize: 14, color: c.textPrimary, lineHeight: 20, marginBottom: Spacing.md },
   statRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
   stat: { flex: 1, padding: Spacing.sm, backgroundColor: c.background, borderRadius: Radius.sm },
   statLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted },
-  statValue: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary, marginTop: 2 },
+  statValue: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 13, color: c.brandPrimary, marginTop: 2 },
   action: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: c.borderSubtle },
   actionText: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.brandPrimary, flex: 1, fontStyle: 'italic' },
   capsNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary, marginTop: Spacing.sm, marginBottom: Spacing.sm },

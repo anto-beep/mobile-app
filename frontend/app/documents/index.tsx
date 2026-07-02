@@ -101,7 +101,7 @@ export default function Documents() {
       setVault(data.limits);
       setCategories(data.categories);
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't load vault"));
+      toast.error(extractErrorMessage(e, "Could not load vault"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -129,7 +129,7 @@ export default function Documents() {
       setPickerCategory('other');
       setPickerNotes('');
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't open the file picker"));
+      toast.error(extractErrorMessage(e, "Could not open the file picker"));
     }
   }, []);
 
@@ -154,7 +154,7 @@ export default function Documents() {
       setPicker(null);
       await load();
     } catch (e: any) {
-      toast.error(extractErrorMessage(e, "Couldn't upload"));
+      toast.error(extractErrorMessage(e, "Could not upload"));
     } finally {
       setUploading(false);
     }
@@ -167,7 +167,7 @@ export default function Documents() {
         toast.success('Deleted.');
         setDocs((xs) => xs.filter((x) => x.id !== d.id));
       } catch (e) {
-        toast.error(extractErrorMessage(e, "Couldn't delete"));
+        toast.error(extractErrorMessage(e, "Could not delete"));
       }
     };
     if (Platform.OS === 'web') {
@@ -189,7 +189,7 @@ export default function Documents() {
         router.push(`/statements?upload_job=${data.job_id}` as any);
       }
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't decode this statement"));
+      toast.error(extractErrorMessage(e, "Could not decode this statement"));
     }
   }, [router]);
 

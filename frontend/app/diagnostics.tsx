@@ -90,7 +90,7 @@ export default function Diagnostics() {
           <Row k="Event types" v={String(eventCount)} />
           <Row k="Workflows" v={String(workflowCount)} />
           <Row k="Contacts" v={String(contactCount)} />
-          {majorMismatch && <Text style={styles.warn}>Major version ahead — update required.</Text>}
+          {majorMismatch && <Text style={styles.warn}>Major version ahead, update required.</Text>}
         </Block>
         <Block title="Live probes">
           {probes.map((p) => (

@@ -72,7 +72,7 @@ export default function Ratings() {
       await refresh();
       toast.success('Rating saved.');
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't save the rating."));
+      toast.error(extractErrorMessage(e, "Could not save the rating."));
     } finally { setBusy(false); }
   }, [providerName, score, wouldRecommend, comment, refresh]);
 
@@ -83,7 +83,7 @@ export default function Ratings() {
         await refresh();
         toast.success('Rating removed.');
       } catch (e) {
-        toast.error(extractErrorMessage(e, "Couldn't remove rating."));
+        toast.error(extractErrorMessage(e, "Could not remove rating."));
       }
     };
     if (Platform.OS === 'web') {
@@ -109,7 +109,7 @@ export default function Ratings() {
         <Text style={styles.overline}>Private provider ratings</Text>
         <Text style={styles.h1}>Your own honest opinions on providers</Text>
         <Text style={styles.sub}>
-          These ratings are private to you — not shared with providers or other Wayly users. Use them as a memory aid when comparing or switching.
+          These ratings are private to you, not shared with providers or other Wayly users. Use them as a memory aid when comparing or switching.
         </Text>
 
         {/* Composer */}
@@ -164,7 +164,7 @@ export default function Ratings() {
             style={[styles.input, styles.textArea]}
             value={comment}
             onChangeText={setComment}
-            placeholder="Comment (what worked, what didn't)"
+            placeholder="Comment (what worked, what did not)"
             placeholderTextColor={c.textMuted}
             multiline
             editable={!busy}
@@ -191,7 +191,7 @@ export default function Ratings() {
           <View style={styles.emptyCard}>
             <Ionicons name="star-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No ratings yet</Text>
-            <Text style={styles.emptyBody}>Add your honest 1–5 star rating for each provider you&apos;ve worked with.</Text>
+            <Text style={styles.emptyBody}>Add your honest 1 to 5 star rating for each provider you have worked with.</Text>
           </View>
         ) : items.map((r) => (
           <View key={r.id} style={styles.row} testID={`rating-${r.id}`}>

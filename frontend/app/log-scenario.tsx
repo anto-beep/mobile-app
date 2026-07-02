@@ -28,7 +28,7 @@ export default function LogScenarioRoute() {
     if (!dirty) { goBack(); return; }
     Alert.alert(
       'Discard this entry?',
-      "You've started capturing a scenario. If you go back now your draft will be cleared.",
+      "You have started capturing a scenario. If you go back now your draft will be cleared.",
       [
         { text: 'Keep editing', style: 'cancel' },
         { text: 'Discard', style: 'destructive', onPress: goBack },
@@ -43,7 +43,7 @@ export default function LogScenarioRoute() {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         if (!dirty) return false; // let RN handle it (navigate back)
         onBackPressed();
-        return true; // we'll handle it via the Alert
+        return true; // we will handle it via the Alert
       });
       return () => sub.remove();
     }, [dirty, onBackPressed]),

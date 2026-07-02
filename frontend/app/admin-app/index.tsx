@@ -141,7 +141,7 @@ export default function AdminInbox() {
           {p1Tickets.length === 0 ? (
             <View style={styles.emptyRow}>
               <Ionicons name="checkmark-circle" size={16} color={c.success} />
-              <Text style={styles.emptyText}>No open P1 tickets — nice.</Text>
+              <Text style={styles.emptyText}>No open P1 tickets, nice.</Text>
             </View>
           ) : p1Tickets.map((t) => (
             <TouchableOpacity key={t.id} style={styles.row} onPress={() => router.push(`/admin-app/tickets/${t.id}` as any)} testID={`ticket-${t.id}`}>
@@ -224,7 +224,7 @@ export default function AdminInbox() {
           })}
         </View>
 
-        {/* Maintenance CTA (super_admin only — gated card visible to all so they know it exists) */}
+        {/* Maintenance CTA (super_admin only, gated card visible to all so they know it exists) */}
         <TouchableOpacity
           style={[styles.maintRow, admin.admin_role !== 'super_admin' && { opacity: 0.55 }]}
           onPress={() => {
@@ -240,7 +240,7 @@ export default function AdminInbox() {
             <Ionicons name={maintenance.enabled ? 'warning' : 'build'} size={16} color={maintenance.enabled ? c.danger : c.brandPrimary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.maintTitle}>{maintenance.enabled ? 'Wayly is offline — maintenance ON' : 'Maintenance mode'}</Text>
+            <Text style={styles.maintTitle}>{maintenance.enabled ? 'Wayly is offline, maintenance ON' : 'Maintenance mode'}</Text>
             <Text style={styles.maintMeta}>
               {admin.admin_role === 'super_admin' ? 'Tap to toggle (biometric required)' : 'super_admin only'}
             </Text>
@@ -255,7 +255,7 @@ export default function AdminInbox() {
           testID="admin-logout"
         >
           <Ionicons name="log-out-outline" size={16} color={c.brandPrimary} />
-          <Text style={styles.logoutText}>Sign out</Text>
+          <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />

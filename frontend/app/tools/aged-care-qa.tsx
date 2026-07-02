@@ -65,7 +65,7 @@ export default function AgedCareQA() {
       sessionId.current = data.session_id || sessionId.current;
       setTurns((p) => [...p, { role: 'assistant', content: data.reply || data.message || '...' }]);
     } catch (e) {
-      setTurns((p) => [...p, { role: 'assistant', content: extractErrorMessage(e, "I couldn't reach my brain — try again?") }]);
+      setTurns((p) => [...p, { role: 'assistant', content: extractErrorMessage(e, "I could not reach my brain, try again?") }]);
     } finally {
       setSending(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -80,7 +80,7 @@ export default function AgedCareQA() {
         <Text style={styles.h1}>Plain-English aged-care answers</Text>
         <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
         <Text style={styles.boundary} testID="aged-care-qa-boundary">
-          This is a general Q&amp;A assistant — it can't see your account or statements. Signed-in members can ask the in-app assistant questions about their own household.
+          This is a general Q&amp;A assistant, it cannot see your account or statements. Signed-in members can ask the in-app assistant questions about their own household.
         </Text>
         <AIAccuracyBanner tool="aged-care-qa" />
       </View>

@@ -201,7 +201,7 @@ export default function CalendarRoute() {
       setComposerOpen(false);
       await refresh();
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't save the appointment"));
+      toast.error(extractErrorMessage(e, "Could not save the appointment"));
     } finally { setBusy(false); }
   }, [title, kind, provider, location, notes, date, time, duration, editing, refresh]);
 
@@ -212,7 +212,7 @@ export default function CalendarRoute() {
       confirmLabel: 'Remove',
       onConfirm: async () => {
         try { await api.delete(`/visits/${v.id}`); toast.success('Appointment removed.'); await refresh(); }
-        catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
+        catch (e) { toast.error(extractErrorMessage(e, "Could not remove.")); }
       },
     });
   }, [refresh]);
@@ -433,7 +433,7 @@ export default function CalendarRoute() {
             <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="e.g. 123 King St, or Zoom" placeholderTextColor={c.textMuted} testID="visit-location" />
           </Field>
           <Field label="Notes">
-            <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={notes} onChangeText={setNotes} multiline placeholder="Anything worth remembering — bring meds list, etc." placeholderTextColor={c.textMuted} testID="visit-notes" />
+            <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]} value={notes} onChangeText={setNotes} multiline placeholder="Anything worth remembering, bring meds list, etc." placeholderTextColor={c.textMuted} testID="visit-notes" />
           </Field>
 
           <View style={styles.composerActions}>

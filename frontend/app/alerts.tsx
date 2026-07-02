@@ -45,7 +45,7 @@ export default function AlertsInbox() {
           {!!active && <Text style={styles.sub}>For {active.first_name}</Text>}
         </View>
         {loading ? <ListSkeleton rows={4} /> : items.length === 0 ? (
-          <EmptyState icon="shield-checkmark-outline" title="All clear" body="No active alerts for this participant. We'll let you know if a deadline approaches or a statement anomaly turns up." />
+          <EmptyState icon="shield-checkmark-outline" title="All clear" body="No active alerts for this participant. We will let you know if a deadline approaches or a statement anomaly turns up." />
         ) : items.map((a) => (
           <AlertCell key={a.id} item={{ at: a.created_at || a.updated_at || new Date().toISOString(), type: 'alert', data: a }} />
         ))}

@@ -82,7 +82,7 @@ export default function AdminMaintenance() {
       if (res.reason === 'unavailable' || res.reason === 'no-enrolled') {
         // Fallback: native Alert confirm
         if (Platform.OS !== 'web') {
-          Alert.alert(action, `${prompt}.\n\nBiometric isn't set up on this device. Tap Confirm to continue.`, [
+          Alert.alert(action, `${prompt}.\n\nBiometric is not set up on this device. Tap Confirm to continue.`, [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Confirm', style: 'destructive', onPress: () => performSave(nextEnabled, message) },
           ]);
@@ -153,8 +153,8 @@ export default function AdminMaintenance() {
                 value={enabled}
                 disabled={!isSuper || saving}
                 onValueChange={(v) => confirmAndSave(v)}
-                trackColor={{ false: c.borderSubtle, true: 'rgba(192, 57, 43, 0.7)' }}
-                thumbColor={enabled ? c.danger : c.cardBg}
+                trackColor={{ false: 'rgba(122,138,140,0.45)', true: 'rgba(192, 57, 43, 0.7)' }}
+                thumbColor="#FFFFFF"
                 testID="maintenance-switch"
               />
             </View>
@@ -163,7 +163,7 @@ export default function AdminMaintenance() {
             <TextInput
               value={message}
               onChangeText={(t) => { setMessage(t); setDirty(true); }}
-              placeholder="We'll be back at 10pm AEST tonight."
+              placeholder="We will be back at 10pm AEST tonight."
               placeholderTextColor={c.textMuted}
               style={styles.input}
               multiline
@@ -201,7 +201,7 @@ export default function AdminMaintenance() {
                 <View key={h.id} style={styles.histRow}>
                   <View style={[styles.histDot, { backgroundColor: h.enabled ? c.danger : c.success }]} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.histTitle}>{h.enabled ? 'Enabled' : 'Disabled'}{h.message ? ` — “${h.message}”` : ''}</Text>
+                    <Text style={styles.histTitle}>{h.enabled ? 'Enabled' : 'Disabled'}{h.message ? `, “${h.message}”` : ''}</Text>
                     <Text style={styles.histMeta}>{formatDateTime(h.at)} · {h.actor_email}</Text>
                   </View>
                 </View>

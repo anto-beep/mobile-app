@@ -9,7 +9,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing, formatAUD, formatAUD2 } from '../../src/lib/theme';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
@@ -18,8 +19,8 @@ import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/
 type Supplement = 'oxygen' | 'enteral_bolus' | 'enteral_non_bolus' | 'veterans' | 'dementia_cognition' | 'eachd_top_up';
 const SUPPLEMENT_OPTIONS: { key: Supplement; label: string; hint: string }[] = [
   { key: 'oxygen',              label: 'Oxygen',                  hint: 'Daily supplement for participants needing oxygen therapy' },
-  { key: 'enteral_bolus',       label: 'Enteral (bolus)',         hint: 'Tube feeding — bolus method' },
-  { key: 'enteral_non_bolus',   label: 'Enteral (non-bolus)',     hint: 'Tube feeding — continuous / pump' },
+  { key: 'enteral_bolus',       label: 'Enteral (bolus)',         hint: 'Tube feeding, bolus method' },
+  { key: 'enteral_non_bolus',   label: 'Enteral (non-bolus)',     hint: 'Tube feeding, continuous / pump' },
   { key: 'veterans',            label: 'Veterans',                hint: '+11.5% on individual rate (DVA Gold/White)' },
   { key: 'dementia_cognition',  label: 'Dementia / cognition',    hint: 'Grandfathered participants only' },
   { key: 'eachd_top_up',        label: 'EACHD top-up',            hint: 'Grandfathered EACHD package only' },
@@ -71,7 +72,7 @@ export default function BudgetCalc() {
       const { data } = await api.post('/public/budget-calc', body);
       setResult(data);
     } catch (e) {
-      Alert.alert("Couldn't calculate", extractErrorMessage(e));
+      Alert.alert("Could not calculate", extractErrorMessage(e));
     } finally { setLoading(false); }
   };
 
@@ -85,7 +86,7 @@ export default function BudgetCalc() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Budget calculator</Text>
           <Text style={styles.h1}>What's the budget?</Text>
-          <Text style={styles.sub}>Per quarter and per year, for any classification level — with optional supplements.</Text>
+          <Text style={styles.sub}>Per quarter and per year, for any classification level, with optional supplements.</Text>
           <AIAccuracyBanner tool="budget-calculator" />
 
           <Text style={styles.label}>Classification level</Text>
@@ -100,9 +101,9 @@ export default function BudgetCalc() {
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Grandfathered (pre-1 July 2025)</Text>
-              <Text style={styles.hint}>L1–L4 use transitional figures when this is on.</Text>
+              <Text style={styles.hint}>L1-L4 use transitional figures when this is on.</Text>
             </View>
-            <Switch value={grandfathered} onValueChange={setGrandfathered} testID="budget-grandfathered" />
+            <Switch thumbColor="#FFFFFF" trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }} value={grandfathered} onValueChange={setGrandfathered} testID="budget-grandfathered" />
           </View>
 
           <Text style={styles.label}>Force transitional classification (optional)</Text>
@@ -145,6 +146,12 @@ export default function BudgetCalc() {
 
           {result && (
             <View style={styles.result} testID="budget-result">
+              <ToolSummary
+                toolName="Budget Calculator"
+                tone="success"
+                headline={`Your quarterly usable budget is ${formatAUD2(result.quarterly_usable)}.`}
+                body={`Wayly worked out your Support at Home budget from your Classification and pension status. That's ${formatAUD(result.annual_total)} across the year, split into four quarters. The provider keeps ${formatAUD2(result.care_management_quarterly)} per quarter as their 10% care management fee. The rest is what you can spend on care.`}
+              />
               <Text style={styles.resultOverline}>{result.classification_label}{result.is_transitional_hcp ? ' · Transitional HCP' : ''}</Text>
               <Text style={styles.resultAmount}>{formatAUD(result.annual_total)}/yr</Text>
               <View style={styles.divider} />
@@ -216,6 +223,7 @@ export default function BudgetCalc() {
               {result.years_to_cap != null && (
                 <Text style={styles.resultLine}>At your burn rate: ~<Text style={styles.bold}>{result.years_to_cap} years</Text> to the cap</Text>
               )}
+              <ReportIssueButton tool="Budget Calculator" />
             </View>
           )}
         </ScrollView>
@@ -254,13 +262,13 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   btnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: c.cream },
   result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
   resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
-  resultAmount: { fontFamily: Fonts.heading, fontSize: 32, color: c.brandPrimary, letterSpacing: -1 },
+  resultAmount: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 28, color: c.brandPrimary },
   divider: { height: 1, backgroundColor: c.borderSubtle, marginVertical: Spacing.md },
   threeCard: { flexDirection: 'row', gap: 8 },
   kpiCard: { flex: 1, padding: 10, borderRadius: Radius.md, backgroundColor: c.background, borderWidth: 1, borderColor: c.borderSubtle },
   kpiCardHighlight: { borderColor: c.brandPrimary, backgroundColor: 'rgba(14, 77, 82, 0.06)' },
   kpiLabel: { fontFamily: Fonts.bodyMed, fontSize: 10, color: c.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
-  kpiValue: { fontFamily: Fonts.heading, fontSize: 17, color: c.textPrimary, marginTop: 2 },
+  kpiValue: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 15, color: c.textPrimary, marginTop: 2 },
   kpiHint: { fontFamily: Fonts.body, fontSize: 10, color: c.textMuted, marginTop: 2, lineHeight: 13 },
   streamHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 6 },
   sectionTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary, letterSpacing: 0.2 },
@@ -271,9 +279,9 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   streamsNote: { fontFamily: Fonts.body, fontSize: 11, color: c.textMuted, marginTop: 6, fontStyle: 'italic', lineHeight: 15 },
   streamRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   streamName: { fontFamily: Fonts.bodyMed, fontSize: 14, color: c.textSecondary },
-  streamAmt: { fontFamily: Fonts.bodySemi, fontSize: 14, color: c.brandPrimary },
+  streamAmt: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 14, color: c.brandPrimary },
   warnBox: { marginTop: Spacing.md, padding: 10, backgroundColor: 'rgba(183, 121, 31, 0.08)', borderRadius: Radius.md, borderLeftWidth: 3, borderLeftColor: c.brandSecondary },
   warnText: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
   resultLine: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, marginTop: 4, lineHeight: 20 },
-  bold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },
+  bold: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], color: c.brandPrimary },
 }); }

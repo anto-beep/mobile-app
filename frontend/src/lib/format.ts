@@ -56,3 +56,40 @@ export function shortFirstName(name: string | null | undefined, max = 14): strin
   const f = name.trim().split(/\s+/)[0] || '';
   return f.length > max ? f.slice(0, max - 1) + '…' : f;
 }
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+] as const;
+
+/** "2026-05" → "May 2026". Month + year always render as "Month YYYY". */
+export function formatMonthYear(input: string | Date | null | undefined): string {
+  if (!input) return '';
+  if (typeof input === 'string') {
+    const m = input.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (m) return `${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
+  }
+  const d = typeof input === 'string' ? new Date(input) : input;
+  if (Number.isNaN(d.getTime())) return String(input);
+  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Render-time guard (UI-2 follow-up): historical records on production still
+// stream raw "YYYY-MM" tokens through the API. Apply this to any alert or
+// notification title/body before display so "2026-05" renders as "May 2026".
+export function humanizeMonths(text: string): string {
+  if (!text) return text;
+  return text.replace(/\b(\d{4})-(0[1-9]|1[0-2])\b(?!-\d)/g,
+    (_m, y, mo) => `${MONTHS[Number(mo) - 1]} ${y}`);
+}
+
+// Apostrophe-safe Title Case (UI-2 Rule 2.4). Never produces "Month'S" —
+// letters directly after an apostrophe stay lowercase.
+export function titleCaseSafe(text: string): string {
+  if (!text) return text;
+  return text.replace(/\b\w/g, (ch, offset: number) => {
+    const prev = text[offset - 1];
+    if (prev === "'" || prev === '\u2019') return ch;
+    return ch.toUpperCase();
+  });
+}

@@ -54,7 +54,7 @@ export default function Onboarding() {
   }
 
   const steps = [
-    { title: 'Welcome to Wayly', body: `Hi ${user?.name?.split(' ')[0] || 'there'} — let's set up the person you're caring for so the dashboard shows the right data.`, icon: 'sparkles-outline' as const },
+    { title: 'Welcome to Wayly', body: `Hi ${user?.name?.split(' ')[0] || 'there'}, we will set up the person you are caring for so the dashboard shows the right data.`, icon: 'sparkles-outline' as const },
     { title: 'Their name', body: 'We use the first name throughout the app.', icon: 'person-outline' as const },
     { title: 'Their classification', body: 'Support at Home Level 1‑8. You can change this later from Participants.', icon: 'pricetag-outline' as const },
     { title: 'Provider', body: 'Who delivers their funded services?', icon: 'business-outline' as const },

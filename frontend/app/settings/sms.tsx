@@ -37,7 +37,7 @@ export default function SmsSettings() {
                 <Text style={styles.label}>{r.label}</Text>
                 <Text style={styles.sub}>{r.sub}</Text>
               </View>
-              <Switch value={opts[r.key]} onValueChange={() => toggle(r.key)} trackColor={{ true: c.brandPrimary, false: c.border }} />
+              <Switch value={opts[r.key]} onValueChange={() => toggle(r.key)} trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }} thumbColor="#FFFFFF" />
             </View>
           ))}
         </View>

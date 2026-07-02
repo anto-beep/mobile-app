@@ -14,6 +14,7 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, DecoderProgress, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton, ReportThis } from '../../src/components/ToolShell';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 type Tab = 'snap' | 'upload' | 'paste';
@@ -71,7 +72,7 @@ export default function StatementDecoder() {
         if (e?.message) throw e;
       }
     }
-    throw new Error('Decoding is taking longer than expected. Please try again — your free quota wasn’t used.');
+    throw new Error('Decoding is taking longer than expected. Please try again, your free quota was not used.');
   };
 
   const submit = async (file?: { uri: string; name: string; mime: string }) => {
@@ -101,7 +102,7 @@ export default function StatementDecoder() {
       if (e?.response?.status === 429) {
         setLimitedUntil(e.response.data?.retry_at || e.response.data?.next_available || null);
       } else {
-        Alert.alert("Couldn't decode", extractErrorMessage(e));
+        Alert.alert("Could not decode", extractErrorMessage(e));
       }
     } finally {
       setSubmitting(false);
@@ -131,7 +132,7 @@ export default function StatementDecoder() {
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Statement Decoder</Text>
         <Text style={styles.h1}>What does this statement actually say?</Text>
-        <Text style={styles.sub}>Snap a photo, upload a file, or paste text — we'll read it and flag anything off.</Text>
+        <Text style={styles.sub}>Snap a photo, upload a file, or paste text, we will read it and flag anything off.</Text>
 
         <AIAccuracyBanner tool="statement-decoder" />
 
@@ -211,16 +212,16 @@ export default function StatementDecoder() {
               return (
                 <View style={styles.results} testID="decoder-results">
                   <Text style={styles.resultsOverline}>Decoded successfully{periodLabel ? ` · ${periodLabel}` : ''}</Text>
-                  {summary ? (
-                    <View style={styles.summaryCard}>
-                      <Text style={styles.summaryLabel}>In plain English</Text>
-                      <Text style={styles.summaryText}>{summary}</Text>
-                    </View>
-                  ) : null}
+                  <ToolSummary
+                    toolName="Statement Decoder"
+                    tone={anomalies.length > 0 ? 'alert' : 'success'}
+                    headline={(String(summary || '').match(/^[^.]*\./) || [])[0] || 'Your statement has been decoded.'}
+                    body={`We checked every line against Support at Home rules. ${anomalies.length > 0 ? `We found ${anomalies.length} thing${anomalies.length === 1 ? '' : 's'} worth checking with your provider.` : 'Nothing looked out of order.'}${summary ? ` ${summary}` : ''}`}
+                  />
 
                   {anomalies.length > 0 && (
                     <>
-                      <Text style={styles.sectionTitle}>Things to know</Text>
+                      <Text style={styles.sectionTitle}>Points To Check</Text>
                       {anomalies.map((a: any, i: number) => (
                         <View
                           key={a.id || i}
@@ -255,19 +256,20 @@ export default function StatementDecoder() {
                           {a.suggested_action ? (
                             <Text style={styles.anomalyAction}>→ {a.suggested_action}</Text>
                           ) : null}
+                          <ReportThis tool="Statement Decoder" />
                         </View>
                       ))}
                     </>
                   )}
 
-                  {/* Statement notes — informational only, no severity badges.
+                  {/* Statement notes, informational only, no severity badges.
                       Carries entries with kind `at_hm_active_commitment` or
                       `previous_period_adjustment` per production spec. */}
                   {informationalNotes.length > 0 && (
                     <>
                       <Text style={styles.sectionTitle}>Statement notes</Text>
                       <Text style={styles.sectionSub}>
-                        Context the decoder spotted — not alerts, just things worth knowing.
+                        Context the decoder spotted, not alerts, just things worth knowing.
                       </Text>
                       {informationalNotes.map((n: any, i: number) => (
                         <View key={i} style={styles.note} testID={`decoder-note-${i}`}>
@@ -295,6 +297,8 @@ export default function StatementDecoder() {
                       ))}
                     </>
                   )}
+                  <Text style={styles.disclaimer}>Wayly provides information only, not clinical or financial advice.</Text>
+                  <ReportIssueButton tool="Statement Decoder" />
                 </View>
               );
             })()}
@@ -302,7 +306,7 @@ export default function StatementDecoder() {
             {!hasPaidAccess(user) && result && (
               <View style={styles.upsell}>
                 <Text style={styles.upsellTitle}>Decode unlimited statements</Text>
-                <Text style={styles.upsellBody}>Start your 7-day free trial — no card required.</Text>
+                <Text style={styles.upsellBody}>Start your 7-day free trial, no card required.</Text>
                 <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/settings/plan' as any)} testID="decoder-upsell-cta">
                   <Text style={styles.upsellBtnText}>See plans</Text>
                 </TouchableOpacity>
@@ -369,7 +373,8 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   noteAction: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.brandSecondary, marginTop: 4 },
   lineItem: { flexDirection: 'row', justifyContent: 'space-between', padding: Spacing.sm, backgroundColor: c.cardBg, borderRadius: Radius.sm, marginBottom: 4, borderWidth: 1, borderColor: c.borderSubtle },
   lineService: { fontFamily: Fonts.bodyMed, fontSize: 13, color: c.textPrimary, flex: 1 },
-  lineTotal: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
+  lineTotal: { fontFamily: Fonts.monoSemi, fontVariant: ['tabular-nums' as const], fontSize: 13, color: c.brandPrimary },
+  disclaimer: { fontFamily: Fonts.body, fontSize: 12, color: c.textMuted, marginTop: Spacing.md, fontStyle: 'italic', lineHeight: 17 },
   upsell: { marginTop: Spacing.lg, backgroundColor: c.brandPrimary, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center' },
   upsellTitle: { fontFamily: Fonts.heading, fontSize: 20, color: c.cream, textAlign: 'center', letterSpacing: -0.3 },
   upsellBody: { fontFamily: Fonts.body, fontSize: 14, color: 'rgba(250, 247, 242, 0.85)', marginTop: 6, marginBottom: Spacing.md, textAlign: 'center' },

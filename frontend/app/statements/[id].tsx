@@ -221,7 +221,7 @@ export default function StatementDetail() {
       // ---------- DECODED PDF — server-rendered ----------
       if (kind === 'pdf') {
         // eslint-disable-next-line no-console
-        console.log('[wayly] decoded-pdf: server-rendered v2 — statement', stmt.id);
+        console.log('[wayly] decoded-pdf: server-rendered v2, statement', stmt.id);
         // Mirror the Original-TXT download path: fetch the server-rendered PDF
         // from GET /api/statements/{id}/decoded.pdf (the same endpoint the web
         // app uses once deployed), then save/share via the OS share sheet on
@@ -268,7 +268,7 @@ export default function StatementDetail() {
           // eslint-disable-next-line no-console
           console.log('[wayly] decoded-pdf: download result', dl?.status, dl?.uri);
           if (!dl || dl.status !== 200) {
-            toast.error(`Couldn’t download the PDF (HTTP ${dl?.status || 'unknown'}).`);
+            toast.error(`Could not download the PDF (HTTP ${dl?.status || 'unknown'}).`);
             return;
           }
           const canShare = await Sharing.isAvailableAsync().catch(() => false);
@@ -279,7 +279,7 @@ export default function StatementDetail() {
               await Sharing.shareAsync(dl.uri, {
                 mimeType: 'application/pdf',
                 UTI: 'com.adobe.pdf',
-                dialogTitle: `${stmt.period_label || 'Statement'} — Decoded PDF`,
+                dialogTitle: `${stmt.period_label || 'Statement'}, Decoded PDF`,
               });
             } catch (shareErr: any) {
               // User cancelling the share sheet often throws — that's fine.
@@ -362,7 +362,7 @@ export default function StatementDetail() {
           {formatAUD2(totalContribution)} you paid
         </Text>
 
-        {/* Ask Wayly — top primary CTA, mirrors the web app's prominent "Ask
+        {/* Ask Wayly, top primary CTA, mirrors the web app's prominent "Ask
             Wayly about this statement" button at the top of the page. */}
         <TouchableOpacity
           style={styles.askBtn}
@@ -375,7 +375,7 @@ export default function StatementDetail() {
           <Text style={styles.askBtnText}>Ask Wayly about this statement</Text>
         </TouchableOpacity>
 
-        {/* Lifecycle action row — Archive / Restore / Permanent delete /
+        {/* Lifecycle action row, Archive / Restore / Permanent delete /
             Audit log. Surfaces only the actions valid for the current state. */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
           {stmt.state !== 'archived' && (
@@ -400,7 +400,7 @@ export default function StatementDetail() {
           </TouchableOpacity>
         </View>
 
-        {/* Download tiles — three large, equally-prominent cards matching
+        {/* Download tiles, three large, equally-prominent cards matching
             the web app's download row. Each tile has icon on top, label
             below, and a clear secondary "Download" hint. */}
         <Text style={styles.downloadsLabel}>Downloads</Text>
@@ -517,9 +517,9 @@ export default function StatementDetail() {
           </View>
         )}
 
-        {/* Informational notes — calmer section, NOT alarms (Rule 12 AT-HM,
+        {/* Informational notes, calmer section, NOT alarms (Rule 12 AT-HM,
             PPA, etc.). Surfaced beside anomalies so the user sees them but
-            doesn't read them as red flags. */}
+            does not read them as red flags. */}
         {Array.isArray(stmt.informational_notes) && stmt.informational_notes.length > 0 && (
           <View style={styles.section} testID="statement-info-notes">
             <Text style={styles.sectionTitle}>Notes for your records</Text>
@@ -653,7 +653,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   evidenceBox: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' },
   evidenceTitle: { fontFamily: Fonts.bodyMed, fontSize: 11, color: c.textSecondary, marginBottom: 4, letterSpacing: 0.3, textTransform: 'uppercase' },
   evidenceLine: { fontFamily: Fonts.body, fontSize: 12, color: c.textPrimary, lineHeight: 17 },
-  anomalyRule: { fontFamily: 'Courier', fontSize: 10, color: c.textMuted, marginTop: 8, letterSpacing: 0.3 },
+  anomalyRule: { fontFamily: Fonts.mono, fontSize: 10, color: c.textMuted, marginTop: 8, letterSpacing: 0.3 },
   lineItem: {
     backgroundColor: c.cardBg, borderRadius: Radius.md, padding: Spacing.md,
     marginBottom: Spacing.sm, borderWidth: 1, borderColor: c.borderSubtle,

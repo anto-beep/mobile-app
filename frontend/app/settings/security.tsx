@@ -42,7 +42,7 @@ export default function Security() {
       const r = await confirmWithBiometric('Confirm to enable biometric lock');
       if (!r.success) {
         if (r.reason === 'no-enrolled') toast.warning('Set up Face ID / Touch ID in iOS Settings first.');
-        else if (r.reason === 'unavailable') toast.warning('This device doesn’t support biometric auth.');
+        else if (r.reason === 'unavailable') toast.warning('This device does not support biometric auth.');
         else if (r.reason !== 'cancelled') toast.error('Biometric check failed. Try again.');
         return;
       }
@@ -57,9 +57,9 @@ export default function Security() {
     setBusy('reset');
     try {
       await api.post('/auth/forgot', { email: user.email });
-      Alert.alert('Check your inbox', `We've sent a password reset link to ${user.email}.`);
+      Alert.alert('Check your inbox', `We have sent a password reset link to ${user.email}.`);
     } catch (e) {
-      Alert.alert("Couldn't send the link", extractErrorMessage(e));
+      Alert.alert("Could not send the link", extractErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -68,7 +68,7 @@ export default function Security() {
   const deleteAccount = () => {
     Alert.alert(
       'Delete account?',
-      "This permanently deletes your Wayly account, household, statements, and family thread. This can't be undone.",
+      "This permanently deletes your Wayly account, household, statements, and family thread. This cannot be undone.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -81,7 +81,7 @@ export default function Security() {
               await logout();
               router.replace('/(auth)/login');
             } catch (e) {
-              Alert.alert("Couldn't delete", extractErrorMessage(e));
+              Alert.alert("Could not delete", extractErrorMessage(e));
               setBusy(null);
             }
           },
@@ -118,7 +118,7 @@ export default function Security() {
                   Alert.alert('No statements yet', 'Upload your first statement to start building an audit trail.');
                 }
               } catch (e) {
-                Alert.alert("Couldn't load", extractErrorMessage(e));
+                Alert.alert("Could not load", extractErrorMessage(e));
               }
             }}
             style={[styles.btn, styles.btnPrimary]}
@@ -145,13 +145,13 @@ export default function Security() {
               value={bioOn}
               onValueChange={toggleBio}
               disabled={!bioReady || Platform.OS === 'web'}
-              trackColor={{ false: c.borderSubtle, true: c.brandPrimary }}
-              thumbColor={c.cream}
+              trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }}
+              thumbColor="#FFFFFF"
               testID="security-biometric-switch"
             />
           </View>
           <Text style={styles.helpText}>
-            When enabled, you’ll be prompted on every cold start and after 30 seconds in the background.
+            When enabled, you will be prompted on every cold start and after 30 seconds in the background.
           </Text>
         </View>
 
@@ -162,7 +162,7 @@ export default function Security() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Reset your password</Text>
-              <Text style={styles.cardSub}>We'll email a link to {user?.email || 'you'}.</Text>
+              <Text style={styles.cardSub}>We will email a link to {user?.email || 'you'}.</Text>
             </View>
           </View>
           <TouchableOpacity onPress={sendReset} disabled={busy === 'reset'} style={[styles.btn, busy === 'reset' && { opacity: 0.6 }]} testID="security-send-reset">

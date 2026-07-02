@@ -27,7 +27,7 @@ export async function confirmWithBiometric(promptMessage: string): Promise<Biome
   // Web fallback — there's no Face ID in a browser tab.
   if (Platform.OS === 'web') {
     // eslint-disable-next-line no-alert
-    const ok = typeof window !== 'undefined' && window.confirm(`${promptMessage}\n\n(Web fallback — on a real device this would trigger Face ID / Touch ID.)`);
+    const ok = typeof window !== 'undefined' && window.confirm(`${promptMessage}\n\n(Web fallback, on a real device this would trigger Face ID / Touch ID.)`);
     return { success: ok, reason: ok ? undefined : 'web-confirm-declined', biometryType: 'unknown' };
   }
   try {

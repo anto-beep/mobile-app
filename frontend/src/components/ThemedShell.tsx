@@ -111,7 +111,7 @@ export function ThemedShell({ children }: { children: React.ReactNode }) {
         {children}
       </View>
 
-      {/* No overlay — dark mode uses CSS variable overrides on web; native
+      {/* No overlay, dark mode uses CSS variable overrides on web; native
           dark theme is a per-component palette (a separate effort). */}
 
       {/* High contrast: CSS filter on web; gentle tint fallback on native. */}

@@ -31,12 +31,12 @@ import { Platform } from 'react-native';
 export const Colors = {
   // Core
   background: '#FBF8F3',          // warm off-white app shell
-  bg: '#FBF8F3',                  // alias of `background` — keep both keys in sync
-  brandPrimary: '#0E4D52',        // teal-ink — primary surfaces, headers, nav
+  bg: '#FBF8F3',                  // alias of `background`, keep both keys in sync
+  brandPrimary: '#0E4D52',        // teal-ink, primary surfaces, headers, nav
   brandPrimaryDeep: '#073034',    // pressed/active state of teal surfaces
-  brandSecondary: '#A5512B',      // clay 500 — CTA fill (always white text)
+  brandSecondary: '#A5512B',      // clay 500, CTA fill (always white text)
   brandSecondaryDeep: '#7E3F22',  // pressed/active state of CTA
-  focusRing: '#C2683D',           // clay 400 — focus outline
+  focusRing: '#C2683D',           // clay 400, focus outline
   cream: '#FBF8F3',               // alias, used for inverse text on dark surfaces
 
   // Streams (consistent palette across charts + chips)
@@ -55,7 +55,7 @@ export const Colors = {
   textPrimary: '#1C2B2D',         // warm ink
   textSecondary: '#3D5557',       // dimmer warm ink for sub-copy
   textMuted: '#7A8A8C',           // subtle muted grey-teal
-  textInverse: '#FFFFFF',         // text on teal-ink / clay surfaces — ALWAYS white
+  textInverse: '#FFFFFF',         // text on teal-ink / clay surfaces, ALWAYS white
 
   // Surfaces
   cardBg: '#FFFFFF',
@@ -76,33 +76,34 @@ export const Colors = {
 // dark mode leans heavily on white/near-white primaries so dark surfaces
 // really contrast. Teal and clay remain accent colours.
 export const DarkColors = {
-  background: '#141210',
-  bg: '#141210',
-  brandPrimary: '#6FB7BD',          // lifted teal accent (text/icons on dark)
+  // UI-2/UI-3 parity: matches the web dark palette exactly.
+  background: '#0B1416',
+  bg: '#0B1416',
+  brandPrimary: '#4FA8AE',          // bright teal accent (text/icons on dark)
   brandPrimaryDeep: '#0E4D52',      // banner surface (still deep teal)
-  brandSecondary: '#E5A382',        // clay 400 — CTA accent on dark
+  brandSecondary: '#E89A6F',        // clay, CTA accent on dark
   brandSecondaryDeep: '#A5512B',
   focusRing: '#EBC3A2',
   cream: '#FFFFFF',
   streams: {
-    Clinical: '#9CC3A2',
+    Clinical: '#A8C7AB',
     Independence: '#B8D3BB',
-    'Everyday Living': '#E5A382',
+    'Everyday Living': '#E89A6F',
   } as Record<string, string>,
   severityAlert: '#F4988D',
   severityWarning: '#F0BE76',
-  severityInfo: '#B8D3BB',
-  textPrimary: '#FFFFFF',           // crisp white for headings/labels
-  textSecondary: '#E6E2D8',         // off-white for body copy
-  textMuted: '#A39C8E',              // softer muted for chevrons / meta
-  textInverse: '#141210',
-  cardBg: '#23201C',
-  cardBgWarm: '#2C2823',
-  inputBg: '#1C1A17',
-  border: 'rgba(255, 255, 255, 0.16)',
+  severityInfo: '#A8C7AB',
+  textPrimary: '#FFFFFF',           // ALL headings pure white in dark
+  textSecondary: '#E5E5E5',         // secondary body copy
+  textMuted: '#C7C2B8',             // muted meta text (AAA on surfaces)
+  textInverse: '#0B1416',
+  cardBg: '#152425',                // surface
+  cardBgWarm: '#1C2F31',            // surface2
+  inputBg: '#060B0C',               // sunken
+  border: '#2A3A3C',
   borderSubtle: 'rgba(255, 255, 255, 0.09)',
   surfaceTint: 'rgba(255, 255, 255, 0.06)',
-  success: '#8FC79E',
+  success: '#A8C7AB',               // bright sage replaces success-green in dark
   warning: '#F0BE76',
   danger: '#F4988D',
 } as const;
@@ -159,6 +160,8 @@ export const Fonts = Platform.select({
     bodyMed: 'Inter',
     bodySemi: 'Inter',
     mono: 'IBM Plex Mono',
+    monoMed: 'IBM Plex Mono Medium',
+    monoSemi: 'IBM Plex Mono SemiBold',
   },
   android: {
     heading: 'Fraunces',
@@ -167,6 +170,8 @@ export const Fonts = Platform.select({
     bodyMed: 'Inter',
     bodySemi: 'Inter',
     mono: 'IBM Plex Mono',
+    monoMed: 'IBM Plex Mono Medium',
+    monoSemi: 'IBM Plex Mono SemiBold',
   },
   default: {
     // Web — CSS picks the first registered family.
@@ -176,6 +181,8 @@ export const Fonts = Platform.select({
     bodyMed: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     bodySemi: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     mono: '"IBM Plex Mono", Menlo, monospace',
+    monoMed: '"IBM Plex Mono Medium", "IBM Plex Mono", Menlo, monospace',
+    monoSemi: '"IBM Plex Mono SemiBold", "IBM Plex Mono", Menlo, monospace',
   },
 }) as {
   heading: string;
@@ -184,6 +191,8 @@ export const Fonts = Platform.select({
   bodyMed: string;
   bodySemi: string;
   mono: string;
+  monoMed: string;
+  monoSemi: string;
 };
 
 // Body type scale — never below 16

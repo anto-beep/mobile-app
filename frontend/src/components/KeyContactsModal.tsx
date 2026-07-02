@@ -197,7 +197,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
       setComposerOpen(false);
       await load();
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't save the contact"));
+      toast.error(extractErrorMessage(e, "Could not save the contact"));
     } finally { setBusy(false); }
   }, [form, editing, participantId, load]);
 
@@ -211,7 +211,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
           await api.delete(`/participants/${participantId}/contacts/${k.id}`);
           toast.success('Contact removed.');
           await load();
-        } catch (e) { toast.error(extractErrorMessage(e, "Couldn't remove.")); }
+        } catch (e) { toast.error(extractErrorMessage(e, "Could not remove.")); }
       },
     });
   }, [participantId, participantName, load]);
@@ -397,7 +397,7 @@ export function KeyContactsModal({ visible, onClose, participantId, participantN
             <TextInput style={styles.input} value={form.address} onChangeText={(v) => setForm((s) => ({ ...s, address: v }))} placeholder="Street, Suburb, State" placeholderTextColor={c.textMuted} testID="kc-address" />
           </Field>
           <Field label="Notes">
-            <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={form.notes} onChangeText={(v) => setForm((s) => ({ ...s, notes: v }))} multiline placeholder="Anything worth remembering — best time to call, languages, etc." placeholderTextColor={c.textMuted} testID="kc-notes" />
+            <TextInput style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]} value={form.notes} onChangeText={(v) => setForm((s) => ({ ...s, notes: v }))} multiline placeholder="Anything worth remembering, best time to call, languages, etc." placeholderTextColor={c.textMuted} testID="kc-notes" />
           </Field>
 
           <TouchableOpacity onPress={() => setForm((s) => ({ ...s, is_primary: !s.is_primary }))} style={styles.checkRow} testID="kc-primary-toggle">

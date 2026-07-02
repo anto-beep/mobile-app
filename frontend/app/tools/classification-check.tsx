@@ -11,9 +11,10 @@ import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 const QUESTIONS = [
-  'Mobility — moving around the home',
+  'Mobility, moving around the home',
   'Climbing stairs or steps',
   'Showering or bathing',
   'Dressing & grooming',
@@ -73,7 +74,7 @@ export default function ClassificationCheck() {
       });
       setResult(data);
     } catch (e) {
-      Alert.alert("Couldn't check", extractErrorMessage(e));
+      Alert.alert("Could not check", extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function ClassificationCheck() {
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Classification check</Text>
         <Text style={styles.h1}>Quick self-check</Text>
-        <Text style={styles.sub}>Twelve questions, two minutes — gives a likely Support at Home level.</Text>
+        <Text style={styles.sub}>Twelve questions, two minutes, gives a likely Support at Home level.</Text>
         <AIAccuracyBanner tool="classification-self-check" />
 
         <View style={styles.note}>
@@ -136,10 +137,16 @@ export default function ClassificationCheck() {
 
         {result && (
           <View style={styles.result} testID="class-result">
+            <ToolSummary
+              toolName="Classification Self-Check"
+              tone={result.suggest_reassessment ? 'alert' : 'neutral'}
+              headline={`Your answers point to ${result.likely_label}.`}
+              body={`Based on 12 questions about daily living, mobility, cognition and support, Wayly estimates ${result.likely_label}. That maps to an annual budget between ${formatAUD(result.annual_range[0])} and ${formatAUD(result.annual_range[1])}. This is a self-check to help you prepare, not an official assessment.`}
+            />
             <Text style={styles.resultOverline}>Likely classification</Text>
             <Text style={styles.resultAmount}>{result.likely_label}</Text>
             <Text style={styles.resultSub}>
-              Annual budget range: {formatAUD(result.annual_range[0])} – {formatAUD(result.annual_range[1])}
+              Annual budget range: {formatAUD(result.annual_range[0])} to {formatAUD(result.annual_range[1])}
             </Text>
             <View style={styles.divider} />
             <Text style={styles.resultLine}>Score: <Text style={styles.bold}>{result.score} of {result.score_max}</Text></Text>
@@ -147,11 +154,12 @@ export default function ClassificationCheck() {
               <View style={styles.suggest}>
                 <Ionicons name="alert-circle-outline" size={16} color={c.severityWarning} />
                 <Text style={styles.suggestText}>
-                  Worth requesting a reassessment — your current level looks out of step with these answers.
+                  Worth requesting a reassessment, your current level looks out of step with these answers.
                 </Text>
               </View>
             )}
             <Text style={styles.caveat}>{result.caveat}</Text>
+            <ReportIssueButton tool="Classification Self-Check" />
           </View>
         )}
       </ScrollView>
@@ -189,7 +197,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   result: { marginTop: Spacing.lg, backgroundColor: c.cardBg, borderRadius: Radius.lg, padding: Spacing.lg, borderWidth: 1, borderColor: c.borderSubtle },
   resultOverline: { fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: c.brandSecondary, marginBottom: 4 },
   resultAmount: { fontFamily: Fonts.heading, fontSize: 28, color: c.brandPrimary, letterSpacing: -0.5 },
-  resultSub: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, marginTop: 4 },
+  resultSub: { fontFamily: Fonts.mono, fontVariant: ['tabular-nums' as const], fontSize: 13, color: c.textSecondary, marginTop: 4 },
   divider: { height: 1, backgroundColor: c.borderSubtle, marginVertical: Spacing.md },
   resultLine: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, lineHeight: 20 },
   bold: { fontFamily: Fonts.bodySemi, color: c.brandPrimary },

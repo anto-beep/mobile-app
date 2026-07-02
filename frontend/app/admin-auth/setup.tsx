@@ -52,7 +52,7 @@ export default function AdminSetup() {
       setBackupCodes(res.backupCodes);
       setStep('codes');
     } catch (e: any) {
-      Alert.alert("Code didn't match", e.message || 'Try again', [
+      Alert.alert("Code did not match", e.message || 'Try again', [
         { text: 'OK', onPress: () => { setCode(''); inputRef.current?.focus(); } },
       ]);
     } finally { setBusy(false); }
@@ -81,7 +81,7 @@ export default function AdminSetup() {
               {params.qr_data_uri ? (
                 <Image source={{ uri: params.qr_data_uri }} style={styles.qr} />
               ) : null}
-              <Text style={styles.helperLabel}>Can’t scan? Type this secret in by hand:</Text>
+              <Text style={styles.helperLabel}>Cannot scan? Type this secret in by hand:</Text>
               <TouchableOpacity onPress={onCopySecret} style={styles.secretBox} testID="copy-secret">
                 <Text style={styles.secretText}>{params.secret}</Text>
                 <Ionicons name="copy-outline" size={16} color={c.brandPrimary} />
@@ -131,7 +131,7 @@ export default function AdminSetup() {
           {step === 'codes' && (
             <>
               <Text style={styles.title}>Save your backup codes</Text>
-              <Text style={styles.sub}>Use one of these 8-character codes if you ever lose your authenticator. They’re only shown once.</Text>
+              <Text style={styles.sub}>Use one of these 8-character codes if you ever lose your authenticator. They are only shown once.</Text>
               <View style={styles.codesGrid}>
                 {backupCodes.map((c) => (
                   <View key={c} style={styles.codeCell}><Text style={styles.codeCellText}>{c}</Text></View>
@@ -143,10 +143,10 @@ export default function AdminSetup() {
               </TouchableOpacity>
               <View style={styles.warnBox}>
                 <Ionicons name="warning-outline" size={14} color={c.brandSecondary} />
-                <Text style={styles.warnText}>Save these somewhere safe — your password manager, a sealed envelope, anywhere offline. You can’t see them again.</Text>
+                <Text style={styles.warnText}>Save these somewhere safe, your password manager, a sealed envelope, anywhere offline. You cannot see them again.</Text>
               </View>
               <TouchableOpacity style={styles.primary} onPress={() => router.replace('/admin-app' as any)} testID="setup-done">
-                <Text style={styles.primaryText}>I’ve saved them — continue</Text>
+                <Text style={styles.primaryText}>I’ve saved them, continue</Text>
               </TouchableOpacity>
             </>
           )}
@@ -196,7 +196,7 @@ function DevCodeHint() {
       const d = await r.json();
       setCode(d.code);
       setValidFor(d.valid_seconds || 30);
-      toast.info('Dev code fetched — paste it above', 4000);
+      toast.info('Dev code fetched, paste it above', 4000);
     } catch (e: any) {
       toast.error('Could not fetch dev code');
     } finally { setBusy(false); }
@@ -208,7 +208,7 @@ function DevCodeHint() {
         <Text style={devStyles.title}>DEV SHORTCUT</Text>
       </View>
       <Text style={devStyles.body}>
-        Container clock differs from your phone, so authenticator codes won't match. Tap below to fetch the code computed on the server.
+        Container clock differs from your phone, so authenticator codes will not match. Tap below to fetch the code computed on the server.
       </Text>
       <TouchableOpacity style={devStyles.btn} onPress={fetchCode} disabled={busy} testID="admin-setup-devcode">
         {busy ? <ActivityIndicator size="small" color={c.brandPrimary} /> : <Text style={devStyles.btnText}>{code ? `Code: ${code} (refresh)` : 'Show current code'}</Text>}

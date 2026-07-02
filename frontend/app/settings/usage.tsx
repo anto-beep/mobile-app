@@ -62,7 +62,7 @@ export default function Usage() {
           <View style={styles.empty}>
             <Ionicons name="stats-chart-outline" size={36} color={c.textMuted} />
             <Text style={styles.emptyTitle}>No activity yet</Text>
-            <Text style={styles.emptyBody}>Once you decode a statement or use a tool, you&apos;ll see your stats here.</Text>
+            <Text style={styles.emptyBody}>Once you decode a statement or use a tool, you will see your stats here.</Text>
           </View>
         ) : (
           <View style={styles.grid}>

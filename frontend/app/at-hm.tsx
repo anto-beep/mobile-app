@@ -66,7 +66,7 @@ export default function AtHm() {
       setForm({ category: 'AT', status: 'OPEN' });
       await refresh();
       toast.success('Item added.');
-    } catch (e) { toast.error(extractErrorMessage(e, "Couldn't save item")); }
+    } catch (e) { toast.error(extractErrorMessage(e, "Could not save item")); }
     finally { setBusy(false); }
   }, [form, refresh]);
 
@@ -86,14 +86,14 @@ export default function AtHm() {
           <Ionicons name="construct-outline" size={22} color={c.brandPrimary} />
           <Text style={styles.hero}>AT & home mods</Text>
         </View>
-        <Text style={styles.subhero}>Track wheelchair fittings, bathroom rails, kitchen mods — anything needing a quote, approval or install date.</Text>
+        <Text style={styles.subhero}>Track wheelchair fittings, bathroom rails, kitchen mods, anything needing a quote, approval or install date.</Text>
 
         {loading ? <ActivityIndicator color={c.brandPrimary} style={{ paddingVertical: 32 }} /> :
           items.length === 0 ? (
             <View style={styles.emptyCard}>
               <Ionicons name="construct-outline" size={28} color={c.textMuted} />
               <Text style={styles.emptyTitle}>No items yet</Text>
-              <Text style={styles.emptyBody}>Tap &ldquo;Add&rdquo; to log a wheelchair fitting, grab-rail, or any other modification you&apos;re tracking.</Text>
+              <Text style={styles.emptyBody}>Tap &ldquo;Add&rdquo; to log a wheelchair fitting, grab-rail, or any other modification you are tracking.</Text>
             </View>
           ) : items.map((it) => {
             const m = STATUS_META[(it.status || 'OPEN').toUpperCase()] || STATUS_META.OPEN;
@@ -179,7 +179,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   scroll: { padding: Spacing.md, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
   hero: { fontFamily: Fonts.heading, fontSize: 24, color: c.brandPrimary, letterSpacing: -0.3 },
-  subhero: { fontFamily: Fonts.body, fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: Spacing.lg },
+  subhero: { fontFamily: Fonts.body, fontSize: 14, color: c.textSecondary, lineHeight: 21, marginBottom: Spacing.lg },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: c.brandPrimary, minHeight: 32 },
   addBtnText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: '#FFFFFF' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.cardBg, borderRadius: Radius.md, borderWidth: 1, borderColor: c.borderSubtle, padding: Spacing.md, marginBottom: 6 },

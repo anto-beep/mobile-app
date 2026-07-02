@@ -37,7 +37,7 @@ export default function AdminLogin() {
         });
       }
     } catch (e: any) {
-      Alert.alert("Couldn't sign in", e.message || 'Try again');
+      Alert.alert("Could not sign in", e.message || 'Try again');
     } finally {
       setBusy(false);
     }
@@ -57,7 +57,7 @@ export default function AdminLogin() {
             <Text style={styles.badgeText}>Wayly staff</Text>
           </View>
           <Text style={styles.title}>Admin sign in</Text>
-          <Text style={styles.sub}>Two-factor required. If you haven’t set it up yet, we’ll walk you through it.</Text>
+          <Text style={styles.sub}>Two-factor required. If you have not set it up yet, we will walk you through it.</Text>
 
           <Text style={styles.label}>Email</Text>
           <TextInput

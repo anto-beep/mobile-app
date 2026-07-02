@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { formatDateTime } from '../../src/lib/formatDate';
+import { humanizeMonths, titleCaseSafe } from '../../src/lib/format';
 import {
   View,
   Text,
@@ -138,7 +139,7 @@ export default function Notifications() {
             <Ionicons name="checkmark-circle-outline" size={40} color={c.severityInfo} />
             <Text style={styles.emptyTitle}>All caught up</Text>
             <Text style={styles.emptyBody}>
-              Nothing unusual at the moment. We'll send you a notification if anything needs a look.
+              Nothing unusual at the moment. We will send you a notification if anything needs a look.
             </Text>
           </View>
         ) : (
@@ -199,9 +200,9 @@ export default function Notifications() {
                   size={18}
                   color={SEVERITY_COLOR[n.severity]}
                 />
-                <Text style={styles.cardTitle}>{n.title}</Text>
+                <Text style={styles.cardTitle}>{titleCaseSafe(humanizeMonths(n.title || ''))}</Text>
               </View>
-              <Text style={styles.cardBody}>{n.body}</Text>
+              <Text style={styles.cardBody}>{humanizeMonths(n.body || '')}</Text>
               <Text style={styles.cardTime}>
                 {formatDateTime(n.created_at)}
               </Text>

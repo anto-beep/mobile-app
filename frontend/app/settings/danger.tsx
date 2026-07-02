@@ -23,7 +23,7 @@ export default function DangerSettings() {
   async function signOutEverywhere() {
     Alert.alert(
       'Sign out everywhere?',
-      'This signs you out on every device, including this one. You’ll need to log back in.',
+      'This signs you out on every device, including this one. You will need to log back in.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign out everywhere', style: 'destructive', onPress: async () => {
@@ -52,7 +52,7 @@ export default function DangerSettings() {
             try { await api.delete('/auth/me'); }
             catch (e: any) {
               if (e?.response?.status === 404 || e?.response?.status === 405) {
-                Alert.alert('Not available yet', 'Self-service deletion isn’t wired on the backend yet. Contact support@wayly.com.au and we’ll process the request within 7 days.');
+                Alert.alert('Not available yet', 'Self-service deletion is not wired on the backend yet. Contact support@wayly.com.au and we will process the request within 7 days.');
                 return;
               }
               throw e;

@@ -95,7 +95,7 @@ export function ParticipantSwitcher() {
                       {pending && (
                         <View style={styles.warnRow}>
                           <Ionicons name="alert-circle" size={12} color={Colors.warning} />
-                          <Text style={styles.warnText}>Removal pending — back to active in 30 days</Text>
+                          <Text style={styles.warnText}>Removal pending, back to active in 30 days</Text>
                         </View>
                       )}
                     </View>

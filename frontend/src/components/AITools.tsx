@@ -28,18 +28,18 @@ export const canStartTrial = (u: any) => {
 };
 
 const TOOL_DISCLAIMERS: Record<string, string> = {
-  'statement-decoder': "Wayly's AI reads your statement and flags possible issues. It may misread figures or miss anomalies — always check against the original statement and your provider before disputing anything.",
-  'budget-calculator': "These figures use the published Support at Home budget tables. They're a guide — the official quarterly amount on your statement is the source of truth.",
-  'provider-price-checker': "Rate comparisons use the Department of Health's official indicative range (October 2025). Price caps were deferred indefinitely in May 2026 — this tool does not show a cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.",
+  'statement-decoder': "Wayly's AI reads your statement and flags possible issues. It may misread figures or miss anomalies, always check against the original statement and your provider before disputing anything.",
+  'budget-calculator': "These figures use the published Support at Home budget tables. They are a guide, the official quarterly amount on your statement is the source of truth.",
+  'provider-price-checker': "Rate comparisons use the Department of Health's official indicative range (October 2025). Price caps were deferred indefinitely in May 2026, this tool does not show a cap. If you believe you have been overcharged, the Aged Care Quality and Safety Commission can order refunds.",
   'classification-self-check': "This is informational only. Only My Aged Care's Independent Assessment Tool (IAT) determines your actual classification.",
   'reassessment-letter': "AI drafts can get details wrong. Review carefully, check the date, and add your address before sending.",
   'contribution-estimator': "Contribution rates are based on the published Support at Home schedule. Your actual contribution depends on Services Australia's means assessment.",
-  'care-plan-reviewer': "Wayly reviews care plan text for completeness and balance — it doesn't replace your care manager's clinical judgement.",
-  'aged-care-qa': "I'm a general Q&A assistant — I can't see your account, statements or budget. I won't recommend specific providers or make clinical decisions. Always confirm details with your provider, My Aged Care on 1800 200 422, or the Aged Care Quality & Safety Commission on 1800 951 822.",
+  'care-plan-reviewer': "Wayly reviews care plan text for completeness and balance, it does not replace your care manager's clinical judgement.",
+  'aged-care-qa': "I'm a general Q&A assistant, I cannot see your account, statements or budget. I will not recommend specific providers or make clinical decisions. Always confirm details with your provider, My Aged Care on 1800 200 422, or the Aged Care Quality & Safety Commission on 1800 951 822.",
 };
 
 export function AIAccuracyBanner({ tool }: { tool: keyof typeof TOOL_DISCLAIMERS | string }) {
-  const copy = TOOL_DISCLAIMERS[tool] || "Wayly's AI helps you understand your aged-care information — it can be wrong. Always verify against official sources before making decisions.";
+  const copy = TOOL_DISCLAIMERS[tool] || "Wayly's AI helps you understand your aged-care information, it can be wrong. Always verify against official sources before making decisions.";
   return (
     <View style={styles.banner} testID="ai-accuracy-banner">
       <Ionicons name="alert-circle" size={16} color={Colors.brandSecondary} />
@@ -77,10 +77,10 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
     return (
       <View style={[styles.gate, styles.gateLimit]} testID="tool-gate-sd-limit">
         <Ionicons name="time-outline" size={28} color={Colors.brandSecondary} />
-        <Text style={styles.gateTitle}>You&apos;ve used your free decode today</Text>
+        <Text style={styles.gateTitle}>You have used your daily free Statement Decoder run.</Text>
         <Text style={styles.gateBody}>
-          Next free decode in <Text style={styles.bold}>{hours}h {mins}m</Text>.
-          {trialEligible ? ' Start a 7-day trial to decode unlimited statements right now.' : ' Pick a plan to decode unlimited statements right now.'}
+          Next free run in <Text style={styles.bold}>{hours}h {mins}m</Text>.
+          {' '}Solo, Family and Adviser plans include unlimited Statement Decoder runs.
         </Text>
         <TouchableOpacity
           style={styles.goldBtn}
@@ -107,8 +107,8 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
         <Text style={styles.gateTitle}>Paid plan needed</Text>
         <Text style={styles.gateBody}>
           {trialEligible
-            ? 'This tool is for Solo and Family plans. Try Wayly free for 7 days — no card required.'
-            : 'This tool is for Solo and Family plans. Pick a plan to unlock it.'}
+            ? 'This tool is for Solo and Family plans. Try Wayly free for 7 days, no card required.'
+            : 'This tool is for Solo and Family plans. Pick a plan to use it.'}
         </Text>
         <TouchableOpacity
           style={styles.goldBtn}
@@ -250,7 +250,7 @@ export function UpgradeGate({ visible, onClose, reason }: { visible: boolean; on
           <Ionicons name="sparkles-outline" size={26} color={Colors.brandSecondary} />
         </View>
         <Text style={[styles.gateTitle, { textAlign: 'center', marginTop: Spacing.md }]}>Upgrade to keep going</Text>
-        <Text style={[styles.gateBody, { textAlign: 'center' }]}>{reason || 'This action is on Solo and Family plans. Start your 7-day free trial — no card required.'}</Text>
+        <Text style={[styles.gateBody, { textAlign: 'center' }]}>{reason || 'This action is on Solo and Family plans. Start your 7-day free trial, no card required.'}</Text>
         <TouchableOpacity
           style={styles.goldBtn}
           onPress={() => { onClose(); router.push('/settings/plan' as any); }}

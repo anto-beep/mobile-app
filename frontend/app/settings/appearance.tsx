@@ -33,9 +33,9 @@ export default function AppearanceSettings() {
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 40, gap: Spacing.md }}>
         <View style={styles.card}>
           <Text style={styles.label}>Appearance</Text>
-          <Text style={styles.sub}>Pick how Wayly should look. We&apos;ll keep the system clock and battery readable — black on light, white on dark.</Text>
+          <Text style={styles.sub}>Pick how Wayly should look. We will keep the system clock and battery readable, black on light, white on dark.</Text>
 
-          {/* Live preview swatches — show what the current pick will look like */}
+          {/* Live preview swatches, show what the current pick will look like */}
           <View style={styles.preview}>
             <View style={[styles.previewTile, effective === 'light' ? styles.previewLight : styles.previewDark]}>
               <Text style={[styles.previewLbl, { color: effective === 'light' ? '#0E4D52' : '#F0EBE0' }]}>Aa</Text>
@@ -78,7 +78,7 @@ export default function AppearanceSettings() {
               <Text style={styles.label2}>Reduce motion</Text>
               <Text style={styles.sub}>Soften transitions and disable subtle animations.</Text>
             </View>
-            <Switch value={reduceMotion} onValueChange={toggleReduceMotion} trackColor={{ true: c.brandPrimary, false: c.border }} />
+            <Switch value={reduceMotion} onValueChange={toggleReduceMotion} trackColor={{ false: 'rgba(122,138,140,0.45)', true: c.brandPrimary }} thumbColor="#FFFFFF" />
           </View>
         </View>
       </ScrollView>

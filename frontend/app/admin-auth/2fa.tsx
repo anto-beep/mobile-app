@@ -45,7 +45,7 @@ export default function Admin2FA() {
       await verify2FA(temp_token, cleaned);
       router.replace('/admin-app' as any);
     } catch (e: any) {
-      Alert.alert("Code didn't match", e.message || 'Try again', [
+      Alert.alert("Code did not match", e.message || 'Try again', [
         { text: 'OK', onPress: () => { setCode(''); inputRef.current?.focus(); } },
       ]);
     } finally {
@@ -92,7 +92,7 @@ export default function Admin2FA() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => { setUseBackup((b) => !b); setCode(''); }} style={styles.toggle} testID="admin-2fa-toggle-backup">
-            <Text style={styles.toggleText}>{useBackup ? 'Use authenticator code instead' : "Can't open your authenticator? Use a backup code"}</Text>
+            <Text style={styles.toggleText}>{useBackup ? 'Use authenticator code instead' : "Cannot open your authenticator? Use a backup code"}</Text>
           </TouchableOpacity>
 
           <DevCodeHint />
@@ -114,7 +114,7 @@ function DevCodeHint() {
       const d = await r.json();
       setCode(d.code);
       setValidFor(d.valid_seconds || 30);
-      toast.info('Dev code fetched — paste it above', 4000);
+      toast.info('Dev code fetched, paste it above', 4000);
     } catch (e: any) {
       toast.error('Could not fetch dev code');
     } finally { setBusy(false); }
@@ -126,7 +126,7 @@ function DevCodeHint() {
         <Text style={devStyles.title}>DEV SHORTCUT</Text>
       </View>
       <Text style={devStyles.body}>
-        Container clock differs from your phone, so authenticator codes won't match. Tap below to fetch the code computed on the server.
+        Container clock differs from your phone, so authenticator codes will not match. Tap below to fetch the code computed on the server.
       </Text>
       <TouchableOpacity style={devStyles.btn} onPress={fetchCode} disabled={busy} testID="admin-2fa-devcode">
         {busy ? <ActivityIndicator size="small" color={c.brandPrimary} /> : <Text style={devStyles.btnText}>{code ? `Code: ${code} (refresh)` : 'Show current code'}</Text>}

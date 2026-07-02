@@ -86,7 +86,7 @@ export default function AdviserHome() {
       if (detail && typeof detail === 'object' && detail.error === 'plan_required') {
         setPlanErr({ current_plan: detail.current_plan });
       } else {
-        toast.error(extractErrorMessage(e, "Couldn't load adviser portal"));
+        toast.error(extractErrorMessage(e, "Could not load adviser portal"));
       }
     } finally {
       setLoading(false);
@@ -113,9 +113,9 @@ export default function AdviserHome() {
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       if (typeof detail === 'object' && detail?.error === 'client_cap_reached') {
-        toast.error(`Roster full — ${detail.max} clients max on adviser plan.`);
+        toast.error(`Roster full, ${detail.max} clients max on adviser plan.`);
       } else {
-        toast.error(extractErrorMessage(e, "Couldn't add client"));
+        toast.error(extractErrorMessage(e, "Could not add client"));
       }
     } finally {
       setAdding(false);
@@ -128,7 +128,7 @@ export default function AdviserHome() {
       toast.success('Invite re-sent.');
       await load();
     } catch (e) {
-      toast.error(extractErrorMessage(e, "Couldn't resend invite"));
+      toast.error(extractErrorMessage(e, "Could not resend invite"));
     }
   }, [load]);
 
@@ -139,7 +139,7 @@ export default function AdviserHome() {
         toast.success('Removed.');
         setClients((cs) => cs.filter((x) => x.id !== c.id));
       } catch (e) {
-        toast.error(extractErrorMessage(e, "Couldn't remove"));
+        toast.error(extractErrorMessage(e, "Could not remove"));
       }
     };
     if (Platform.OS === 'web') {
@@ -266,7 +266,7 @@ export default function AdviserHome() {
           <View style={styles.modalCard}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Invite a client</Text>
-            <Text style={styles.modalSub}>We’ll send them a secure sign-up link. They’ll appear in your roster as “invited” until they accept.</Text>
+            <Text style={styles.modalSub}>We will send them a secure sign-up link. They’ll appear in your roster as “invited” until they accept.</Text>
 
             <Text style={styles.label}>Client name</Text>
             <TextInput value={nName} onChangeText={setNName} placeholder="Margaret Williams" placeholderTextColor={c.textMuted} style={styles.input} testID="adviser-new-name" />

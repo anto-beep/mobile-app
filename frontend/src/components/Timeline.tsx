@@ -3,10 +3,13 @@ import React from 'react';
 import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Fonts, Radius, Spacing, Type } from '../lib/theme';
+import { Fonts, Radius, Spacing, Type } from '../lib/theme';
+import type { ColorPalette } from '../lib/theme';
+import { useColors } from '../hooks/useColors';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 import { useScenario } from '../context/ScenarioContext';
 import { lifecyclePalette, mapWebPathToNative, severityPalette } from '../lib/scenarioSchema';
-import { formatAUDate } from '../lib/format';
+import { formatAUDate, humanizeMonths, titleCaseSafe } from '../lib/format';
 
 function humanise(s: string | null | undefined) {
   if (!s) return '—';
@@ -14,6 +17,9 @@ function humanise(s: string | null | undefined) {
 }
 
 export function StatusBadge({ state, small }: { state?: string | null; small?: boolean }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   if (!state) return null;
   const p = lifecyclePalette(state);
   return (
@@ -24,6 +30,9 @@ export function StatusBadge({ state, small }: { state?: string | null; small?: b
 }
 
 export function SeverityChip({ severity }: { severity: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   const p = severityPalette(severity);
   return (
     <View style={[styles.sevChip, { backgroundColor: p.bg, borderColor: p.border }]} testID={`severity-${severity}`}>
@@ -33,12 +42,15 @@ export function SeverityChip({ severity }: { severity: string }) {
 }
 
 export function BoundaryChip({ boundary }: { boundary: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   if (!boundary || boundary === 'SAFE_TO_EXPLAIN') return null;
   const isEscalate = boundary === 'ESCALATE';
   return (
     <View style={[styles.boundChip, isEscalate ? styles.boundChipEscalate : styles.boundChipRouteOut]} testID={`boundary-${boundary}`}>
-      <Ionicons name={isEscalate ? 'warning' : 'information-circle'} size={12} color={isEscalate ? '#7A2210' : '#0E4D52'} />
-      <Text style={[styles.boundChipText, { color: isEscalate ? '#7A2210' : '#0E4D52' }]}>{boundary.replace('_', ' ')}</Text>
+      <Ionicons name={isEscalate ? 'warning' : 'information-circle'} size={12} color={isEscalate ? '#7A2210' : c.brandPrimary} />
+      <Text style={[styles.boundChipText, { color: isEscalate ? '#7A2210' : c.brandPrimary }]}>{boundary.replace('_', ' ')}</Text>
     </View>
   );
 }
@@ -50,13 +62,16 @@ export type ContactCardProps = {
 };
 
 export function ContactCard({ boundary = 'ROUTE_OUT', contactKeys, followUp }: ContactCardProps) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   const { getContacts } = useScenario();
   const contacts = getContacts(contactKeys);
   if (contacts.length === 0) return null;
   const isEscalate = boundary === 'ESCALATE';
   return (
     <View style={[styles.contactCard, isEscalate ? styles.contactCardEscalate : styles.contactCardRouteOut]} testID="contact-card">
-      <Text style={[styles.contactLead, { color: isEscalate ? '#7A2210' : '#0E4D52' }]}>
+      <Text style={[styles.contactLead, { color: isEscalate ? '#7A2210' : c.brandPrimary }]}>
         {isEscalate ? 'Please contact straight away' : 'Where to start'}
       </Text>
       {contacts.map((c) => (
@@ -84,6 +99,9 @@ export function ContactCard({ boundary = 'ROUTE_OUT', contactKeys, followUp }: C
 }
 
 function CellShell({ children, accent }: { children: React.ReactNode; accent?: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={[styles.cell, accent ? { borderLeftColor: accent, borderLeftWidth: 3 } : null]}>
       {children}
@@ -92,6 +110,9 @@ function CellShell({ children, accent }: { children: React.ReactNode; accent?: s
 }
 
 export function EventCell({ item }: { item: { at: string; data: any } }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   const { getEventType } = useScenario();
   const data = item.data || {};
   const meta = getEventType(data.event_type);
@@ -102,7 +123,7 @@ export function EventCell({ item }: { item: { at: string; data: any } }) {
   return (
     <CellShell accent={severityPalette(blocked ? 'medium' : 'low').border}>
       <View style={styles.cellHead}>
-        <Ionicons name="flag-outline" size={14} color={Colors.brandPrimary} />
+        <Ionicons name="flag-outline" size={14} color={c.brandPrimary} />
         <Text style={styles.cellKind}>Event</Text>
         <BoundaryChip boundary={boundary} />
         {blocked && (
@@ -129,18 +150,21 @@ export function EventCell({ item }: { item: { at: string; data: any } }) {
 }
 
 export function StateCell({ item }: { item: { at: string; data: any } }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   const data = item.data || {};
   return (
-    <CellShell accent={Colors.brandPrimary}>
+    <CellShell accent={c.brandPrimary}>
       <View style={styles.cellHead}>
-        <Ionicons name="swap-horizontal" size={14} color={Colors.brandPrimary} />
+        <Ionicons name="swap-horizontal" size={14} color={c.brandPrimary} />
         <Text style={styles.cellKind}>Status changed</Text>
         <Text style={styles.cellAt}>{formatAUDate(item.at)}</Text>
       </View>
       <Text style={styles.cellTitle}>{humanise(data.kind || 'state_change')}</Text>
       <View style={styles.stateRow}>
         <StatusBadge state={data.from_value} small />
-        <Ionicons name="arrow-forward" size={14} color={Colors.textMuted} />
+        <Ionicons name="arrow-forward" size={14} color={c.textMuted} />
         <StatusBadge state={data.to_value} small />
       </View>
     </CellShell>
@@ -148,6 +172,9 @@ export function StateCell({ item }: { item: { at: string; data: any } }) {
 }
 
 export function AlertCell({ item }: { item: { at: string; data: any } }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+
   const router = useRouter();
   const data = item.data || {};
   const sev = data.severity || 'medium';
@@ -162,15 +189,15 @@ export function AlertCell({ item }: { item: { at: string; data: any } }) {
         <BoundaryChip boundary={boundary} />
         <Text style={styles.cellAt}>{formatAUDate(item.at)}</Text>
       </View>
-      <Text style={styles.cellTitle}>{data.title || humanise(data.alert_type)}</Text>
-      {!!data.body && <Text style={styles.cellBody}>{data.body}</Text>}
+      <Text style={styles.cellTitle}>{titleCaseSafe(humanizeMonths(data.title || humanise(data.alert_type)))}</Text>
+      {!!data.body && <Text style={styles.cellBody}>{humanizeMonths(data.body)}</Text>}
       {boundary !== 'SAFE_TO_EXPLAIN' && Array.isArray(data?.route_out_contacts) && data.route_out_contacts.length > 0 && (
         <ContactCard boundary={boundary as any} contactKeys={data.route_out_contacts} />
       )}
       {!!dest && (
         <TouchableOpacity testID={`alert-cta-${data.id || 'x'}`} onPress={() => router.push(dest as any)} style={styles.alertCta}>
           <Text style={styles.alertCtaText}>{cta}</Text>
-          <Ionicons name="chevron-forward" size={14} color={Colors.brandPrimary} />
+          <Ionicons name="chevron-forward" size={14} color={c.brandPrimary} />
         </TouchableOpacity>
       )}
     </CellShell>
@@ -183,7 +210,7 @@ export function TimelineCell({ item }: { item: { at: string; type: 'event' | 'st
   return <AlertCell item={item} />;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   badge: { borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
   badgeSm: { paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { fontFamily: Fonts.bodySemi, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
@@ -194,30 +221,30 @@ const styles = StyleSheet.create({
   boundChipRouteOut: { backgroundColor: 'rgba(14,77,82,0.08)' },
   boundChipEscalate: { backgroundColor: '#FBE5E0' },
   boundChipText: { fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
-  cell: { backgroundColor: Colors.cardBg, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 8 },
+  cell: { backgroundColor: c.cardBg, borderWidth: 1, borderColor: c.border, borderRadius: Radius.lg, padding: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 8 },
   cellHead: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  cellKind: { ...Type.caption, color: Colors.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.6 },
-  cellAt: { ...Type.caption, color: Colors.textMuted, marginLeft: 'auto' },
-  cellTitle: { ...Type.bodySemi, color: Colors.textPrimary, marginTop: 4 },
-  cellBody: { ...Type.body, color: Colors.textSecondary, marginTop: 2, lineHeight: 21 },
-  payloadBlock: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: Colors.border, gap: 2 },
-  payloadLine: { ...Type.caption, color: Colors.textSecondary },
+  cellKind: { ...Type.caption, color: c.textMuted, fontFamily: Fonts.bodySemi, textTransform: 'uppercase', letterSpacing: 0.6 },
+  cellAt: { ...Type.caption, color: c.textMuted, marginLeft: 'auto' },
+  cellTitle: { ...Type.bodySemi, color: c.textPrimary, marginTop: 4 },
+  cellBody: { ...Type.body, color: c.textSecondary, marginTop: 2, lineHeight: 21 },
+  payloadBlock: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: c.border, gap: 2 },
+  payloadLine: { ...Type.caption, color: c.textSecondary },
   payloadKey: { fontFamily: Fonts.bodySemi },
   stateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   blockedPill: { backgroundColor: '#FAEFD4', borderRadius: 9999, paddingHorizontal: 8, paddingVertical: 2 },
   blockedText: { color: '#5C3D11', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700' },
   alertCta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' },
-  alertCtaText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  alertCtaText: { color: c.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
   contactCard: { marginTop: 10, padding: 10, borderRadius: Radius.md, borderWidth: 1, gap: 8 },
-  contactCardRouteOut: { borderColor: Colors.brandPrimary, backgroundColor: 'rgba(14,77,82,0.05)' },
+  contactCardRouteOut: { borderColor: c.brandPrimary, backgroundColor: 'rgba(14,77,82,0.05)' },
   contactCardEscalate: { borderColor: '#A5512B', borderWidth: 2, backgroundColor: '#FDF3EF' },
   contactLead: { fontFamily: Fonts.bodySemi, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', fontSize: 11 },
   contactRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  contactLabel: { ...Type.bodySemi, color: Colors.textPrimary },
-  contactMeta: { ...Type.caption, color: Colors.textSecondary, marginTop: 2 },
-  contactBlurb: { ...Type.caption, color: Colors.textSecondary, marginTop: 4, lineHeight: 17 },
-  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.brandPrimary, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9999 },
+  contactLabel: { ...Type.bodySemi, color: c.textPrimary },
+  contactMeta: { ...Type.caption, color: c.textSecondary, marginTop: 2 },
+  contactBlurb: { ...Type.caption, color: c.textSecondary, marginTop: 4, lineHeight: 17 },
+  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.brandPrimary, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9999 },
   callBtnEscalate: { backgroundColor: '#A5512B' },
   callBtnText: { color: '#fff', fontFamily: Fonts.bodySemi, fontWeight: '700', fontSize: 12 },
-  followUp: { ...Type.caption, color: Colors.textSecondary, marginTop: 6, lineHeight: 17 },
+  followUp: { ...Type.caption, color: c.textSecondary, marginTop: 6, lineHeight: 17 },
 });

@@ -59,7 +59,7 @@ type ReportRow = {
   participant_id: string;
   report_type: ReportKey;
   report_name?: string;     // server-supplied friendly title
-  title?: string;           // older shape — kept for backward compat
+  title?: string;           // older shape, kept for backward compat
   period_label?: string;
   generated_at?: string;
   file_size_bytes?: number;
@@ -176,7 +176,7 @@ export default function Reports() {
     const friendly = TYPES.find((t) => t.key === key)?.label || key;
     try {
       const payload: Record<string, unknown> = {
-        report_type: key, // Canonical UPPERCASE enum — must not transform.
+        report_type: key, // Canonical UPPERCASE enum, must not transform.
       };
       const pid = active?.id || getActiveParticipantId();
       if (pid) payload.participant_id = pid;
@@ -513,7 +513,7 @@ export default function Reports() {
         <View style={styles.footer}>
           <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
           <Text style={styles.footerText}>
-            Reports are isolated per participant — switching participants shows a different library.
+            Reports are isolated per participant, switching participants shows a different library.
           </Text>
         </View>
       ) : null}

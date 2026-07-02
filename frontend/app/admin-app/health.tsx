@@ -122,9 +122,9 @@ export default function AdminHealth() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.serviceName}>{s.name}</Text>
                       <View style={styles.metaRow}>
-                        <Text style={styles.meta}>{s.response_ms ?? '–'} ms now</Text>
+                        <Text style={styles.meta}>{s.response_ms ?? '-'} ms now</Text>
                         <Text style={styles.metaDot}>·</Text>
-                        <Text style={styles.meta}>p95 {s.p95_ms ?? '–'} ms</Text>
+                        <Text style={styles.meta}>p95 {s.p95_ms ?? '-'} ms</Text>
                         <Text style={styles.metaDot}>·</Text>
                         <Text style={styles.meta}>err {(s.error_rate_24h ?? 0) * 100 < 0.01 ? '<0.01' : ((s.error_rate_24h ?? 0) * 100).toFixed(2)}%</Text>
                       </View>

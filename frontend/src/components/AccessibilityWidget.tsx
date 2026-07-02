@@ -25,7 +25,7 @@ export function AccessibilityWidget() {
 
   return (
     <>
-      {/* Floating pill button — bottom-left */}
+      {/* Floating pill button, bottom-left */}
       <TouchableOpacity
         style={styles.pill}
         onPress={() => setOpen(true)}
@@ -173,8 +173,8 @@ function ToggleRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: 'rgba(14,77,82,0.15)', true: Colors.brandSecondary }}
-        thumbColor={Platform.OS === 'android' ? (value ? Colors.brandPrimary : '#f4f3f4') : undefined}
+        trackColor={{ false: 'rgba(122,138,140,0.45)', true: Colors.brandPrimary }}
+        thumbColor="#FFFFFF"
         testID={testID}
       />
     </View>
