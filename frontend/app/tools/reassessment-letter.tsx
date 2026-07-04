@@ -91,7 +91,7 @@ export default function ReassessmentLetter() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Reassessment Letter Drafter</Text>
-          <Text style={styles.h1}>Draft An Aged-Care Letter</Text>
+          <Text style={styles.h1}>Draft an Aged-Care Letter</Text>
           <Text style={styles.sub}>If needs have changed, write to My Aged Care or your provider with the right framing.</Text>
           <AIAccuracyBanner tool="reassessment-letter" />
 

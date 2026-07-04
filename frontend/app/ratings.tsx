@@ -99,7 +99,7 @@ export default function Ratings() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Provider Ratings" />
+      <BackHeader title="Ratings" />
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"

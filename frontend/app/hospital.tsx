@@ -140,7 +140,7 @@ export default function Hospital() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Hospital Liaison" />
+      <BackHeader title="Hospital Mode" />
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -149,7 +149,7 @@ export default function Hospital() {
       >
         <View style={styles.heroRow}>
           <Ionicons name="pulse-outline" size={22} color={c.brandPrimary} />
-          <Text style={styles.hero}>Hospital Liaison</Text>
+          <Text style={styles.hero}>Hospital Mode</Text>
         </View>
         <Text style={styles.subhero}>What an ED triage nurse needs in 30 seconds. We will save it so you can pull it up on the way to hospital.</Text>
 

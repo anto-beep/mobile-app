@@ -96,7 +96,7 @@ export default function ResetPassword() {
             ) : (
               <>
                 <Text style={styles.overline}>Reset password</Text>
-                <Text style={styles.h1}>Choose A New Password</Text>
+                <Text style={styles.h1}>Choose a New Password</Text>
                 <Text style={styles.sub}>Pick something only you would know. Reset link expires after 1 hour.</Text>
 
                 <Text style={styles.label}>New password</Text>

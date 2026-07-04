@@ -197,7 +197,7 @@ export default function Documents() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Document Vault" rightAccessory={(
+      <BackHeader title="Documents" rightAccessory={(
         <TouchableOpacity onPress={pickFile} style={styles.uploadBtn} testID="docs-upload-btn">
           <Ionicons name="cloud-upload-outline" size={16} color={c.cream} />
           <Text style={styles.uploadBtnText}>Upload</Text>

@@ -116,7 +116,7 @@ export default function PlanSettings() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackHeader title="Plan & Billing" />
+      <BackHeader title="Plan & billing" />
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
         {/* ─── Billing tile card ─── */}
         <View style={styles.tileCard} testID="billing-tile-card">

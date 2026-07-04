@@ -136,20 +136,20 @@ export default function Amendments() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <BackHeader title="Care Plan Amendments" />
+      <BackHeader title="Care-Plan Changes" />
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24}>
         {/* Hero */}
         <View style={styles.heroRow}>
           <Ionicons name="create-outline" size={22} color={c.brandPrimary} />
-          <Text style={styles.hero}>Care Plan Amendments</Text>
+          <Text style={styles.hero}>Care-Plan Changes</Text>
         </View>
         <Text style={styles.subhero}>
           Build a clear, formal request to change the care plan, provider will receive the changes you actually need, in writing.
         </Text>
 
-        {/* New amendment request */}
+        {/* New change request */}
         <View style={styles.card}>
-          <Text style={styles.cardH1}>New amendment request</Text>
+          <Text style={styles.cardH1}>New change request</Text>
 
           <View style={styles.row3}>
             <View style={{ flex: 1 }}>

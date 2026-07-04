@@ -52,10 +52,10 @@ export default function More() {
     { title: 'Their Care', items: [
       { label: 'Care Team', icon: 'people-outline', href: '/(tabs)/family', testID: 'more-link-care-team' },
       { label: 'Calendar', icon: 'calendar-outline', href: '/calendar', testID: 'more-link-calendar' },
-      { label: 'Hospital Liaison', icon: 'pulse-outline', href: '/hospital', testID: 'more-link-hospital' },
+      { label: 'Hospital Mode', icon: 'pulse-outline', href: '/hospital', testID: 'more-link-hospital' },
       { label: 'AT & HM', icon: 'construct-outline', href: '/at-hm', testID: 'more-link-at-hm' },
       { label: 'Care-Plan Changes', icon: 'create-outline', href: '/amendments', testID: 'more-link-amendments' },
-      { label: 'Log a scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },
+      { label: 'Log a Scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },
       { label: 'Timeline', icon: 'time-outline', href: '/timeline', testID: 'more-link-timeline' },
     ]},
     { title: 'Providers & Paperwork', items: [
@@ -68,7 +68,7 @@ export default function More() {
       { label: 'Participants', icon: 'people-outline', href: '/participants', testID: 'more-link-participants', badge: summary ? `${summary.participants_active}/${summary.participants_max}` : undefined },
       { label: 'Referrals', icon: 'gift-outline', href: '/referrals', testID: 'more-link-referrals' },
       { label: 'Audit Log', icon: 'shield-checkmark-outline', href: '/audit', testID: 'more-link-audit' },
-      { label: 'Plan & Billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
+      { label: 'Plan & billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
       { label: 'Settings', icon: 'settings-outline', href: '/settings', testID: 'more-link-settings' },
       { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat', testID: 'more-link-help' },
       { label: 'Support', icon: 'help-buoy-outline', href: '/support', testID: 'more-link-support' },

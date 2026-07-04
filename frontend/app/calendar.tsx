@@ -231,7 +231,7 @@ export default function CalendarRoute() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.brandPrimary} />}
       >
         <Text style={styles.eyebrow}>CALENDAR</Text>
-        <Text style={styles.hero}>Appointments And Home Visits</Text>
+        <Text style={styles.hero}>Appointments and Home Visits</Text>
         <Text style={styles.subhero}>Every appointment, home visit, telehealth call and assessment in one place. Tap a day to add something new, or tap an event to view, edit or cancel it.</Text>
 
         <TouchableOpacity onPress={() => openAddFor()} style={styles.primaryCta} testID="add-appointment">
