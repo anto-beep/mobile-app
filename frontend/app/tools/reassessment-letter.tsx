@@ -90,7 +90,7 @@ export default function ReassessmentLetter() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
-          <Text style={styles.overline}>Reassessment letter</Text>
+          <Text style={styles.overline}>Reassessment Letter Drafter</Text>
           <Text style={styles.h1}>Draft An Aged-Care Letter</Text>
           <Text style={styles.sub}>If needs have changed, write to My Aged Care or your provider with the right framing.</Text>
           <AIAccuracyBanner tool="reassessment-letter" />
@@ -145,7 +145,7 @@ export default function ReassessmentLetter() {
           {letter && (
             <View style={styles.result} testID="reassess-result">
               <ToolSummary
-                toolName="Reassessment Letter"
+                toolName="Reassessment Letter Drafter"
                 tone="success"
                 headline="Your reassessment letter is ready to review."
                 body="Wayly drafted a short, factual letter to My Aged Care asking for a reassessment. Read it end to end, edit anything that does not sound like you, and send it from your own email. Include the participant's My Aged Care reference number if you have it."
@@ -159,7 +159,7 @@ export default function ReassessmentLetter() {
               </View>
               <Text style={styles.letterText} selectable>{letter}</Text>
               <Text style={styles.caveat}>Review before sending. Add the date, your address, and the recipient's address at the top.</Text>
-              <ReportIssueButton tool="Reassessment Letter" />
+              <ReportIssueButton tool="Reassessment Letter Drafter" />
             </View>
           )}
         </ScrollView>

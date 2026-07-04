@@ -52,7 +52,7 @@ export default function More() {
     { title: 'Their Care', items: [
       { label: 'Care Team', icon: 'people-outline', href: '/(tabs)/family', testID: 'more-link-care-team' },
       { label: 'Calendar', icon: 'calendar-outline', href: '/calendar', testID: 'more-link-calendar' },
-      { label: 'Hospital Mode', icon: 'medkit-outline', href: '/hospital', testID: 'more-link-hospital' },
+      { label: 'Hospital Liaison', icon: 'pulse-outline', href: '/hospital', testID: 'more-link-hospital' },
       { label: 'AT & HM', icon: 'construct-outline', href: '/at-hm', testID: 'more-link-at-hm' },
       { label: 'Care-Plan Changes', icon: 'create-outline', href: '/amendments', testID: 'more-link-amendments' },
       { label: 'Log a scenario', icon: 'flag-outline', href: '/log-scenario', testID: 'more-link-log-scenario' },

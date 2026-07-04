@@ -63,7 +63,7 @@ const TOOLS: Tool[] = [
   },
   {
     key: 'reassessment-letter',
-    title: 'Reassessment Letter',
+    title: 'Reassessment Letter Drafter',
     sub: "Polite letter to My Aged Care asking for a fresh look",
     icon: 'mail-outline',
     color: Colors.brandPrimary,

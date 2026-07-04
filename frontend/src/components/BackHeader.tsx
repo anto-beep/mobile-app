@@ -49,9 +49,7 @@ export default function BackHeader({ title, label = 'Back', onBack, rightAccesso
           <Ionicons name="chevron-back" size={18} color={styles.__chipIcon.color as string} />
           <Text style={styles.chipText}>{label}</Text>
         </Pressable>
-        <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
-          {title}
-        </Text>
+        <View style={styles.spacer} />
         <View style={styles.right}>{rightAccessory}</View>
       </View>
     </View>
@@ -97,6 +95,7 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
     color: c.textPrimary,
     fontWeight: '600',
   },
+  spacer: { flex: 1 },
   right: {
     minWidth: 0,
   },
