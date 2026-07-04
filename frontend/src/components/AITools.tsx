@@ -159,26 +159,7 @@ export function ToolGate({ tool, variant = 'unauth', retryAt }: ToolGateProps) {
   );
 }
 
-export function TrialCountdownBanner() {
-  const { user } = useAuth();
-  const router = useRouter();
-  if (!user || !trialActive(user)) return null;
-  const end = new Date(user.trial_ends_at!);
-  const days = Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000));
-  return (
-    <TouchableOpacity
-      style={styles.trialBanner}
-      onPress={() => router.push('/settings/plan' as any)}
-      testID="trial-countdown-banner"
-    >
-      <Ionicons name="time-outline" size={14} color={Colors.brandSecondary} />
-      <Text style={styles.trialText}>
-        <Text style={styles.bold}>{days} day{days === 1 ? '' : 's'}</Text> left in your free trial
-      </Text>
-      <Text style={styles.trialCta}>Pick a plan ›</Text>
-    </TouchableOpacity>
-  );
-}
+export { TrialCountdownBanner } from './TrialCountdownBanner';
 
 const DECODER_STEPS = [
   { key: 'header', label: 'Reading the header' },
