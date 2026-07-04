@@ -56,12 +56,24 @@ type AuthState = {
   verification: VerificationState | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  signup: (email: string, password: string, name: string) => Promise<User>;
+  signup: (payload: SignupPayload) => Promise<User>;
   loginWithGoogle: () => Promise<User>;
   finishGoogleSession: (sessionId: string) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   refreshVerification: () => Promise<VerificationState | null>;
+};
+
+export type SignupPayload = {
+  email: string;
+  password: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  mobile?: string;
+  role?: 'caregiver' | 'participant';
+  plan?: 'solo' | 'family' | 'adviser';
+  invite?: string;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -234,9 +246,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (payload: SignupPayload) => {
     try {
-      const { data } = await api.post('/auth/signup', { email, password, name, role: 'caregiver' });
+      const body: Record<string, any> = { ...payload };
+      // Backend still accepts the legacy `name` field for display; keep it in
+      // sync with first + last so email templates and JWT claims stay stable.
+      if (!body.name && (body.first_name || body.last_name)) {
+        body.name = `${body.first_name || ''} ${body.last_name || ''}`.trim();
+      }
+      const { data } = await api.post('/auth/signup', body);
       await persistAndSet(data.token, data.refresh_token, data.user);
       return data.user as User;
     } catch (err) {
