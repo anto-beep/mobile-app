@@ -13,7 +13,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isTrialExpired } from '../context/AuthContext';
 import { useParticipants } from '../context/ParticipantsContext';
 import { api } from '../lib/api';
 import { Colors, Fonts, Spacing } from '../lib/theme';
@@ -43,7 +43,10 @@ export function WaylyHeader({ transparent = false }: Props) {
   }, [participantSig, user?.id]);
 
   const subActive = subscription?.status === 'active' || subscription?.status === 'trialing';
-  const plan = ((subActive && subscription?.plan && subscription.plan !== 'FREE') ? subscription.plan : (user?.plan || 'free')).toUpperCase();
+  const trialEnded = isTrialExpired(user);
+  const plan = trialEnded
+    ? 'FREE'
+    : ((subActive && subscription?.plan && subscription.plan !== 'FREE') ? subscription.plan : (user?.plan || 'free')).toUpperCase();
 
   return (
     <View style={[styles.bar, transparent && styles.transparent]}>

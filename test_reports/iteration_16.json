@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 16 re-test on Expo web (localhost:3000, viewport 390x844, production backend aged-care-os.emergent.host). ALL THREE ITERATION-15 BLOCKERS ARE NOW RESOLVED. VERIFIED PASS: (1) Dashboard red-screen crash fixed — family-trial user uitest1782985661@example.com now lands on /today without any 'styles is not defined' ReferenceError. The new insights layout renders: [data-testid=dashboard-lifetime-cap-card] visible ('0.0% used of $137,917') and [data-testid=dashboard-things-to-know] visible. dashboard-monthly-spend and dashboard-anomaly-strip correctly return null for this account because it has 0 statements — verified via code (DashboardInsights.tsx:76 and :174 both `if (bars.length === 0) return null;`) — not a regression, expected zero-state behaviour. (2) Header plan-badge is now correct for both users — family-trial account shows [data-testid=layout-plan-badge] text = 'FAMILY', and expired-trial account (cathy@example.com) now shows 'FREE' (previously stuck on 'FAMILY' in iteration 15). WaylyHeader.tsx:46-49 correctly consults isTrialExpired(user) and forces 'FREE'. (3) Trial-expired READ-ONLY guard (Part F) is fully restored — Cathy navigates to /settings/profile and taps Save changes: (a) toast 'Your trial has ended. Subscribe to add or change anything.' appears immediately (verified in DOM), (b) ZERO PATCH requests fired to /api/auth/me during the save attempt (verified via page.on('request') network monitoring — post-save write requests: 0). isTrialExpired now flips setTrialReadOnly(true) for subscription_status=expired accounts (AuthContext.tsx:96-107, 146) and the axios request interceptor at api.ts:115-120 short-circuits with `throw new axios.Cancel('Trial expired read-only mode')` before the network call. (4) Copy fix: budget-calc.tsx:153 now reads 'That is $29,696 across the year, split into four quarters.' (verified via DOM text on /tools/budget-calc — contains 'That is', does NOT contain 'That\\'s'). (5) Tools index disclaimer still positioned BELOW the tool cards (disclaimer top=1343 vs last card bottom=1302 — 8 tool cards rendered, standalone yellow disclaimer sits below). MINOR ONLY: Statement Decoder __SAMPLE__ path was not re-exercised in this iteration (iteration 15 confirmed it, and no changes touched decoder code). The profile-save-button testID appears to render lazily — the first pass of `wait_for_selector('[data-testid=profile-save-button]', 15000)` timed out but the button was visible on screen with 'Save changes' text; clicking via text fallback worked and triggered the read-only guard correctly. Not blocking — cosmetic timing issue. Deprecated packages detected: none. SafeAreaView issues detected: none. React-native-web cosmetic warnings (shadow*, expo-notifications web listener, props.pointerEvents) unchanged from prior iterations.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All screens", "issues": [
+        "React-native-web 'shadow*' style props deprecation warning still noisy (cosmetic).",
+        "[expo-notifications] Listening to push token changes is not fully supported on web (cosmetic).",
+        "props.pointerEvents deprecation warning still noisy (cosmetic)."
+      ]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/i16_family_dashboard.png (family user /today — no red screen, lifetime-cap-card + things-to-know visible, plan badge FAMILY)",
+    "/tmp/i16_budget.png (Budget Calc summary — 'That is $29,696 across the year' contraction fix confirmed)",
+    "/tmp/i16_cathy_profile_saved.png (Cathy Save changes tap — toast 'Your trial has ended. Subscribe to add or change anything.' + plan badge FREE + 0 PATCH requests to /auth/me)",
+    "/tmp/i16_cathy_profile_save.png"
+  ],
+  "action_items": [
+    "OPTIONAL polish: the [data-testid=profile-save-button] attribute renders lazily on Expo web (first 15s wait_for_selector timed out; text-based click still succeeded and guard fired). Likely a React Native Web TouchableOpacity hydration ordering quirk — worth a quick look, but does not affect functionality.",
+    "OPTIONAL polish: dashboard-monthly-spend and dashboard-anomaly-strip correctly return null for zero-statement accounts. If E1 wants to make them testable in the empty state, either render an empty placeholder card with the same testID or expose the empty state via a separate testID."
+  ],
+  "critical_code_review_comments": [
+    "isTrialExpired now robustly covers explicit subscription_status values ('expired', 'canceled', 'cancelled', 'past_due', 'unpaid', 'incomplete_expired') AND the legacy trial_ends_at timestamp fallback. Good defensive coverage.",
+    "The api.ts request interceptor correctly allow-lists /auth/(login|signup|logout|refresh|forgot|reset|verify|resend) and /billing/* so an expired user can still sign in, sign out, and subscribe. Verified by observing POST /auth/login/v2 + POST /auth/login still fire during Cathy's login.",
+    "DashboardInsights.tsx now has 4 top-level components each declaring their own `const styles = useThemedStyles(makeStyles); const c = useColors();` at the top of their function bodies (lines 58, 151, 243, 272). No more scope leakage. Suggest adding a short comment header on each component to prevent future regressions."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only test against production backend)",
+    "frontend": "100% for the three iteration-15 blockers. Family-trial dashboard renders; badge shows correct plan for both users; expired-trial Save changes is blocked client-side with correct toast and zero network mutations; budget-calc copy fixed. No new blockers introduced."
+  },
+  "seed_data_creation": "None. Used existing production accounts uitest1782985661@example.com (family trial) and cathy@example.com (expired trial).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 15 blockers (dashboard red-screen, expired-trial read-only guard, plan badge, budget-calc contraction) are all fixed and verified on iteration 16. Login testIDs: auth-email-input / auth-password-input / auth-login-button. Family-trial account: uitest1782985661@example.com / UiTest1!pass (plan=FAMILY, subscription_status=trialing). Expired-trial account: cathy@example.com / testpass123 (plan=free, subscription_status=expired → read-only). Mobile viewport 390x844. Key files: src/context/AuthContext.tsx:96-107 (isTrialExpired), src/lib/api.ts:115-120 (interceptor blocks non-GET on trialReadOnly), src/components/WaylyHeader.tsx:46-49 (forces FREE badge when trialEnded), src/components/DashboardInsights.tsx (4 components each hoist useThemedStyles + useColors at line 58/151/243/272). The [data-testid=profile-save-button] TouchableOpacity testID renders lazily on Expo web — prefer either wait_for_selector with 30s+ timeout, or text-based fallback `page.get_by_text('Save changes', exact=True)`.",
+  "rca_of_issue": "N/A — all iteration-15 issues have been resolved. Fixes verified: (1) DashboardInsights.tsx now hoists `const styles = useThemedStyles(makeStyles); const c = useColors();` at the top of every top-level component including LifetimeCapCard (line 243). (2) isTrialExpired expanded to detect subscription_status='expired' etc. — the useEffect at AuthContext.tsx:146 flips setTrialReadOnly, and the api.ts request interceptor at lines 115-120 cancels non-GET writes with the exact toast message. (3) WaylyHeader.tsx forces plan badge to 'FREE' when isTrialExpired(user)."
+}

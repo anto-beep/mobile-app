@@ -78,7 +78,7 @@ export default function ProfileSettings() {
           <Text style={styles.value}>{formatAUDate(user?.created_at)}</Text>
           <Text style={styles.label}>Plan</Text>
           <Text style={styles.value}>{(user?.plan || 'free').toUpperCase()}</Text>
-          <TouchableOpacity style={[styles.btn, busy && { opacity: 0.6 }]} onPress={save} disabled={busy}>
+          <TouchableOpacity testID="profile-save-button" style={[styles.btn, busy && { opacity: 0.6 }]} onPress={save} disabled={busy}>
             <Text style={styles.btnText}>{busy ? 'Saving…' : 'Save changes'}</Text>
           </TouchableOpacity>
         </View>

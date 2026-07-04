@@ -95,9 +95,15 @@ async function fetchSubscription(): Promise<Subscription | null> {
 // read-only; trialing accounts flip once trial_ends_at passes.
 export function isTrialExpired(u: User | null): boolean {
   if (!u) return false;
-  if (u.subscription_status === 'active') return false;
-  if (!u.trial_ends_at) return false;
-  return new Date(u.trial_ends_at).getTime() < Date.now();
+  const s = (u.subscription_status || '').toLowerCase();
+  // Active/trialing subscriptions are NEVER read-only.
+  if (s === 'active' || s === 'trialing') return false;
+  // Any explicit non-active/non-trialing subscription status counts as expired
+  // (canceled, expired, past_due, unpaid, incomplete_expired).
+  if (s === 'expired' || s === 'canceled' || s === 'cancelled' || s === 'past_due' || s === 'unpaid' || s === 'incomplete_expired') return true;
+  // Fallback: trial timestamp elapsed.
+  if (u.trial_ends_at && new Date(u.trial_ends_at).getTime() < Date.now()) return true;
+  return false;
 }
 
 function mergeUserWithSub(u: User, sub: Subscription | null): User {
