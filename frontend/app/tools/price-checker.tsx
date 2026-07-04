@@ -13,6 +13,7 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 const FALLBACK_SERVICES = ['Personal care', 'Domestic assistance', 'Nursing', 'Physiotherapy', 'Cleaning', 'Transport'];
 
 const VERDICT_COLORS: Record<string, string> = {
@@ -62,6 +63,7 @@ export default function PriceChecker() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Price checker</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="price-checker" /></View>
           <Text style={styles.h1}>Is This Rate Fair?</Text>
           <AIAccuracyBanner tool="provider-price-checker" />
           <ToolGate tool="provider-price-checker" variant={user ? 'free-plan' : 'unauth'} />

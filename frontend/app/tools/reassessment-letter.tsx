@@ -15,6 +15,7 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 type LetterType = 'classification_reassessment' | 'rcp_assessment' | 'care_plan_amendment';
 const LETTER_TYPES: { key: LetterType; label: string; sub: string }[] = [
   { key: 'classification_reassessment', label: 'Classification reassessment', sub: 'Ask My Aged Care to reassess the classification level' },
@@ -91,6 +92,7 @@ export default function ReassessmentLetter() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Reassessment Letter Drafter</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="reassessment-letter" /></View>
           <Text style={styles.h1}>Draft an Aged-Care Letter</Text>
           <Text style={styles.sub}>If needs have changed, write to My Aged Care or your provider with the right framing.</Text>
           <AIAccuracyBanner tool="reassessment-letter" />

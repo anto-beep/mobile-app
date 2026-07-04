@@ -16,6 +16,7 @@ import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 type Supplement = 'oxygen' | 'enteral_bolus' | 'enteral_non_bolus' | 'veterans' | 'dementia_cognition' | 'eachd_top_up';
 const SUPPLEMENT_OPTIONS: { key: Supplement; label: string; hint: string }[] = [
   { key: 'oxygen',              label: 'Oxygen',                  hint: 'Daily supplement for participants needing oxygen therapy' },
@@ -46,6 +47,7 @@ export default function BudgetCalc() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Budget calculator</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="budget-calculator" /></View>
           <Text style={styles.h1}>What Is The Budget?</Text>
           <AIAccuracyBanner tool="budget-calculator" />
           <ToolGate tool="budget-calculator" variant={user ? 'free-plan' : 'unauth'} />

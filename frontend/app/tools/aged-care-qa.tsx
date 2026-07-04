@@ -14,6 +14,7 @@ import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 type Turn = { role: 'user' | 'assistant'; content: string };
 
 const STARTERS = [
@@ -40,6 +41,7 @@ export default function AgedCareQA() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Aged Care Q&amp;A</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="aged-care-qa" /></View>
           <Text style={styles.h1}>Plain-English Aged-Care Answers</Text>
           <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
           <AIAccuracyBanner tool="aged-care-qa" />

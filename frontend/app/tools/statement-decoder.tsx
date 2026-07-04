@@ -15,6 +15,7 @@ import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, DecoderProgress, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton, ReportThis } from '../../src/components/ToolShell';
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
 
 // Used when `__SAMPLE__` is typed and the backend `_sample` shortcut is not
@@ -153,6 +154,7 @@ export default function StatementDecoder() {
       <ScrollView contentContainerStyle={styles.scroll} testID="statement-decoder-scroll" keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Statement Decoder</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="statement-decoder" /></View>
         <Text style={styles.h1}>What Does This Statement Actually Say?</Text>
         <Text style={styles.sub}>Snap a photo, upload a file, or paste text, we will read it and flag anything off.</Text>
 

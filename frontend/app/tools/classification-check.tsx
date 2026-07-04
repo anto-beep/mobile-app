@@ -13,6 +13,7 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
+import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 const QUESTIONS = [
   'Mobility, moving around the home',
   'Climbing stairs or steps',
@@ -52,6 +53,7 @@ export default function ClassificationCheck() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Classification Self-Check</Text>
+        <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="classification-check" /></View>
           <Text style={styles.h1}>Quick Self-Check</Text>
           <AIAccuracyBanner tool="classification-self-check" />
           <ToolGate tool="classification-self-check" variant={user ? 'free-plan' : 'unauth'} />
