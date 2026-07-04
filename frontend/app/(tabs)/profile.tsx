@@ -205,7 +205,7 @@ export default function Profile() {
               <Ionicons name="card-outline" size={20} color={c.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.linkTitle}>Plan & billing</Text>
+              <Text style={styles.linkTitle}>Plan and Billing</Text>
               <Text style={styles.linkSub}>{(user?.plan || 'free').toUpperCase()} plan · upgrade or cancel</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={c.textMuted} />

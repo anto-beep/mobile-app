@@ -68,7 +68,7 @@ export default function More() {
       { label: 'Participants', icon: 'people-outline', href: '/participants', testID: 'more-link-participants', badge: summary ? `${summary.participants_active}/${summary.participants_max}` : undefined },
       { label: 'Referrals', icon: 'gift-outline', href: '/referrals', testID: 'more-link-referrals' },
       { label: 'Audit Log', icon: 'shield-checkmark-outline', href: '/audit', testID: 'more-link-audit' },
-      { label: 'Plan & billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
+      { label: 'Plan and Billing', icon: 'card-outline', href: '/settings/plan', testID: 'more-link-plan', badge: summary?.base_plan },
       { label: 'Settings', icon: 'settings-outline', href: '/settings', testID: 'more-link-settings' },
       { label: 'Help', icon: 'help-circle-outline', href: '/(tabs)/chat', testID: 'more-link-help' },
       { label: 'Support', icon: 'help-buoy-outline', href: '/support', testID: 'more-link-support' },

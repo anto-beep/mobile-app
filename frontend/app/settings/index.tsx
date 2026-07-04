@@ -24,7 +24,7 @@ type Item = {
 const GROUPS: Array<{ title: string; items: Item[] }> = [
   { title: 'Account', items: [
     { key: 'profile', title: 'Profile', sub: 'Your name and email', icon: 'person-outline', href: '/settings/profile', testID: 'settings-link-profile' },
-    { key: 'plan', title: 'Plan & billing', sub: 'Switch plan, manage trial, billing history', icon: 'card-outline', href: '/settings/plan' },
+    { key: 'plan', title: 'Plan and Billing', sub: 'Switch plan, manage trial, billing history', icon: 'card-outline', href: '/settings/plan' },
     { key: 'members', title: 'Family members', sub: 'Invite family to share the dashboard', icon: 'people-outline', href: '/settings/members' },
     { key: 'security', title: 'Security', sub: 'Biometric lock, sessions, password', icon: 'shield-outline', href: '/settings/security' },
   ]},

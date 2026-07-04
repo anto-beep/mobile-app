@@ -42,7 +42,12 @@ export default function PlanSettings() {
   }
   useEffect(() => { void loadSub(); }, [user?.id, summary?.base_plan]);
 
-  const currentPlan: Plan = (sub?.plan || user?.plan || 'FREE').toUpperCase();
+  // Only trust the subscription record's plan when the subscription is
+  // actually active or trialing. For expired / canceled / past_due states the
+  // record still carries the last paid plan (e.g. FAMILY for Cathy) so we
+  // fall back to `user.plan` which the backend resets to FREE on lapse.
+  const subActive = sub?.status === 'active' || sub?.status === 'trialing';
+  const currentPlan: Plan = ((subActive ? sub?.plan : null) || user?.plan || 'FREE').toUpperCase();
   const trialDays = sub?.trial_ends_at ? daysUntil(sub.trial_ends_at) : null;
   const activeCount = summary?.participants_active ?? participants.length;
   const PLAN_RANK: Record<Plan, number> = { FREE: 0, SOLO: 1, FAMILY: 2 };
@@ -116,7 +121,7 @@ export default function PlanSettings() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackHeader title="Plan & billing" />
+      <BackHeader title="Plan and Billing" />
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
         {/* ─── Billing tile card ─── */}
         <View style={styles.tileCard} testID="billing-tile-card">

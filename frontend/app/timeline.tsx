@@ -58,9 +58,16 @@ export default function Timeline() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackHeader title="Timeline" />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.brandPrimary} />} contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Web-parity hero, mirrors Log a Scenario / Hospital Mode layout. */}
         <View style={styles.head}>
-          <Text style={[Type.h1 as any, { color: c.textPrimary }]}>{active.first_name}</Text>
-          {!!lifecycle && <StatusBadge state={lifecycle} />}
+          <Text style={styles.overline}>Timeline</Text>
+          <View style={styles.heroRow}>
+            <Text style={styles.h1}>{active.first_name}&apos;s Care Journey</Text>
+            {!!lifecycle && <StatusBadge state={lifecycle} />}
+          </View>
+          <Text style={styles.subhero}>
+            Every event, status change, and alert Wayly has captured for {active.first_name}, newest first.
+          </Text>
         </View>
         {/* Category filter — wrapping chip grid (UI-2 §3), never a horizontal scroll. */}
         <View style={styles.filterGrid} testID="timeline-filter-grid">
@@ -77,7 +84,11 @@ export default function Timeline() {
         </View>
         {loading ? <ListSkeleton rows={5} /> : items.length === 0 ? (
           <EmptyState icon="document-text-outline" title="Nothing logged yet" body={`${active.first_name}’s timeline will start filling as events are captured, hospital admissions, statement anomalies, status changes, alerts.`} cta={{ label: 'Log a Scenario', onPress: () => setShowCapture(true) }} />
-        ) : items.filter((it) => filter === 'all' || it.type === filter).map((it, idx) => <TimelineCell key={`${it.type}-${idx}-${it.at}`} item={it} />)}
+        ) : (
+          <View style={{ paddingHorizontal: Spacing.lg, gap: 12 }}>
+            {items.filter((it) => filter === 'all' || it.type === filter).map((it, idx) => <TimelineCell key={`${it.type}-${idx}-${it.at}`} item={it} />)}
+          </View>
+        )}
       </ScrollView>
       <TouchableOpacity testID="log-scenario-fab" onPress={() => setShowCapture(true)} style={styles.fab}>
         <Ionicons name="add" size={26} color="#fff" />
@@ -89,8 +100,15 @@ export default function Timeline() {
 
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
-  head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  filterGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+  head: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm, gap: 4 },
+  overline: {
+    fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.5,
+    textTransform: 'uppercase', color: c.textMuted,
+  },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  h1: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.4, lineHeight: 32 },
+  subhero: { fontFamily: Fonts.body, fontSize: 13.5, color: c.textSecondary, lineHeight: 20, marginTop: 4 },
+  filterGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md, paddingTop: 4 },
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9999, borderWidth: 1, borderColor: c.border, backgroundColor: c.cardBg },
   filterChipActive: { backgroundColor: c.brandPrimary, borderColor: c.brandPrimary },
   filterChipText: { fontFamily: Fonts.bodySemi, fontSize: 13, color: c.brandPrimary },
