@@ -13,13 +13,14 @@
 // imported by both ScenarioContext.tsx AND non-React utilities.
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from './api';
 
 const CACHE_KEY = 'wayly:scenario_schema_v1';
 const CACHE_MAX_AGE_MS = 60 * 60 * 1_000;
 export const MIN_SCHEMA_VERSION = '1.0.0';
 export const MAX_MAJOR = 1;
 
-const BASE = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const BASE = API_BASE_URL;
 
 export type Contact = {
   label: string;

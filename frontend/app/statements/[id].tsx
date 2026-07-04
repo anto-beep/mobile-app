@@ -37,6 +37,31 @@ const SEVERITY: Record<string, { color: string; bg: string; icon: any }> = {
   info: { color: Colors.severityInfo, bg: 'rgba(139, 155, 130, 0.08)', icon: 'information-circle' },
 };
 
+// Format a line-item service date. Backend can return:
+//   - a valid ISO string ("2026-06-03")           → "3 Jun 2026"
+//   - Unix epoch fallback ("1970-01-01")          → "—" (parser lost the date)
+//   - null / empty                                 → "—"
+// The Unix-epoch case is common on production for statements that were
+// decoded before the parser started capturing service dates, so we hide it
+// instead of confusing users with a nonsense 1970 date.
+function formatLineDate(raw: unknown): string {
+  if (!raw) return '—';
+  const s = String(raw).trim();
+  if (!s || s.startsWith('1970-01-01')) return '—';
+  // ISO YYYY-MM-DD → "3 Jun 2026" (fallback to raw for any parse failure).
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) {
+    const [, y, mo, d] = m;
+    const dt = new Date(Number(y), Number(mo) - 1, Number(d));
+    if (!Number.isNaN(dt.getTime()) && dt.getFullYear() > 1970) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${Number(d)} ${months[Number(mo) - 1]} ${y}`;
+    }
+    return '—';
+  }
+  return s;
+}
+
 type Stmt = {
   id: string;
   filename: string;
@@ -542,7 +567,7 @@ export default function StatementDetail() {
             return (
               <View key={li.id} style={styles.lineItem} testID={`statement-line-item-${li.id}`}>
                 <View style={styles.lineItemHead}>
-                  <Text style={styles.lineDate}>{li.date}</Text>
+                  <Text style={styles.lineDate}>{formatLineDate(li.date)}</Text>
                   <Text style={styles.lineTotal}>{formatAUD2(li.total)}</Text>
                 </View>
                 <Text style={styles.lineService}>{li.service_name}</Text>

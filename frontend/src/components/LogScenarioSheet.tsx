@@ -31,6 +31,131 @@ export type LogScenarioHandle = {
   isDirty: () => boolean;
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// Client-side categorization
+//
+// Production `GET /api/scenario/schema` currently returns `category: null` for
+// every event type, so if we simply pass that through the UI lumps all 60+
+// events into a single "OTHER" section. Mirror the web app grouping by
+// mapping each event `key` to a human category. Kept next to the component so
+// it lives with the rest of the scenario UI copy and is easy to tweak.
+// ─────────────────────────────────────────────────────────────────────────
+const CATEGORY_ORDER = [
+  'assessment',
+  'care_pathway',
+  'living',
+  'safeguarding',
+  'financial',
+  'supporters',
+  'provider',
+  'statements',
+  'at_hm',
+  'policy',
+  'identity',
+  'other',
+] as const;
+
+const CATEGORY_LABELS: Record<string, string> = {
+  assessment: 'Assessment & Classification',
+  care_pathway: 'Care Pathways & Health',
+  living: 'Living Situation',
+  safeguarding: 'Safeguarding & Capacity',
+  financial: 'Financial & Means',
+  supporters: 'Supporters & Legal',
+  provider: 'Provider & Services',
+  statements: 'Statements & Budget',
+  at_hm: 'Assistive Technology & Home Modifications',
+  policy: 'Policy & Indexation',
+  identity: 'Identity, Consent & Referrals',
+  other: 'Other',
+};
+
+const KEY_TO_CATEGORY: Record<string, string> = {
+  // Assessment & Classification
+  assessment_completed: 'assessment',
+  assessment_appealed: 'assessment',
+  classification_changed: 'assessment',
+  reassessment_requested: 'assessment',
+  reassessment_completed: 'assessment',
+  interim_funding_started: 'assessment',
+  // Care pathway
+  restorative_pathway_started: 'care_pathway',
+  restorative_pathway_ended: 'care_pathway',
+  eol_pathway_started: 'care_pathway',
+  eol_pathway_extended: 'care_pathway',
+  hospitalised: 'care_pathway',
+  discharged_from_hospital: 'care_pathway',
+  entered_respite: 'care_pathway',
+  left_respite: 'care_pathway',
+  deceased: 'care_pathway',
+  // Living
+  moved_to_residential: 'living',
+  moved_overseas_temporarily: 'living',
+  returned_from_overseas: 'living',
+  moved_to_remote_area: 'living',
+  moved_to_mps_area: 'living',
+  natural_disaster_affecting_home: 'living',
+  missing_person: 'living',
+  // Safeguarding
+  capacity_concern_raised: 'safeguarding',
+  safeguarding_concern_raised: 'safeguarding',
+  elder_abuse_disclosed: 'safeguarding',
+  financial_abuse_disclosed: 'safeguarding',
+  scam_or_fraud_disclosed: 'safeguarding',
+  // Financial
+  services_australia_letter_received: 'financial',
+  means_not_disclosed: 'financial',
+  pension_status_changed: 'financial',
+  hardship_granted: 'financial',
+  lifetime_cap_reached: 'financial',
+  time_limited_cap_reached: 'financial',
+  cshc_acquired: 'financial',
+  cshc_lost: 'financial',
+  // Supporters
+  registered_supporter_added: 'supporters',
+  epoa_registered: 'supporters',
+  guardian_appointed: 'supporters',
+  public_trustee_appointed: 'supporters',
+  caregiver_added: 'supporters',
+  caregiver_removed: 'supporters',
+  // Provider
+  provider_changed: 'provider',
+  provider_cease_notified: 'provider',
+  provider_deregistered: 'provider',
+  service_paused: 'provider',
+  service_resumed: 'provider',
+  branch_transfer_notified: 'provider',
+  switching_provider_started: 'provider',
+  // Statements & Budget
+  statement_received: 'statements',
+  care_management_over_cap: 'statements',
+  wrong_stream_billing: 'statements',
+  backdated_adjustment: 'statements',
+  quarter_end_underspend_risk: 'statements',
+  budget_exhaustion_projected: 'statements',
+  supplement_granted: 'statements',
+  // AT-HM
+  at_hm_approved: 'at_hm',
+  at_hm_purchased: 'at_hm',
+  at_hm_expiring: 'at_hm',
+  // Policy
+  policy_personal_care_free_2026: 'policy',
+  policy_price_caps_deferred_2026: 'policy',
+  policy_eol_round2_2027: 'policy',
+  policy_chsp_transition: 'policy',
+  indexation_classification: 'policy',
+  indexation_cap: 'policy',
+  // Identity, consent, referrals
+  identity_change: 'identity',
+  consent_withdrawn: 'identity',
+  referral_code_issued: 'identity',
+  referral_code_expired: 'identity',
+};
+
+function deriveCategory(key: string): string | null {
+  return KEY_TO_CATEGORY[key] || null;
+}
+
 export function LogScenarioSheet({ visible, participantId, participantName, onClose, onLogged, fullScreen, inline, onDirtyChange }: Props) {
   const { schema, logEvent } = useScenario();
   const [eventKey, setEventKey] = useState<string | null>(null);
@@ -39,16 +164,30 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
   const [payload, setPayload] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [query, setQuery] = useState('');
 
   const types = schema?.events?.types || [];
   const grouped = useMemo(() => {
+    // Filter by search first.
+    const q = query.trim().toLowerCase();
+    const filtered = q
+      ? types.filter((t) => t.label.toLowerCase().includes(q) || t.key.toLowerCase().includes(q))
+      : types;
     const m: Record<string, typeof types> = {};
-    for (const t of types) {
-      const k = (t.category || 'other').toString();
+    for (const t of filtered) {
+      // Prefer server-provided category; otherwise fall back to a client-side
+      // mapping so the UI doesn't dump everything under "OTHER" (production
+      // currently returns `category: null` for every event type).
+      const k = (t.category || deriveCategory(t.key) || 'other').toString();
       (m[k] = m[k] || []).push(t);
     }
-    return Object.entries(m).sort(([a], [b]) => a.localeCompare(b));
-  }, [types]);
+    // Preserve the display order defined in CATEGORY_ORDER; unknown categories
+    // are appended alphabetically at the end.
+    const ordered: Array<[string, typeof types]> = [];
+    for (const cat of CATEGORY_ORDER) if (m[cat]) ordered.push([cat, m[cat]]);
+    for (const cat of Object.keys(m).sort()) if (!CATEGORY_ORDER.includes(cat)) ordered.push([cat, m[cat]]);
+    return ordered;
+  }, [types, query]);
   const selected = types.find((t) => t.key === eventKey);
 
   function reset() { setEventKey(null); setNote(''); setPayload({}); setResult(null); setDate(new Date().toISOString().slice(0, 10)); }
@@ -121,9 +260,28 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
         {!eventKey ? (
           <View style={{ gap: 12 }}>
             <Text style={styles.lbl}>Event type</Text>
-            {grouped.map(([cat, items]) => (
+            <View style={styles.searchWrap}>
+              <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search scenarios"
+                placeholderTextColor={Colors.textMuted}
+                style={styles.searchInput}
+                testID="scenario-search"
+                autoCorrect={false}
+              />
+              {!!query && (
+                <TouchableOpacity onPress={() => setQuery('')} hitSlop={8} testID="scenario-search-clear">
+                  <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {grouped.length === 0 ? (
+              <Text style={styles.noResults}>No scenarios match &ldquo;{query}&rdquo;.</Text>
+            ) : grouped.map(([cat, items]) => (
               <View key={cat} style={{ gap: 6 }}>
-                <Text style={styles.cat}>{cat.toUpperCase()}</Text>
+                <Text style={styles.cat}>{(CATEGORY_LABELS[cat] || cat).toUpperCase()}</Text>
                 <View style={styles.chipWrap}>
                   {items.map((t) => (
                     <TouchableOpacity key={t.key} testID={`event-type-${t.key}`} onPress={() => setEventKey(t.key)} style={styles.chip}>
@@ -222,6 +380,9 @@ const styles = StyleSheet.create({
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { backgroundColor: 'rgba(14,77,82,0.07)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontSize: 13 },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.cardBg },
+  searchInput: { flex: 1, fontFamily: Fonts.body, color: Colors.textPrimary, fontSize: 14, paddingVertical: 2 },
+  noResults: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, paddingVertical: 12, textAlign: 'center' },
   input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: Colors.textPrimary },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   backText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },
