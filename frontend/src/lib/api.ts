@@ -109,9 +109,11 @@ api.interceptors.request.use(async (config) => {
     const ce = new axios.Cancel('Impersonation read-only mode');
     throw ce;
   }
-  // Trial expired → block writes client-side. Auth + billing stay open so the
-  // user can sign in/out and subscribe.
-  const isWriteBlockedRoute = !url.startsWith('/auth') && !url.startsWith('/billing');
+  // Trial expired → block writes client-side. Session endpoints (sign in/out,
+  // token refresh, password reset) and billing stay open so the user can
+  // authenticate and subscribe. PATCH /auth/me (profile edits) IS blocked.
+  const isAuthSessionRoute = /^\/auth\/(login|signup|logout|refresh|forgot|reset|verify|resend)/.test(url);
+  const isWriteBlockedRoute = !isAuthSessionRoute && !url.startsWith('/billing');
   if (trialReadOnly && isWriteBlockedRoute && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
     toast.warning(TRIAL_EXPIRED_MSG, 5000);
     throw new axios.Cancel('Trial expired read-only mode');

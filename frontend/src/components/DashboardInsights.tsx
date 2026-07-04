@@ -55,6 +55,8 @@ function severityRank(s: string | undefined): number {
 type ChartBar = { id: string; label: string; gross: number; copay: number; statementId: string };
 
 function MonthlySpendChart({ statements }: { statements: Statement[] }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
   const [sheet, setSheet] = useState<ChartBar | null>(null);
   const bars: ChartBar[] = useMemo(() => {
     const sorted = [...statements].sort((a, b) => (a.uploaded_at || '').localeCompare(b.uploaded_at || ''));
@@ -125,15 +127,15 @@ function MonthlySpendChart({ statements }: { statements: Statement[] }) {
             </View>
             <View style={styles.sheetRow}>
               <Text style={styles.sheetLabel}>Co-payment</Text>
-              <Text style={[styles.sheetValue, { color: Colors.severityWarning }]}>{formatAUD2(sheet?.copay || 0)}</Text>
+              <Text style={[styles.sheetValue, { color: c.severityWarning }]}>{formatAUD2(sheet?.copay || 0)}</Text>
             </View>
             <View style={[styles.sheetRow, styles.sheetDivider]}>
-              <Text style={[styles.sheetLabel, { fontFamily: Fonts.bodySemi, color: Colors.brandPrimary }]}>Net</Text>
-              <Text style={[styles.sheetValue, { color: Colors.brandPrimary }]}>{formatAUD2((sheet?.gross || 0) - (sheet?.copay || 0))}</Text>
+              <Text style={[styles.sheetLabel, { fontFamily: Fonts.bodySemi, color: c.brandPrimary }]}>Net</Text>
+              <Text style={[styles.sheetValue, { color: c.brandPrimary }]}>{formatAUD2((sheet?.gross || 0) - (sheet?.copay || 0))}</Text>
             </View>
             <Pressable style={styles.sheetCta} onPress={() => sheet && (require('expo-router') as any).router.push(`/statements/${sheet.statementId}`)}>
               <Text style={styles.sheetCtaText}>Open statement</Text>
-              <Ionicons name="chevron-forward" size={14} color={Colors.cream} />
+              <Ionicons name="chevron-forward" size={14} color={c.cream} />
             </Pressable>
           </Pressable>
         </Pressable>
@@ -146,6 +148,8 @@ function MonthlySpendChart({ statements }: { statements: Statement[] }) {
 type AnomalyBar = { id: string; label: string; alert: number; warn: number; info: number; total: number; statementId: string };
 
 function AnomaliesOverTimeStrip({ statements }: { statements: Statement[] }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
   const router = useRouter();
   const bars: AnomalyBar[] = useMemo(() => {
     const sorted = [...statements].sort((a, b) => (a.uploaded_at || '').localeCompare(b.uploaded_at || ''));
@@ -180,15 +184,15 @@ function AnomaliesOverTimeStrip({ statements }: { statements: Statement[] }) {
         </View>
         <View style={{ alignItems: 'flex-end', gap: 2 }}>
           <View style={styles.legendInline}>
-            <View style={[styles.dot, { backgroundColor: Colors.severityAlert }]} />
+            <View style={[styles.dot, { backgroundColor: c.severityAlert }]} />
             <Text style={styles.legendText}>{totals.a} alert{totals.a === 1 ? '' : 's'}</Text>
           </View>
           <View style={styles.legendInline}>
-            <View style={[styles.dot, { backgroundColor: Colors.severityWarning }]} />
+            <View style={[styles.dot, { backgroundColor: c.severityWarning }]} />
             <Text style={styles.legendText}>{totals.w} warn</Text>
           </View>
           <View style={styles.legendInline}>
-            <View style={[styles.dot, { backgroundColor: Colors.severityInfo }]} />
+            <View style={[styles.dot, { backgroundColor: c.severityInfo }]} />
             <Text style={styles.legendText}>{totals.i} info</Text>
           </View>
         </View>
@@ -209,9 +213,9 @@ function AnomaliesOverTimeStrip({ statements }: { statements: Statement[] }) {
               <Text style={styles.barValue}>{b.total > 0 ? b.total : ''}</Text>
               <View style={styles.stripTrack}>
                 <View style={[styles.stripStack, { height: b.total > 0 ? `${Math.max(10, h)}%` : 0 }]}>
-                  {b.alert > 0 ? <View style={{ flex: b.alert / totalSegments, backgroundColor: Colors.severityAlert }} /> : null}
-                  {b.warn > 0 ? <View style={{ flex: b.warn / totalSegments, backgroundColor: Colors.severityWarning }} /> : null}
-                  {b.info > 0 ? <View style={{ flex: b.info / totalSegments, backgroundColor: Colors.severityInfo }} /> : null}
+                  {b.alert > 0 ? <View style={{ flex: b.alert / totalSegments, backgroundColor: c.severityAlert }} /> : null}
+                  {b.warn > 0 ? <View style={{ flex: b.warn / totalSegments, backgroundColor: c.severityWarning }} /> : null}
+                  {b.info > 0 ? <View style={{ flex: b.info / totalSegments, backgroundColor: c.severityInfo }} /> : null}
                 </View>
               </View>
               <Text style={styles.barLabel}>{b.label}</Text>
@@ -221,11 +225,11 @@ function AnomaliesOverTimeStrip({ statements }: { statements: Statement[] }) {
       </View>
 
       <View style={styles.captionRow}>
-        <View style={[styles.dot, { backgroundColor: Colors.severityAlert }]} />
+        <View style={[styles.dot, { backgroundColor: c.severityAlert }]} />
         <Text style={styles.caption}>Alert = action recommended</Text>
-        <View style={[styles.dot, { backgroundColor: Colors.severityWarning, marginLeft: 8 }]} />
+        <View style={[styles.dot, { backgroundColor: c.severityWarning, marginLeft: 8 }]} />
         <Text style={styles.caption}>Warning = check it</Text>
-        <View style={[styles.dot, { backgroundColor: Colors.severityInfo, marginLeft: 8 }]} />
+        <View style={[styles.dot, { backgroundColor: c.severityInfo, marginLeft: 8 }]} />
         <Text style={styles.caption}>Info = FYI only</Text>
       </View>
     </View>
@@ -237,12 +241,13 @@ type LifetimeProps = { lifetime_cap: number; lifetime_contributions: number; lif
 
 function LifetimeCapCard({ lifetime_cap, lifetime_contributions, lifetime_pct, is_grandfathered }: LifetimeProps) {
   const styles = useThemedStyles(makeStyles);
+  const c = useColors();
   return (
     <View style={[styles.insightCard, styles.lifetimeCard]} testID="dashboard-lifetime-cap-card">
       <View style={styles.lifetimeHead}>
         <Text style={styles.overline}>Lifetime contribution cap</Text>
         <View style={styles.statusPill}>
-          <Ionicons name={is_grandfathered ? 'shield-checkmark' : 'sparkles-outline'} size={11} color={Colors.brandPrimary} />
+          <Ionicons name={is_grandfathered ? 'shield-checkmark' : 'sparkles-outline'} size={11} color={c.brandPrimary} />
           <Text style={styles.statusPillText}>{is_grandfathered ? 'Grandfathered' : 'New entrant'}</Text>
         </View>
       </View>
@@ -264,6 +269,8 @@ function LifetimeCapCard({ lifetime_cap, lifetime_contributions, lifetime_pct, i
 type TopAnomaly = Anomaly & { statementId: string };
 
 function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useColors();
   const router = useRouter();
   const items: TopAnomaly[] = useMemo(() => {
     const flat: TopAnomaly[] = [];
@@ -291,7 +298,7 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
 
       {items.length === 0 ? (
         <View style={styles.nothingCard}>
-          <Ionicons name="sparkles" size={18} color={Colors.severityInfo} />
+          <Ionicons name="sparkles" size={18} color={c.severityInfo} />
           <View style={{ flex: 1 }}>
             <Text style={styles.nothingTitle}>Nothing unusual at the moment.</Text>
             <Text style={styles.nothingBody}>We will flag anything that does not look right once new statements arrive.</Text>
@@ -301,10 +308,10 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
         items.map((a, i) => {
           const bucket = severityBucket(a.severity);
           const tone = bucket === 'alert'
-            ? { c: Colors.severityAlert, icon: 'alert-circle' as const, bg: 'rgba(192, 57, 43, 0.06)' }
+            ? { c: c.severityAlert, icon: 'alert-circle' as const, bg: 'rgba(192, 57, 43, 0.06)' }
             : bucket === 'warn'
-              ? { c: Colors.severityWarning, icon: 'warning' as const, bg: 'rgba(183, 121, 31, 0.06)' }
-              : { c: Colors.severityInfo, icon: 'information-circle' as const, bg: 'rgba(139, 155, 130, 0.06)' };
+              ? { c: c.severityWarning, icon: 'warning' as const, bg: 'rgba(183, 121, 31, 0.06)' }
+              : { c: c.severityInfo, icon: 'information-circle' as const, bg: 'rgba(139, 155, 130, 0.06)' };
           return (
             <TouchableOpacity
               key={`${a.statementId}-${i}`}
@@ -319,7 +326,7 @@ function ThingsToKnow({ statements, max = 6 }: { statements: Statement[]; max?: 
                 {(a.detail || a.description) ? <Text style={styles.anomalyDetail} numberOfLines={3}>{a.detail || a.description}</Text> : null}
                 <View style={styles.anomalyFooter}>
                   <Text style={styles.viewLink}>View statement</Text>
-                  <Ionicons name="chevron-forward" size={11} color={Colors.brandPrimary} />
+                  <Ionicons name="chevron-forward" size={11} color={c.brandPrimary} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -342,8 +349,6 @@ type Props = {
 };
 
 export default function DashboardInsights({ statements, lifetime_cap, lifetime_contributions, lifetime_pct, is_grandfathered }: Props) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
   return (
     <View>
       <MonthlySpendChart statements={statements} />

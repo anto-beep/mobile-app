@@ -150,7 +150,7 @@ export default function BudgetCalc() {
                 toolName="Budget Calculator"
                 tone="success"
                 headline={`Your quarterly usable budget is ${formatAUD2(result.quarterly_usable)}.`}
-                body={`Wayly worked out your Support at Home budget from your Classification and pension status. That's ${formatAUD(result.annual_total)} across the year, split into four quarters. The provider keeps ${formatAUD2(result.care_management_quarterly)} per quarter as their 10% care management fee. The rest is what you can spend on care.`}
+                body={`Wayly worked out your Support at Home budget from your Classification and pension status. That is ${formatAUD(result.annual_total)} across the year, split into four quarters. The provider keeps ${formatAUD2(result.care_management_quarterly)} per quarter as their 10% care management fee. The rest is what you can spend on care.`}
               />
               <Text style={styles.resultOverline}>{result.classification_label}{result.is_transitional_hcp ? ' · Transitional HCP' : ''}</Text>
               <Text style={styles.resultAmount}>{formatAUD(result.annual_total)}/yr</Text>

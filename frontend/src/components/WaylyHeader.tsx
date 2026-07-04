@@ -42,7 +42,8 @@ export function WaylyHeader({ transparent = false }: Props) {
     return () => { cancelled = true; };
   }, [participantSig, user?.id]);
 
-  const plan = (subscription?.plan && subscription.plan !== 'FREE' ? subscription.plan : (user?.plan || 'free')).toUpperCase();
+  const subActive = subscription?.status === 'active' || subscription?.status === 'trialing';
+  const plan = ((subActive && subscription?.plan && subscription.plan !== 'FREE') ? subscription.plan : (user?.plan || 'free')).toUpperCase();
 
   return (
     <View style={[styles.bar, transparent && styles.transparent]}>
