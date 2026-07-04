@@ -220,7 +220,7 @@ export function PermanentDeleteModal({
   const matches = typed.trim().toLowerCase() === (periodLabel || '').trim().toLowerCase();
   return (
     <ModalShell visible={visible} onClose={onClose} testID="permanent-delete-modal">
-      <ModalHeading icon="trash-outline" iconTint="#A54030" title="Permanently delete this statement?" />
+      <ModalHeading icon="trash-outline" iconTint="#A54030" title="Permanently Delete This Statement?" />
       <Text style={styles.body}>
         This <Text style={styles.bodyStrong}>cannot be undone</Text>. The file, every line item, and the parsed summary will be removed. We keep an audit-log entry showing that you deleted it, but nothing else.
       </Text>
@@ -246,7 +246,7 @@ export function PermanentDeleteModal({
       <View style={styles.actions}>
         <SecondaryBtn onPress={onClose} testID="permanent-delete-cancel">Cancel</SecondaryBtn>
         <PrimaryBtn onPress={onConfirm} disabled={!matches || submitting} danger testID="permanent-delete-submit">
-          {submitting ? 'Deleting…' : 'Permanently delete'}
+          {submitting ? 'Deleting…' : 'Permanently Delete'}
         </PrimaryBtn>
       </View>
     </ModalShell>

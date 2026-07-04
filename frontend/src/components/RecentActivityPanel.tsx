@@ -56,7 +56,7 @@ export function RecentActivityPanel() {
           <Text style={styles.emptyTitle}>Nothing here yet</Text>
           <Text style={styles.emptyBody}>Events, status changes and alerts for {active.first_name} will appear here as they happen.</Text>
           <TouchableOpacity onPress={() => router.push('/log-scenario' as any)} testID="recent-activity-log-event">
-            <Text style={styles.link}>Log a scenario</Text>
+            <Text style={styles.link}>Log A Scenario</Text>
           </TouchableOpacity>
         </View>
       ) : (

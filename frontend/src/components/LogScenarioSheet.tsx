@@ -244,11 +244,32 @@ export function LogScenarioSheet({ visible, participantId, participantName, onCl
       {!fullScreen && !inline && <View style={styles.handle} />}
       {!inline && (
         <View style={styles.head}>
-          <Text style={[Type.h3 as any, { color: Colors.textPrimary }]}>Log a scenario</Text>
+          <Text style={[Type.h3 as any, { color: Colors.textPrimary }]}>Log A Scenario</Text>
           <TouchableOpacity onPress={requestClose} hitSlop={10}><Ionicons name="close" size={22} color={Colors.textPrimary} /></TouchableOpacity>
         </View>
       )}
       {!!participantName && <Text style={styles.sub}>For {participantName}</Text>}
+      {/* Guided intro — matches the web /app/scenarios explainer copy so
+          caregivers know why we ask for scenarios and how Wayly reacts. */}
+      {!eventKey && (
+        <View style={styles.introCard}>
+          <View style={styles.introHeadRow}>
+            <Ionicons name="sparkles-outline" size={16} color={Colors.brandPrimary} />
+            <Text style={styles.introTitle}>What is a scenario?</Text>
+          </View>
+          <Text style={styles.introBody}>
+            A scenario is a real-life event that changes what {participantName || 'the participant'} needs — a hospital stay, a
+            classification change, a switch of providers, or a new supporter joining the household.
+          </Text>
+          <Text style={styles.introBody}>
+            Log the scenario and Wayly will do the follow-up: it updates the lifecycle status,
+            flags anything you should watch, and if there is a next step (draft a letter,
+            call an assessor, review a statement) it will hand you a workflow tailored to that
+            event.
+          </Text>
+          <Text style={styles.introHint}>Pick the closest match below. You can edit or delete entries later from the timeline.</Text>
+        </View>
+      )}
       {grouped.length === 0 && !eventKey ? (
         <View style={styles.emptySchema}>
           <Ionicons name="cloud-offline-outline" size={28} color={Colors.textMuted} />
@@ -383,6 +404,19 @@ const styles = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.cardBg },
   searchInput: { flex: 1, fontFamily: Fonts.body, color: Colors.textPrimary, fontSize: 14, paddingVertical: 2 },
   noResults: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, paddingVertical: 12, textAlign: 'center' },
+  introCard: {
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(14,77,82,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(14,77,82,0.12)',
+    gap: 8,
+  },
+  introHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  introTitle: { fontFamily: Fonts.bodySemi, fontSize: 13, color: Colors.brandPrimary, letterSpacing: 0.2 },
+  introBody: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
+  introHint: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.brandPrimary, marginTop: 4, letterSpacing: 0.2 },
   input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontFamily: Fonts.body, color: Colors.textPrimary },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   backText: { color: Colors.brandPrimary, fontFamily: Fonts.bodySemi, fontWeight: '700' },

@@ -68,7 +68,7 @@ function RootStack() {
           <Stack.Screen name="admin-auth" />
           <Stack.Screen name="admin-app" />
           <Stack.Screen name="reset-password" />
-          <Stack.Screen name="statements/[id]" options={{ headerShown: true, headerTitle: '', headerBackTitle: 'Back', headerStyle: { backgroundColor: Colors.background }, headerTintColor: Colors.brandPrimary }} />
+          <Stack.Screen name="statements/[id]" />
         </Stack>
       </BiometricGate>
       <DeepLinkHandler />

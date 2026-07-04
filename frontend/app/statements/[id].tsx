@@ -401,27 +401,29 @@ export default function StatementDetail() {
         </TouchableOpacity>
 
         {/* Lifecycle action row, Archive / Restore / Permanent delete /
-            Audit log. Surfaces only the actions valid for the current state. */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+            Audit Log rendered as compact pill buttons, so they don't
+            stack awkwardly above the download tiles. */}
+        <View style={styles.actionPillRow}>
           {stmt.state !== 'archived' && (
-            <TouchableOpacity onPress={openArchive} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} testID="statement-archive-btn">
-              <Ionicons name="archive-outline" size={14} color={c.brandPrimary} />
-              <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary }}>Archive</Text>
+            <TouchableOpacity onPress={openArchive} style={styles.actionPill} testID="statement-archive-btn" activeOpacity={0.75}>
+              <Ionicons name="archive-outline" size={13} color={c.brandPrimary} />
+              <Text style={styles.actionPillText}>Archive</Text>
             </TouchableOpacity>
           )}
           {stmt.state === 'archived' && (
-            <TouchableOpacity onPress={() => setDelOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} testID="statement-permanent-delete-btn">
-              <Ionicons name="trash-outline" size={14} color={c.brandSecondary} />
-              <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandSecondary }}>Permanently delete</Text>
+            <TouchableOpacity onPress={() => setDelOpen(true)} style={[styles.actionPill, styles.actionPillDanger]} testID="statement-permanent-delete-btn" activeOpacity={0.75}>
+              <Ionicons name="trash-outline" size={13} color={c.brandSecondary} />
+              <Text style={[styles.actionPillText, { color: c.brandSecondary }]}>Permanently Delete</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/statements/[id]/audit-log' as any, params: { id: stmt.id } })}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            style={styles.actionPill}
             testID="statement-audit-log-link"
+            activeOpacity={0.75}
           >
-            <Ionicons name="time-outline" size={14} color={c.textSecondary} />
-            <Text style={{ fontFamily: Fonts.bodySemi, fontSize: 12, color: c.textSecondary }}>Audit log</Text>
+            <Ionicons name="time-outline" size={13} color={c.brandPrimary} />
+            <Text style={styles.actionPillText}>Audit Log</Text>
           </TouchableOpacity>
         </View>
 
@@ -634,8 +636,19 @@ function makeStyles(c: ColorPalette) { return StyleSheet.create({
   askBtnText: { fontFamily: Fonts.bodySemi, fontSize: 15, color: '#FFFFFF', letterSpacing: 0.2 },
   downloadsLabel: {
     fontFamily: Fonts.bodyMed, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase',
-    color: c.textMuted, marginBottom: 10,
+    color: c.textMuted, marginBottom: 10, marginTop: Spacing.md,
   },
+  // Pill row for Archive / Audit Log (also Restore, Permanent Delete on
+  // archived statements). Renders inline pills so they read as a coherent
+  // toolbar instead of stacked labels above the Downloads block.
+  actionPillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  actionPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 9999,
+    backgroundColor: c.surfaceTint, borderWidth: 1, borderColor: c.borderSubtle,
+  },
+  actionPillText: { fontFamily: Fonts.bodySemi, fontSize: 12, color: c.brandPrimary, letterSpacing: 0.2 },
+  actionPillDanger: { borderColor: 'rgba(183, 121, 31, 0.35)' },
   tilesRow: { flexDirection: 'row', gap: 10, marginBottom: Spacing.lg },
   tile: {
     flex: 1, alignItems: 'center', justifyContent: 'flex-start',

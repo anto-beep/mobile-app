@@ -151,7 +151,7 @@ export default function ArchivedStatements() {
             accessibilityRole="button"
           >
             <Ionicons name="trash-outline" size={14} color={c.brandSecondary} />
-            <Text style={[styles.actionLbl, { color: c.brandSecondary }]}>Permanently delete</Text>
+            <Text style={[styles.actionLbl, { color: c.brandSecondary }]}>Permanently Delete</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/statements/[id]/audit-log' as any, params: { id: item.id } })}
@@ -159,7 +159,7 @@ export default function ArchivedStatements() {
             accessibilityRole="button"
           >
             <Ionicons name="time-outline" size={14} color={c.textSecondary} />
-            <Text style={[styles.actionLbl, { color: c.textSecondary }]}>Audit log</Text>
+            <Text style={[styles.actionLbl, { color: c.textSecondary }]}>Audit Log</Text>
           </TouchableOpacity>
         </View>
       </View>
