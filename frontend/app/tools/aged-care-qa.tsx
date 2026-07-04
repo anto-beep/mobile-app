@@ -12,7 +12,7 @@ import { Fonts, Radius, Spacing } from '../../src/lib/theme';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
-import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolGate, hasPaidAccess } from '../../src/components/AITools';
 
 import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 type Turn = { role: 'user' | 'assistant'; content: string };
@@ -42,9 +42,7 @@ export default function AgedCareQA() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Aged Care Q&amp;A</Text>
         <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="aged-care-qa" /></View>
-          <Text style={styles.h1}>Plain-English Aged-Care Answers</Text>
           <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
-          <AIAccuracyBanner tool="aged-care-qa" />
           <ToolGate tool="aged-care-qa" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
       </SafeAreaView>
@@ -79,12 +77,10 @@ export default function AgedCareQA() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Aged Care Q&amp;A</Text>
-        <Text style={styles.h1}>Plain-English Aged-Care Answers</Text>
         <Text style={styles.tagline}>Plain-English answers about the Support at Home program, grounded in the Aged Care Act 2024.</Text>
         <Text style={styles.boundary} testID="aged-care-qa-boundary">
           This is a general Q&amp;A assistant, it cannot see your account or statements. Signed-in members can ask the in-app assistant questions about their own household.
         </Text>
-        <AIAccuracyBanner tool="aged-care-qa" />
       </View>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.chatScroll} keyboardShouldPersistTaps="handled" testID="aged-care-qa-scroll">

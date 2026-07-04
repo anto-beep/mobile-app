@@ -10,7 +10,7 @@ import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
-import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
@@ -54,8 +54,6 @@ export default function ClassificationCheck() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Classification Self-Check</Text>
         <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="classification-check" /></View>
-          <Text style={styles.h1}>Quick Self-Check</Text>
-          <AIAccuracyBanner tool="classification-self-check" />
           <ToolGate tool="classification-self-check" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
       </SafeAreaView>
@@ -87,10 +85,7 @@ export default function ClassificationCheck() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
         <Text style={styles.overline}>Classification Self-Check</Text>
-        <Text style={styles.h1}>Quick Self-Check</Text>
         <Text style={styles.sub}>Twelve questions, two minutes, gives a likely Support at Home level.</Text>
-        <AIAccuracyBanner tool="classification-self-check" />
-
         <View style={styles.note}>
           <Ionicons name="information-circle-outline" size={16} color={c.severityInfo} />
           <Text style={styles.noteText}>Informational only. The actual classification is set by My Aged Care's IAT.</Text>

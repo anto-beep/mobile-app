@@ -12,7 +12,7 @@ import { Fonts, Radius, Spacing, formatAUD } from '../../src/lib/theme';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
-import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
@@ -47,8 +47,6 @@ export default function ContributionEstimator() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
         <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="contribution-estimator" /></View>
-          <Text style={styles.h1}>What Will I Pay?</Text>
-          <AIAccuracyBanner tool="contribution-estimator" />
           <ToolGate tool="contribution-estimator" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
       </SafeAreaView>
@@ -89,10 +87,7 @@ export default function ContributionEstimator() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Contribution estimator</Text>
-          <Text style={styles.h1}>What Will I Pay?</Text>
           <Text style={styles.sub}>Quarter and annual contribution estimates by cohort.</Text>
-          <AIAccuracyBanner tool="contribution-estimator" />
-
           <Text style={styles.label}>Pension status</Text>
           <View style={styles.row}>
             {COHORTS.map((p) => (

@@ -11,7 +11,7 @@ import { Colors, Fonts, Radius, Spacing } from '../../src/lib/theme';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
-import { AIAccuracyBanner, ToolGate, hasPaidAccess } from '../../src/components/AITools';
+import { ToolGate, hasPaidAccess } from '../../src/components/AITools';
 import { ToolSummary, ReportIssueButton } from '../../src/components/ToolShell';
 
 import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
@@ -49,8 +49,6 @@ export default function CarePlanReviewer() {
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
         <View style={{ marginTop: 6, marginBottom: 4 }}><AboutThisToolButton toolKey="care-plan-reviewer" /></View>
-          <Text style={styles.h1}>Six-Check Care-Plan Review</Text>
-          <AIAccuracyBanner tool="care-plan-reviewer" />
           <ToolGate tool="care-plan-reviewer" variant={user ? 'free-plan' : 'unauth'} />
         </ScrollView>
       </SafeAreaView>
@@ -83,10 +81,7 @@ export default function CarePlanReviewer() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={20} color={c.brandPrimary} /><Text style={styles.backText}>Back</Text></TouchableOpacity>
           <Text style={styles.overline}>Care Plan Reviewer</Text>
-          <Text style={styles.h1}>Six-Check Care-Plan Review</Text>
           <Text style={styles.sub}>Paste the participant's care plan. We check budget fit, CM cap, services, stream alignment, review date and goals.</Text>
-          <AIAccuracyBanner tool="care-plan-reviewer" />
-
           <Text style={styles.label}>Classification (optional)</Text>
           <View style={styles.row}>
             <TouchableOpacity style={[styles.chip, classification == null && styles.chipActive]} onPress={() => setClassification(null)}>
