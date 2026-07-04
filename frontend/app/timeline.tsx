@@ -76,7 +76,7 @@ export default function Timeline() {
           ))}
         </View>
         {loading ? <ListSkeleton rows={5} /> : items.length === 0 ? (
-          <EmptyState icon="document-text-outline" title="Nothing Logged Yet" body={`${active.first_name}’s timeline will start filling as events are captured, hospital admissions, statement anomalies, status changes, alerts.`} cta={{ label: 'Log A Scenario', onPress: () => setShowCapture(true) }} />
+          <EmptyState icon="document-text-outline" title="Nothing logged yet" body={`${active.first_name}’s timeline will start filling as events are captured, hospital admissions, statement anomalies, status changes, alerts.`} cta={{ label: 'Log a Scenario', onPress: () => setShowCapture(true) }} />
         ) : items.filter((it) => filter === 'all' || it.type === filter).map((it, idx) => <TimelineCell key={`${it.type}-${idx}-${it.at}`} item={it} />)}
       </ScrollView>
       <TouchableOpacity testID="log-scenario-fab" onPress={() => setShowCapture(true)} style={styles.fab}>

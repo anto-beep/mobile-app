@@ -246,7 +246,7 @@ export function PermanentDeleteModal({
       <View style={styles.actions}>
         <SecondaryBtn onPress={onClose} testID="permanent-delete-cancel">Cancel</SecondaryBtn>
         <PrimaryBtn onPress={onConfirm} disabled={!matches || submitting} danger testID="permanent-delete-submit">
-          {submitting ? 'Deleting…' : 'Permanently Delete'}
+          {submitting ? 'Deleting…' : 'Permanently delete'}
         </PrimaryBtn>
       </View>
     </ModalShell>

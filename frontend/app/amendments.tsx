@@ -38,6 +38,18 @@ const CHANGE_TYPES = [
   'Other',
 ];
 
+const ROLE_OPTIONS = [
+  'Primary Caregiver',
+  'Support Caregiver',
+  'Family Member',
+  'Registered Supporter',
+  'Guardian',
+  'Attorney (Financial)',
+  'Attorney (Medical)',
+  'Advocate',
+  'Other',
+];
+
 const STATUS_META: Record<string, { bg: string; fg: string; label: string }> = {
   DRAFT:     { bg: '#EDE9DC', fg: '#6B7C92', label: 'DRAFT' },
   OPEN:      { bg: '#FAEFD4', fg: '#5C3D11', label: 'OPEN' },
@@ -59,7 +71,8 @@ export default function Amendments() {
 
   const [forId, setForId] = useState<string>('');
   const [yourName, setYourName] = useState('');
-  const [yourRole, setYourRole] = useState('primary caregiver');
+  const [yourRole, setYourRole] = useState('Primary Caregiver');
+  const [rolePickerOpen, setRolePickerOpen] = useState(false);
   const [changes, setChanges] = useState<ChangeRow[]>([{ service: '', change_type: CHANGE_TYPES[0], why: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [forPickerOpen, setForPickerOpen] = useState(false);
@@ -164,8 +177,29 @@ export default function Amendments() {
               <TextInput style={styles.input} value={yourName} onChangeText={setYourName} placeholder="Cathy" placeholderTextColor={c.textMuted} testID="amendment-your-name" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.lbl}>Your role</Text>
-              <TextInput style={styles.input} value={yourRole} onChangeText={setYourRole} placeholder="primary caregiver" placeholderTextColor={c.textMuted} testID="amendment-your-role" />
+              <Text style={styles.lbl}>Your Role</Text>
+              <TouchableOpacity
+                style={styles.select}
+                onPress={() => setRolePickerOpen(!rolePickerOpen)}
+                testID="amendment-your-role"
+                activeOpacity={0.75}
+              >
+                <Text style={styles.selectText} numberOfLines={1}>{yourRole}</Text>
+                <Ionicons name="chevron-down" size={16} color={c.textMuted} />
+              </TouchableOpacity>
+              {rolePickerOpen && (
+                <View style={styles.dropdown} testID="amendment-role-options">
+                  {ROLE_OPTIONS.map((r) => (
+                    <TouchableOpacity
+                      key={r}
+                      style={styles.dropdownItem}
+                      onPress={() => { setYourRole(r); setRolePickerOpen(false); }}
+                    >
+                      <Text style={styles.dropdownItemText}>{r}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
 

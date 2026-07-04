@@ -48,14 +48,13 @@ function formatLineDate(raw: unknown): string {
   if (!raw) return '—';
   const s = String(raw).trim();
   if (!s || s.startsWith('1970-01-01')) return '—';
-  // ISO YYYY-MM-DD → "3 Jun 2026" (fallback to raw for any parse failure).
+  // Render valid ISO YYYY-MM-DD as DD/MM/YYYY (Australian short date).
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (m) {
     const [, y, mo, d] = m;
     const dt = new Date(Number(y), Number(mo) - 1, Number(d));
     if (!Number.isNaN(dt.getTime()) && dt.getFullYear() > 1970) {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${Number(d)} ${months[Number(mo) - 1]} ${y}`;
+      return `${d}/${mo}/${y}`;
     }
     return '—';
   }
