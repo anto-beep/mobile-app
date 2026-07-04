@@ -109,11 +109,20 @@ api.interceptors.request.use(async (config) => {
     const ce = new axios.Cancel('Impersonation read-only mode');
     throw ce;
   }
-  // Trial expired → block writes client-side. Session endpoints (sign in/out,
-  // token refresh, password reset) and billing stay open so the user can
-  // authenticate and subscribe. PATCH /auth/me (profile edits) IS blocked.
+  // Trial expired → block writes client-side. Handover spec §"Server contract":
+  //   • Exempt (still writable): /auth/*, /billing/*, /stripe/*, /users/me
+  //     (preferences), /admin/*, /health, /metrics, /public/*.
+  //   • /api/support/tickets is NOT exempt — deliberately blocked so expired
+  //     users can't open new tickets. Existing tickets remain readable.
+  //   • PATCH /auth/me (profile edits) IS blocked; the sub-path /users/me
+  //     (preferences) is not, matching the web app.
   const isAuthSessionRoute = /^\/auth\/(login|signup|logout|refresh|forgot|reset|verify|resend)/.test(url);
-  const isWriteBlockedRoute = !isAuthSessionRoute && !url.startsWith('/billing');
+  const isBillingOrStripe = url.startsWith('/billing') || url.startsWith('/stripe');
+  const isPreferences = url.startsWith('/users/me');
+  const isAdminRoute = url.startsWith('/admin');
+  const isPublicRoute = url.startsWith('/public');
+  const isInfraRoute = url.startsWith('/health') || url.startsWith('/metrics');
+  const isWriteBlockedRoute = !isAuthSessionRoute && !isBillingOrStripe && !isPreferences && !isAdminRoute && !isPublicRoute && !isInfraRoute;
   if (trialReadOnly && isWriteBlockedRoute && method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
     toast.warning(TRIAL_EXPIRED_MSG, 5000);
     throw new axios.Cancel('Trial expired read-only mode');

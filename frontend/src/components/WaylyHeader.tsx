@@ -49,6 +49,8 @@ export function WaylyHeader({ transparent = false }: Props) {
     : ((subActive && subscription?.plan && subscription.plan !== 'FREE') ? subscription.plan : (user?.plan || 'free')).toUpperCase();
 
   return (
+    <>
+      {trialEnded && <ReadOnlyBannerBar />}
     <View style={[styles.bar, transparent && styles.transparent]}>
       {/* Brand mark, logo + "Wayly" wordmark (matches web app top-left). */}
       <TouchableOpacity
@@ -100,6 +102,34 @@ export function WaylyHeader({ transparent = false }: Props) {
         )}
       </TouchableOpacity>
     </View>
+    </>
+  );
+}
+
+/**
+ * Persistent expired-trial banner — mirrors the web `<ReadOnlyBanner />`.
+ * Rendered as part of WaylyHeader so every screen that mounts the header
+ * automatically shows it. Copy is verbatim from the handover spec.
+ */
+function ReadOnlyBannerBar() {
+  const router = useRouter();
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/settings/plan' as any)}
+      activeOpacity={0.9}
+      style={styles.readOnlyBar}
+      accessibilityRole="link"
+      accessibilityLabel="Your trial has ended. Tap to subscribe."
+      testID="read-only-banner"
+    >
+      <Ionicons name="lock-closed" size={14} color={Colors.textInverse} />
+      <Text style={styles.readOnlyText} numberOfLines={2}>
+        <Text style={styles.readOnlyBold}>Your trial has ended.</Text> Subscribe to add or change anything. You can still view your existing data.
+      </Text>
+      <View style={styles.readOnlyCta}>
+        <Text style={styles.readOnlyCtaText}>Subscribe</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -149,4 +179,25 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   badgeText: { color: '#fff', fontFamily: Fonts.bodySemi, fontSize: 10, fontWeight: '700' },
+
+  // Read-only (expired-trial) global banner — clay 500 + white text (matches web).
+  readOnlyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    backgroundColor: Colors.brandSecondary,
+    borderBottomWidth: 1,
+    borderBottomColor: '#7E3F22',
+  },
+  readOnlyText: { flex: 1, color: Colors.textInverse, fontFamily: Fonts.body, fontSize: 12.5, lineHeight: 17 },
+  readOnlyBold: { fontFamily: Fonts.bodySemi, fontWeight: '700' },
+  readOnlyCta: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  readOnlyCtaText: { color: Colors.textInverse, fontFamily: Fonts.bodySemi, fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3 },
 });

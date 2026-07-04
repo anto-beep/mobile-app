@@ -32,6 +32,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AudioModule, useAudioRecorder, useAudioPlayer, RecordingPresets } from 'expo-audio';
 import { api, extractErrorMessage } from '../src/lib/api';
+import { useExpiredTrial } from '../src/hooks/useExpiredTrial';
+import { ReadOnlyLock } from '../src/components/ReadOnlyLock';
 import { useAuth } from '../src/context/AuthContext';
 import { useParticipants } from '../src/context/ParticipantsContext';
 import { toast } from '../src/components/Toast';
@@ -81,6 +83,7 @@ export default function FamilyWall() {
   const styles = useThemedStyles(makeStyles);
   const { user } = useAuth();
   const { active, participantSig } = useParticipants();
+  const expiredTrial = useExpiredTrial();
   const scrollRef = useRef<any>(null);
   React.useEffect(() => {
     const { TabScrollBus } = require('../src/lib/tabScrollBus');
@@ -326,7 +329,11 @@ export default function FamilyWall() {
           A simple digital fridge door for {active?.first_name || 'this participant'}. Photos, messages, and quick voice notes from everyone in the family.
         </Text>
 
-        {/* Composer */}
+        {/* Composer — swapped for ReadOnlyLock while the user is in an
+            expired-trial read-only state (mirrors web `<ReadOnlyLock />`). */}
+        {expiredTrial ? (
+          <ReadOnlyLock action="post to the Family Wall" />
+        ) : (
         <View style={styles.composer}>
           <TextInput
             value={text}
@@ -441,6 +448,7 @@ export default function FamilyWall() {
             )}
           </TouchableOpacity>
         </View>
+        )}
 
         <Text style={styles.sectionH}>Recent Activity</Text>
         {loading ? (

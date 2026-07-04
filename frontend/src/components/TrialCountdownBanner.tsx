@@ -19,27 +19,10 @@ export function TrialCountdownBanner() {
   const router = useRouter();
   const { summary } = useParticipants();
   const { user } = useAuth();
-  const expired = isTrialExpired(user);
 
-  // Expired trial → clay banner with white text (matches web).
-  if (expired) {
-    return (
-      <TouchableOpacity
-        testID="trial-expired-banner"
-        onPress={() => router.push('/settings/plan' as any)}
-        activeOpacity={0.85}
-        style={styles.expiredBar}
-        accessibilityRole="link"
-        accessibilityLabel="Your trial has ended. Tap to choose a plan."
-      >
-        <Ionicons name="alert-circle" size={16} color={Colors.textInverse} />
-        <Text style={styles.expiredLabel}>
-          <Text style={styles.expiredBold}>Your trial has ended.</Text> Subscribe to add or change anything.
-        </Text>
-        <Text style={styles.expiredCta}>Choose Plan</Text>
-      </TouchableOpacity>
-    );
-  }
+  // Expired trial → banner is rendered globally inside WaylyHeader
+  // (see `<ReadOnlyBannerBar />`). Bail out here to prevent a double render.
+  if (isTrialExpired(user)) return null;
 
   // Active trial → beige countdown bar.
   if (!summary?.trial_ends_at) return null;
