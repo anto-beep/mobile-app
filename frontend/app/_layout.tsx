@@ -26,6 +26,7 @@ import type { ColorPalette } from '../src/lib/theme';
 import { useColors } from '../src/hooks/useColors';
 import { useThemedStyles } from '../src/hooks/useThemedStyles';
 import { installLogRedactor } from '../src/lib/logRedactor';
+import { runWhoAmI } from '../src/lib/whoami';
 
 // Phase 10 hardening: install console redactor BEFORE any other code runs.
 // In production builds this neuters console.log/info/debug and redacts JWTs,
@@ -103,6 +104,13 @@ export default function RootLayout() {
     try {
       SplashScreen.preventAutoHideAsync();
     } catch {}
+  }, []);
+
+  // Boot-time diagnostic banner — emits API URL + /api/health status + optional
+  // /api/auth/me identity into the Expo Go / Metro console. See
+  // /app/MOBILE_AGENT_WHOAMI_DIAGNOSTIC.md for spec. Fire-and-forget.
+  React.useEffect(() => {
+    runWhoAmI().catch(() => { /* diagnostic must never crash boot */ });
   }, []);
 
   React.useEffect(() => {
