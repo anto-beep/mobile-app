@@ -37,6 +37,12 @@ function resolveBackend(): string {
   const override = process.env.EXPO_PUBLIC_API_BASE_OVERRIDE;
   if (override && override.trim()) return override.trim().replace(/\/$/, '');
 
+  // New canonical env — takes precedence over the legacy BACKEND_URL. This is
+  // what MOBILE_AGENT_WHOAMI_DIAGNOSTIC recommends and what shared QA (jeremy@
+  // test.com, cathy@example.com …) relies on to hit the preview DB.
+  const wayly = (process.env.EXPO_PUBLIC_WAYLY_API_URL || '').trim();
+  if (wayly) return wayly.replace(/\/$/, '');
+
   const envVal = (process.env.EXPO_PUBLIC_BACKEND_URL || '').trim();
   if (envVal && !PREVIEW_HOST_PATTERN.test(envVal)) {
     return envVal.replace(/\/$/, '');
@@ -45,8 +51,8 @@ function resolveBackend(): string {
   if (envVal && PREVIEW_HOST_PATTERN.test(envVal) && __DEV__) {
     console.warn(
       `[api] EXPO_PUBLIC_BACKEND_URL is a preview-pod URL (${envVal}). ` +
-        `Substituting production (${PROD_BACKEND}). Set EXPO_PUBLIC_API_BASE_OVERRIDE ` +
-        `if you really meant to hit a non-production backend.`,
+        `Substituting production (${PROD_BACKEND}). Set EXPO_PUBLIC_WAYLY_API_URL ` +
+        `or EXPO_PUBLIC_API_BASE_OVERRIDE if you really meant to hit a non-production backend.`,
     );
   }
   return PROD_BACKEND;
