@@ -30,6 +30,17 @@ class ParticipantCreate(BaseModel):
     classification: int = Field(ge=1, le=8, default=4)
     provider_name: str = Field(default="Your provider", max_length=160)
     date_of_birth: Optional[str] = None
+    # Web-parity onboarding fields (Option B — Essentials/Recommended).
+    pension_status: Optional[str] = None                # full|part|cshc|self|unsure
+    statement_delivery: Optional[str] = None            # email|post|portal|other
+    preferred_name: Optional[str] = Field(default=None, max_length=80)
+    mac_reference: Optional[str] = Field(default=None, max_length=40)
+    suburb: Optional[str] = Field(default=None, max_length=80)
+    state: Optional[str] = Field(default=None, max_length=10)
+    hcp_transition: Optional[str] = None                # yes|no|unsure
+    caregiver_relationship: Optional[str] = Field(default=None, max_length=40)
+    caregiver_phone: Optional[str] = Field(default=None, max_length=32)
+    authorisation_confirmed: Optional[bool] = None
 
 
 class ParticipantPatch(BaseModel):
@@ -39,6 +50,16 @@ class ParticipantPatch(BaseModel):
     provider_name: Optional[str] = Field(default=None, max_length=160)
     date_of_birth: Optional[str] = None
     is_primary: Optional[bool] = None
+    pension_status: Optional[str] = None
+    statement_delivery: Optional[str] = None
+    preferred_name: Optional[str] = Field(default=None, max_length=80)
+    mac_reference: Optional[str] = Field(default=None, max_length=40)
+    suburb: Optional[str] = Field(default=None, max_length=80)
+    state: Optional[str] = Field(default=None, max_length=10)
+    hcp_transition: Optional[str] = None
+    caregiver_relationship: Optional[str] = Field(default=None, max_length=40)
+    caregiver_phone: Optional[str] = Field(default=None, max_length=32)
+    authorisation_confirmed: Optional[bool] = None
 
 
 async def _account_for_user(user_id: str) -> tuple[dict, str]:
@@ -93,6 +114,18 @@ async def create_participant(body: ParticipantCreate, user_id: str = Depends(get
         "is_primary": is_primary,
         "status": "ACTIVE",
         "color_index": color_index,
+        # Web-parity onboarding fields — stored so `sharpen accuracy` cards
+        # can pre-fill in the relevant tool later.
+        "pension_status": body.pension_status,
+        "statement_delivery": body.statement_delivery,
+        "preferred_name": (body.preferred_name or "").strip() or None,
+        "mac_reference": (body.mac_reference or "").strip() or None,
+        "suburb": (body.suburb or "").strip() or None,
+        "state": (body.state or "").strip() or None,
+        "hcp_transition": body.hcp_transition,
+        "caregiver_relationship": (body.caregiver_relationship or "").strip() or None,
+        "caregiver_phone": (body.caregiver_phone or "").strip() or None,
+        "authorisation_confirmed": bool(body.authorisation_confirmed) if body.authorisation_confirmed is not None else None,
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }

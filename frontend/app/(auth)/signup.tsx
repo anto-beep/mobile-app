@@ -8,7 +8,7 @@
 //   • Submit → POST /auth/signup → POST /billing/start-trial → route by plan/role.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
@@ -139,7 +139,13 @@ export default function Signup() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bottomOffset={24}>
         {/* Brand */}
-        <View style={styles.brand}>
+        <View style={styles.brand} testID="signup-brand">
+          <Image
+            source={require('../../assets/branding/wayly-mark.png')}
+            style={styles.logoImg}
+            accessibilityLabel="Wayly"
+            resizeMode="contain"
+          />
           <Text style={styles.brandText}>Wayly</Text>
         </View>
 
@@ -284,8 +290,9 @@ export default function Signup() {
 function makeStyles(c: ColorPalette) { return StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
   scroll: { padding: Spacing.lg, paddingBottom: 60, gap: 6 },
-  brand: { alignItems: 'center', paddingVertical: Spacing.md },
-  brandText: { fontFamily: Fonts.heading, fontSize: 32, color: c.brandPrimary, letterSpacing: -0.6 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, alignSelf: 'center', paddingVertical: Spacing.md },
+  logoImg: { width: 40, height: 40, borderRadius: 8 },
+  brandText: { fontFamily: Fonts.heading, fontSize: 26, color: c.brandPrimary, letterSpacing: -0.5 },
 
   inviteCard: { padding: 14, borderRadius: Radius.md, backgroundColor: 'rgba(14,77,82,0.06)', borderWidth: 1, borderColor: 'rgba(14,77,82,0.16)', gap: 6, marginBottom: 8 },
   inviteHead: { fontFamily: Fonts.bodySemi, color: c.brandPrimary, fontSize: 13, letterSpacing: 0.3, textTransform: 'uppercase' },
