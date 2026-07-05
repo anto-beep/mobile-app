@@ -331,7 +331,13 @@ INFORMATIONAL_KINDS = {
 }
 
 
-def _submit_public_decode_job(text: str, refund_key: Optional[str] = None) -> str:
+def _submit_public_decode_job(
+    text: str,
+    refund_key: Optional[str] = None,
+    user_id: Optional[str] = None,
+    household_id: Optional[str] = None,
+    input_method: str = "text_paste",
+) -> str:
     job_id = new_id()
     PUBLIC_DECODE_JOBS[job_id] = {"status": "pending", "created_at": now_iso()}
 
@@ -385,15 +391,54 @@ def _submit_public_decode_job(text: str, refund_key: Optional[str] = None) -> st
                 "anomalies": normalised_anomalies,
                 "informational_notes": informational_notes,
             }
+            period_label = data.get("period_label")
+            summary = data.get("summary")
+
+            # ── Web-parity Spec §6: auto-persist AI-Tools decodes for signed-in
+            # callers so they can pick up the same statement in /statements.
+            # We insert directly (bypassing the Statement pydantic model) to
+            # preserve rich fields (input_method, audit_json, extracted_json,
+            # parsing_warnings, origin_route) that mobile/web read for the
+            # DecoderResultView. Silent failure — a persist error must never
+            # break the decode itself.
+            persisted_statement_id: Optional[str] = None
+            if user_id and household_id:
+                try:
+                    stmt_id = new_id()
+                    doc = {
+                        "id": stmt_id,
+                        "household_id": household_id,
+                        "filename": f"AI Tools decode · {period_label or 'statement'}",
+                        "period_label": period_label,
+                        "uploaded_at": now_iso(),
+                        "line_items": line_items,
+                        "summary": summary,
+                        "anomalies": normalised_anomalies,
+                        "informational_notes": informational_notes,
+                        "audit_json": data.get("audit") or audit,
+                        "extracted_json": data.get("extracted") or {"line_items": line_items},
+                        "parsing_warnings": data.get("parsing_warnings") or [],
+                        "raw_text_preview": (text or "")[:500],
+                        "input_method": input_method,
+                        "origin_route": "ai_tools_decoder",
+                        "has_original_file": False,
+                        "state": "active",
+                    }
+                    await db.statements.insert_one(doc)
+                    persisted_statement_id = stmt_id
+                except Exception:
+                    logger.exception("Failed to auto-persist AI-Tools decode for user %s", user_id)
+
             PUBLIC_DECODE_JOBS[job_id].update({
                 "status": "done",
                 "result": {
-                    "period_label": data.get("period_label"),
-                    "summary": data.get("summary"),
+                    "period_label": period_label,
+                    "summary": summary,
                     "line_items": line_items,
                     "anomalies": normalised_anomalies,
                     "informational_notes": informational_notes,
                     "audit": audit,
+                    "persisted_statement_id": persisted_statement_id,
                 },
             })
         except asyncio.TimeoutError:
@@ -452,7 +497,24 @@ async def public_decode_statement_text(request: Request, payload: DecodeText):
         raise HTTPException(status_code=400, detail="Paste the statement text first.")
     _record_public_decode(key)
     refund_key = key if not key.startswith("user:") else None
-    job_id = _submit_public_decode_job(payload.text, refund_key=refund_key)
+
+    # Web-parity spec §6: when signed-in, auto-persist the decode to
+    # /statements so the user can pick it up under "Open in Statements".
+    household_id_opt: Optional[str] = None
+    if user_id:
+        try:
+            h = await require_household(user_id)
+            household_id_opt = h["id"]
+        except Exception:
+            household_id_opt = None
+
+    job_id = _submit_public_decode_job(
+        payload.text,
+        refund_key=refund_key,
+        user_id=user_id if household_id_opt else None,
+        household_id=household_id_opt,
+        input_method="text_paste",
+    )
     return {"job_id": job_id, "status": "pending"}
 
 
@@ -494,7 +556,22 @@ async def public_decode_statement(request: Request, file: UploadFile = File(...)
         raise HTTPException(status_code=400, detail="Could not extract text. Try a clearer photo.")
     _record_public_decode(key)
     refund_key = key if not key.startswith("user:") else None
-    job_id = _submit_public_decode_job(text, refund_key=refund_key)
+
+    household_id_opt: Optional[str] = None
+    if user_id:
+        try:
+            h = await require_household(user_id)
+            household_id_opt = h["id"]
+        except Exception:
+            household_id_opt = None
+
+    job_id = _submit_public_decode_job(
+        text,
+        refund_key=refund_key,
+        user_id=user_id if household_id_opt else None,
+        household_id=household_id_opt,
+        input_method="file_upload",
+    )
     return {"job_id": job_id, "status": "pending"}
 
 

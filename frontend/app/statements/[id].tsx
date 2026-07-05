@@ -24,6 +24,7 @@ import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import BackHeader from '../../src/components/BackHeader';
 import { toast } from '../../src/components/Toast';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
+import DecoderResultView from '../../src/components/DecoderResultView';
 import {
   ArchiveConfirmModal,
   PermanentDeleteModal,
@@ -67,6 +68,10 @@ type Stmt = {
   period_label?: string | null;
   uploaded_at: string;
   summary?: string;
+  input_method?: string | null;
+  parsing_warnings?: string[] | null;
+  audit_json?: any;
+  extracted_json?: any;
   line_items: any[];
   anomalies: { id: string; severity: 'alert' | 'warning' | 'info'; title: string; detail: string; suggested_action?: string | null; rule?: string | null; dollar_impact?: number | null; evidence?: string[] | null }[];
   anomaly_dollar_impact_total?: number | null;
@@ -490,58 +495,23 @@ export default function StatementDetail() {
           </TouchableOpacity>
         </View>
 
-        {stmt.summary && (
-          <View style={styles.summaryCard} testID="statement-detail-summary">
-            <Text style={styles.summaryOverline}>In plain English</Text>
-            <Text style={styles.summaryText}>{stmt.summary}</Text>
-          </View>
-        )}
-
-        {(stmt.anomalies || []).length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.anomaliesHead}>
-              <Text style={styles.sectionTitle}>Things To Know</Text>
-              {(stmt.anomaly_dollar_impact_total ?? 0) > 0 ? (
-                <View style={styles.impactPill} testID="anomalies-total-impact">
-                  <Text style={styles.impactPillText}>Potential impact: {formatAUD2(stmt.anomaly_dollar_impact_total || 0)}</Text>
-                </View>
-              ) : null}
-            </View>
-            {stmt.anomalies.map((a) => {
-              const s = SEVERITY[a.severity] || SEVERITY.info;
-              return (
-                <View
-                  key={a.id}
-                  style={[styles.anomalyCard, { borderColor: s.color, backgroundColor: s.bg }]}
-                  testID={`anomaly-${a.rule || a.id}`}
-                >
-                  <View style={styles.anomalyHead}>
-                    <Ionicons name={s.icon} size={18} color={s.color} />
-                    <Text style={[styles.anomalyTitle, { color: s.color }]}>{a.title}</Text>
-                    {a.dollar_impact != null && a.dollar_impact > 0 ? (
-                      <Text style={[styles.anomalyDollar, { color: s.color }]} testID={`anomaly-dollar-${a.id}`}>{formatAUD2(a.dollar_impact)}</Text>
-                    ) : null}
-                  </View>
-                  <Text style={styles.anomalyDetail}>{a.detail}</Text>
-                  {a.suggested_action && (
-                    <Text style={styles.anomalyAction}>→ {a.suggested_action}</Text>
-                  )}
-                  {Array.isArray(a.evidence) && a.evidence.length > 0 ? (
-                    <View testID={`anomaly-evidence-${a.id}`} style={styles.evidenceBox}>
-                      <Text style={styles.evidenceTitle}>Why was this flagged?</Text>
-                      {a.evidence.slice(0, 4).map((line, i) => (
-                        <Text key={i} style={styles.evidenceLine}>• {line}</Text>
-                      ))}
-                    </View>
-                  ) : null}
-                  {a.rule ? (
-                    <Text style={styles.anomalyRule} testID={`anomaly-rule-${a.id}`}>{a.rule}</Text>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        )}
+        {stmt.summary || stmt.audit_json || (stmt.line_items && stmt.line_items.length > 0) ? (
+          <DecoderResultView
+            data={{
+              id: stmt.id,
+              filename: stmt.filename,
+              period_label: stmt.period_label,
+              input_method: stmt.input_method,
+              summary: stmt.summary,
+              parsing_warnings: stmt.parsing_warnings,
+              audit_json: stmt.audit_json,
+              extracted_json: stmt.extracted_json,
+              line_items: stmt.line_items,
+              anomalies: stmt.anomalies,
+            }}
+            showActions={false}
+          />
+        ) : null}
 
         {/* Informational notes, calmer section, NOT alarms (Rule 12 AT-HM,
             PPA, etc.). Surfaced beside anomalies so the user sees them but
@@ -561,40 +531,6 @@ export default function StatementDetail() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Line Items</Text>
-          {(stmt.line_items || []).map((li: any) => {
-            const streamColor = c.streams[li.stream] || c.textMuted;
-            return (
-              <View key={li.id} style={styles.lineItem} testID={`statement-line-item-${li.id}`}>
-                <View style={styles.lineItemHead}>
-                  <Text style={styles.lineDate}>{formatLineDate(li.date)}</Text>
-                  <Text style={styles.lineTotal}>{formatAUD2(li.total)}</Text>
-                </View>
-                <Text style={styles.lineService}>{li.service_name}</Text>
-                <View style={styles.lineMetaRow}>
-                  <View
-                    style={[styles.streamChip, { backgroundColor: `${streamColor}20` }]}
-                    testID="statement-line-item-stream-chip"
-                  >
-                    <View style={[styles.streamDot, { backgroundColor: streamColor }]} />
-                    <Text style={[styles.streamChipText, { color: streamColor }]}>
-                      {li.stream}
-                    </Text>
-                  </View>
-                  <Text style={styles.lineMetaText}>
-                    {li.units} × {formatAUD2(li.unit_price)}
-                  </Text>
-                </View>
-                {li.contribution_paid > 0 && (
-                  <Text style={styles.lineYouPaid}>
-                    You paid {formatAUD2(li.contribution_paid)}
-                  </Text>
-                )}
-              </View>
-            );
-          })}
-        </View>
       </ScrollView>
       <ArchiveConfirmModal
         visible={archiveOpen}

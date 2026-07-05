@@ -1,6 +1,6 @@
 // Statement Decoder (public, 1/day for free users) — snap / upload / paste
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,14 +9,16 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { api, extractErrorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
-import { Fonts, Radius, Spacing, formatAUD2 } from '../../src/lib/theme';
+import { Fonts, Radius, Spacing } from '../../src/lib/theme';
 import type { ColorPalette } from '../../src/lib/theme';
 import { useColors } from '../../src/hooks/useColors';
 import { useThemedStyles } from '../../src/hooks/useThemedStyles';
 import { DecoderProgress, ToolGate, hasPaidAccess } from '../../src/components/AITools';
-import { ToolSummary, ReportIssueButton, ReportThis } from '../../src/components/ToolShell';
+import { ReportIssueButton } from '../../src/components/ToolShell';
 import { AboutThisToolButton } from '../../src/components/ToolInfoSheet';
 import { useSensitiveScreen } from '../../src/lib/useSensitiveScreen';
+import DecoderResultView from '../../src/components/DecoderResultView';
+import { toast } from '../../src/components/Toast';
 
 // Used when `__SAMPLE__` is typed and the backend `_sample` shortcut is not
 // deployed (production). Small but anomaly-rich so "Points To Check" renders.
@@ -73,8 +75,14 @@ export default function StatementDecoder() {
       try {
         const { data } = await api.get(`/public/decode-job/${id}`, { timeout: 8000 });
         if (data?.status === 'done') {
-          setResult(data.result || data);
+          const r = data.result || data;
+          setResult(r);
           setJobId(null);
+          // Per spec §6: when signed-in decodes are auto-persisted, toast +
+          // offer "Open in Statements". Server returns the ID inline.
+          if (r?.persisted_statement_id) {
+            toast.success('Saved to your Statements');
+          }
           return;
         }
         if (data?.status === 'error') throw new Error(data?.error || 'Decoding failed');
@@ -211,111 +219,31 @@ export default function StatementDecoder() {
             )}
 
             {result && (() => {
-              // Source-of-truth resolution — production wayly.com.au returns
-              // `audit.anomalies` + `audit.informational_notes`. Some legacy
-              // builds still emit top-level keys. Accept both transparently.
-              const audit = (result as any).audit || {};
-              const anomalies: any[] = Array.isArray(audit.anomalies)
-                ? audit.anomalies
-                : Array.isArray((result as any).anomalies)
-                ? (result as any).anomalies
-                : [];
-              const informationalNotes: any[] = Array.isArray(audit.informational_notes)
-                ? audit.informational_notes
-                : Array.isArray((result as any).informational_notes)
-                ? (result as any).informational_notes
-                : [];
-              const lineItems: any[] = Array.isArray((result as any).line_items) ? (result as any).line_items : [];
-              const summary: string | undefined = (result as any).summary;
-              const periodLabel: string | undefined = (result as any).period_label;
+              const persistedId: string | null = (result as any).persisted_statement_id || null;
+              const decodeAnother = () => {
+                setResult(null);
+                setText('');
+              };
+              const openInStatements = persistedId
+                ? () => router.push({ pathname: '/statements/[id]' as any, params: { id: persistedId } })
+                : undefined;
               return (
                 <View style={styles.results} testID="decoder-results">
-                  <Text style={styles.resultsOverline}>Decoded successfully{periodLabel ? ` · ${periodLabel}` : ''}</Text>
-                  <ToolSummary
-                    toolName="Statement Decoder"
-                    tone={anomalies.length > 0 ? 'alert' : 'success'}
-                    headline={(String(summary || '').match(/^[^.]*\./) || [])[0] || 'Your statement has been decoded.'}
-                    body={`We checked every line against Support at Home rules. ${anomalies.length > 0 ? `We found ${anomalies.length} thing${anomalies.length === 1 ? '' : 's'} worth checking with your provider.` : 'Nothing looked out of order.'}${summary ? ` ${summary}` : ''}`}
+                  <DecoderResultView
+                    data={{
+                      period_label: (result as any).period_label,
+                      summary: (result as any).summary,
+                      parsing_warnings: (result as any).parsing_warnings,
+                      audit_json: (result as any).audit || (result as any).audit_json,
+                      extracted_json: (result as any).extracted || (result as any).extracted_json,
+                      line_items: (result as any).extracted?.line_items || (result as any).line_items || [],
+                      anomalies: (result as any).anomalies,
+                      input_method: (result as any).input_method || (tab === 'paste' ? 'text_paste' : 'file_upload'),
+                    }}
+                    persistedStatementId={persistedId}
+                    onOpenInStatements={openInStatements}
+                    onDecodeAnother={decodeAnother}
                   />
-
-                  {anomalies.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>Points To Check</Text>
-                      {anomalies.map((a: any, i: number) => (
-                        <View
-                          key={a.id || i}
-                          style={[
-                            styles.anomaly,
-                            a.severity === 'alert' && styles.anomalyAlert,
-                            a.severity === 'warning' && styles.anomalyWarning,
-                          ]}
-                          testID={`decoder-anomaly-${i}`}
-                        >
-                          <View style={styles.anomalyHead}>
-                            <View
-                              style={[
-                                styles.sevBadge,
-                                a.severity === 'alert' && styles.sevBadgeAlert,
-                                a.severity === 'warning' && styles.sevBadgeWarning,
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.sevBadgeText,
-                                  a.severity === 'alert' && styles.sevBadgeTextAlert,
-                                  a.severity === 'warning' && styles.sevBadgeTextWarning,
-                                ]}
-                              >
-                                {(a.severity || 'info').toUpperCase()}
-                              </Text>
-                            </View>
-                            <Text style={styles.anomalyTitle}>{a.title}</Text>
-                          </View>
-                          <Text style={styles.anomalyBody}>{a.detail || a.description}</Text>
-                          {a.suggested_action ? (
-                            <Text style={styles.anomalyAction}>→ {a.suggested_action}</Text>
-                          ) : null}
-                          <ReportThis tool="Statement Decoder" />
-                        </View>
-                      ))}
-                    </>
-                  )}
-
-                  {/* Statement notes, informational only, no severity badges.
-                      Carries entries with kind `at_hm_active_commitment` or
-                      `previous_period_adjustment` per production spec. */}
-                  {informationalNotes.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>Statement Notes</Text>
-                      <Text style={styles.sectionSub}>
-                        Context the decoder spotted, not alerts, just things worth knowing.
-                      </Text>
-                      {informationalNotes.map((n: any, i: number) => (
-                        <View key={i} style={styles.note} testID={`decoder-note-${i}`}>
-                          <View style={styles.noteHead}>
-                            <Ionicons name="information-circle-outline" size={16} color={c.severityInfo} />
-                            <Text style={styles.noteTitle}>{n.title || 'Statement note'}</Text>
-                          </View>
-                          {n.detail ? <Text style={styles.noteBody}>{n.detail}</Text> : null}
-                          {n.suggested_action ? (
-                            <Text style={styles.noteAction}>→ {n.suggested_action}</Text>
-                          ) : null}
-                        </View>
-                      ))}
-                    </>
-                  )}
-
-                  {lineItems.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>Line items ({lineItems.length})</Text>
-                      {lineItems.slice(0, 20).map((li: any, i: number) => (
-                        <View key={i} style={styles.lineItem}>
-                          <Text style={styles.lineService}>{li.service_name || li.service || 'Service'}</Text>
-                          <Text style={styles.lineTotal}>{formatAUD2(li.total || 0)}</Text>
-                        </View>
-                      ))}
-                    </>
-                  )}
                   <Text style={styles.disclaimer}>Wayly provides information only, not clinical or financial advice.</Text>
                   <ReportIssueButton tool="Statement Decoder" />
                 </View>
